@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from "react";
@@ -32,7 +33,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <SidebarHeader>
            <div className="flex items-center gap-2 p-2">
              <Wallet className="h-7 w-7 text-primary" />
-             <h1 className="text-xl font-bold font-headline">ExpenseWise</h1>
+             <h1 className="text-xl font-bold font-headline">MedidiWallet</h1>
            </div>
         </SidebarHeader>
         <SidebarContent>

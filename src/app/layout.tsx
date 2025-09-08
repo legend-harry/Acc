@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -5,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { PwaAssets } from '@/components/pwa-assets';
 
 export const metadata: Metadata = {
-  title: 'ExpenseWise',
+  title: 'MedidiWallet',
   description: 'Budgeting and expense tracking simplified.',
   manifest: '/manifest.json',
 };

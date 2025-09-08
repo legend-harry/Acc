@@ -1,12 +1,13 @@
+
 'use client';
 
 export function PwaAssets() {
     return (
         <>
-            <meta name="application-name" content="ExpenseWise" />
+            <meta name="application-name" content="MedidiWallet" />
             <meta name="apple-mobile-web-app-capable" content="yes" />
             <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-            <meta name="apple-mobile-web-app-title" content="ExpenseWise" />
+            <meta name="apple-mobile-web-app-title" content="MedidiWallet" />
             <meta name="format-detection" content="telephone=no" />
             <meta name="mobile-web-app-capable" content="yes" />
             <meta name="msapplication-config" content="/icons/browserconfig.xml" />

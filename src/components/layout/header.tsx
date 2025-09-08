@@ -1,3 +1,4 @@
+
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -13,7 +14,7 @@ export function Header() {
        {isMobile && (
         <div className="flex items-center gap-2 font-bold">
             <Wallet className="h-6 w-6 text-primary" />
-            <span className="font-headline text-lg">ExpenseWise</span>
+            <span className="font-headline text-lg">MedidiWallet</span>
         </div>
       )}
       <div className="flex-1" />

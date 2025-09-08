@@ -42,7 +42,10 @@ const parseDate = (dateStr: string) => {
       if (parts[0].length === 4) { // YYYY-MM-DD
         return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
       } else { // MM/DD/YY
-        return new Date(2000 + parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+        const year = parseInt(parts[2]);
+        // Assuming 2-digit years '00'-'29' are 2000s, and '30'-'99' are 1900s.
+        // The data seems to be for 2025, so this logic should be fine.
+        return new Date((year < 30 ? 2000 : 1900) + year, parseInt(parts[0]) - 1, parseInt(parts[1]));
       }
     }
     return new Date();
@@ -85,9 +88,9 @@ export const transactions: Transaction[] = lines.map((line, index) => {
 export const categories = [...new Set(transactions.map(t => t.category))];
 
 export const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD', // The provided data uses ₹, but for consistency we use USD in formatting
+      currency: 'INR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

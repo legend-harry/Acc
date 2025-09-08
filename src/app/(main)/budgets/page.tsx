@@ -66,7 +66,7 @@ export default function BudgetsPage() {
             <div key={category} className="grid grid-cols-3 items-center gap-4">
               <Label htmlFor={`budget-${category}`}>{category}</Label>
               <div className="col-span-2 flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">$</span>
+                <span className="text-sm text-muted-foreground">₹</span>
                 <Input
                   id={`budget-${category}`}
                   type="number"

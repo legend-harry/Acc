@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Receipt, User } from 'lucide-react';
+import { ChevronRight, Filter, Receipt, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
@@ -125,25 +125,27 @@ export default function TransactionsPage() {
         description="A detailed list of all your expenses."
       />
 
-    <div className="mb-6 flex flex-col md:flex-row gap-4">
-        <Input 
-            placeholder="Search by title, vendor, description..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-        />
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full md:w-[280px]">
-                <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
-    </div>
+    <Card className="mb-6">
+        <CardContent className="p-4 flex flex-col md:flex-row gap-4">
+            <Input 
+                placeholder="Search by title, vendor, description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+            />
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full md:w-[280px]">
+                    <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </CardContent>
+    </Card>
 
       {isMobile ? (
          <div className="space-y-4">

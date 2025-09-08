@@ -7,30 +7,31 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 const pastelColors = [
-  "bg-red-100/70 hover:bg-red-100",
-  "bg-green-100/70 hover:bg-green-100",
-  "bg-blue-100/70 hover:bg-blue-100",
-  "bg-yellow-100/70 hover:bg-yellow-100",
-  "bg-purple-100/70 hover:bg-purple-100",
-  "bg-pink-100/70 hover:bg-pink-100",
-  "bg-indigo-100/70 hover:bg-indigo-100",
-  "bg-cyan-100/70 hover:bg-cyan-100",
-  "bg-teal-100/70 hover:bg-teal-100",
-  "bg-orange-100/70 hover:bg-orange-100",
+  "bg-red-200/40 hover:bg-red-200/60",
+  "bg-green-200/40 hover:bg-green-200/60",
+  "bg-blue-200/40 hover:bg-blue-200/60",
+  "bg-yellow-200/40 hover:bg-yellow-200/60",
+  "bg-purple-200/40 hover:bg-purple-200/60",
+  "bg-pink-200/40 hover:bg-pink-200/60",
+  "bg-indigo-200/40 hover:bg-indigo-200/60",
+  "bg-cyan-200/40 hover:bg-cyan-200/60",
+  "bg-teal-200/40 hover:bg-teal-200/60",
+  "bg-orange-200/40 hover:bg-orange-200/60",
 ];
 
 const badgeColors = [
-  "bg-red-100/30 text-red-800 border-red-200/50",
-  "bg-green-100/30 text-green-800 border-green-200/50",
-  "bg-blue-100/30 text-blue-800 border-blue-200/50",
-  "bg-yellow-100/30 text-yellow-800 border-yellow-200/50",
-  "bg-purple-100/30 text-purple-800 border-purple-200/50",
-  "bg-pink-100/30 text-pink-800 border-pink-200/50",
-  "bg-indigo-100/30 text-indigo-800 border-indigo-200/50",
-  "bg-cyan-100/30 text-cyan-800 border-cyan-200/50",
-  "bg-teal-100/30 text-teal-800 border-teal-200/50",
-  "bg-orange-100/30 text-orange-800 border-orange-200/50",
+  "bg-red-100/70 text-red-900 border-red-200/80",
+  "bg-green-100/70 text-green-900 border-green-200/80",
+  "bg-blue-100/70 text-blue-900 border-blue-200/80",
+  "bg-yellow-100/70 text-yellow-900 border-yellow-200/80",
+  "bg-purple-100/70 text-purple-900 border-purple-200/80",
+  "bg-pink-100/70 text-pink-900 border-pink-200/80",
+  "bg-indigo-100/70 text-indigo-900 border-indigo-200/80",
+  "bg-cyan-100/70 text-cyan-900 border-cyan-200/80",
+  "bg-teal-100/70 text-teal-900 border-teal-200/80",
+  "bg-orange-100/70 text-orange-900 border-orange-200/80",
 ];
+
 
 // We need a consistent mapping, so we can't rely on index.
 // Let's create a function that generates a hash from the category name.

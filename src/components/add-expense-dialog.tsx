@@ -85,6 +85,7 @@ export function AddExpenseDialog({
         quantity: Number(data.qty) || 0,
         ratePerUnit: 0, // This can be calculated or added as a field
         date: data.date ? new Date(data.date as string).toISOString() : new Date().toISOString(),
+        createdAt: new Date().toISOString(),
         receiptUrl: receiptUrl,
     };
     

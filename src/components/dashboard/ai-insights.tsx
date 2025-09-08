@@ -33,6 +33,9 @@ export async function AIInsights({transactions}: {transactions?: Transaction[]})
     }
   } catch (error) {
     console.error("Error generating AI insights:", error);
+    if (error instanceof Error && error.message.includes('503')) {
+      content = "The AI model is currently overloaded. Please try again in a few moments.";
+    }
   }
 
 

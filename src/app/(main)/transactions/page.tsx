@@ -8,7 +8,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardFooter
 } from "@/components/ui/card";
 import {
   Table,
@@ -26,9 +25,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import Image from 'next/image';
 import { Transaction } from '@/types';
 import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
-import { useTransactions } from '@/hooks/use-database';
+import { useTransactions, useCategories } from '@/hooks/use-database';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const TRANSACTIONS_PER_PAGE = 20;
@@ -71,14 +72,29 @@ const ReceiptPreviewDialog = ({ transaction }: { transaction: Transaction }) => 
 
 export default function TransactionsPage() {
     const { transactions, loading } = useTransactions();
+    const { categories } = useCategories();
     const isMobile = useIsMobile();
-    const sortedTransactions = useMemo(() => 
-        [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-        [transactions]
-    );
+    
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState("all");
     const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
 
-    const visibleTransactions = sortedTransactions.slice(0, visibleCount);
+    const filteredTransactions = useMemo(() => 
+        [...transactions]
+        .filter(t => {
+            const searchTermLower = searchTerm.toLowerCase();
+            const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
+            const matchesSearch = searchTerm.trim() === '' ||
+                t.title.toLowerCase().includes(searchTermLower) ||
+                t.vendor.toLowerCase().includes(searchTermLower) ||
+                t.description.toLowerCase().includes(searchTermLower);
+            return matchesCategory && matchesSearch;
+        })
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        [transactions, searchTerm, selectedCategory]
+    );
+
+    const visibleTransactions = filteredTransactions.slice(0, visibleCount);
 
     const loadMore = () => {
         setVisibleCount(prevCount => prevCount + TRANSACTIONS_PER_PAGE);
@@ -105,6 +121,27 @@ export default function TransactionsPage() {
         title="Transactions"
         description="A detailed list of all your expenses."
       />
+
+    <div className="mb-6 flex flex-col md:flex-row gap-4">
+        <Input 
+            placeholder="Search by title, vendor, description..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+        />
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full md:w-[280px]">
+                <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    </div>
+
       {isMobile ? (
          <div className="space-y-4">
             {loading ? (
@@ -120,9 +157,14 @@ export default function TransactionsPage() {
                     </Card>
                 ))
             )}
-             {visibleCount < sortedTransactions.length && (
+             {visibleCount < filteredTransactions.length && (
                 <div className="text-center mt-4">
                 <Button onClick={loadMore} variant="outline">Load More</Button>
+                </div>
+            )}
+            {!loading && filteredTransactions.length === 0 && (
+                <div className="text-center py-10 text-muted-foreground">
+                    No transactions match your search.
                 </div>
             )}
          </div>
@@ -175,9 +217,16 @@ export default function TransactionsPage() {
                     </TableRow>
                     ))
                 )}
+                {!loading && filteredTransactions.length === 0 && (
+                     <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                            No transactions match your filters.
+                        </TableCell>
+                    </TableRow>
+                )}
                 </TableBody>
             </Table>
-            {visibleCount < sortedTransactions.length && !loading && (
+            {visibleCount < filteredTransactions.length && !loading && (
                 <div className="text-center mt-4 pt-4 border-t">
                 <Button onClick={loadMore} variant="outline">Load More</Button>
                 </div>
@@ -188,3 +237,5 @@ export default function TransactionsPage() {
     </div>
   );
 }
+
+    

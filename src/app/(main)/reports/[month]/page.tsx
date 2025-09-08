@@ -27,46 +27,45 @@ import { AIInsights } from '@/components/dashboard/ai-insights';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BudgetComparisonChart } from '@/components/dashboard/budget-comparison-chart';
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 
 async function generatePdf(month: string, monthName: string, monthlyTransactions: any[], insights: string) {
-    if (typeof window !== 'undefined') {
-        const jsPDF = (await import('jspdf')).default;
-        const doc = new jsPDF();
+    const doc = new jsPDF();
 
-        doc.setFontSize(22);
-        doc.text(`Expense Report: ${monthName}`, 14, 20);
-        
-        doc.setFontSize(12);
-        doc.text(`Total Transactions: ${monthlyTransactions.length}`, 14, 30);
+    doc.setFontSize(22);
+    doc.text(`Expense Report: ${monthName}`, 14, 20);
+    
+    doc.setFontSize(12);
+    doc.text(`Total Transactions: ${monthlyTransactions.length}`, 14, 30);
 
-        const tableColumn = ["Date", "Description", "Category", "Amount"];
-        const tableRows: (string|number)[][] = [];
+    const tableColumn = ["Date", "Description", "Category", "Amount"];
+    const tableRows: (string|number)[][] = [];
 
-        monthlyTransactions.forEach(ticket => {
-            const ticketData = [
-                ticket.date.toLocaleDateString(),
-                ticket.title,
-                ticket.category,
-                formatCurrency(ticket.amount)
-            ];
-            tableRows.push(ticketData);
-        });
+    monthlyTransactions.forEach(ticket => {
+        const ticketData = [
+            ticket.date.toLocaleDateString(),
+            ticket.title,
+            ticket.category,
+            formatCurrency(ticket.amount)
+        ];
+        tableRows.push(ticketData);
+    });
 
-        (doc as any).autoTable({
-            head: [tableColumn],
-            body: tableRows,
-            startY: 40,
-        });
-        
-        const finalY = (doc as any).lastAutoTable.finalY;
+    (doc as any).autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 40,
+    });
+    
+    const finalY = (doc as any).lastAutoTable.finalY;
 
-        doc.setFontSize(16);
-        doc.text("AI Insights", 14, finalY + 15);
-        doc.setFontSize(10);
-        doc.text(insights, 14, finalY + 22, { maxWidth: 180 });
+    doc.setFontSize(16);
+    doc.text("AI Insights", 14, finalY + 15);
+    doc.setFontSize(10);
+    doc.text(insights, 14, finalY + 22, { maxWidth: 180 });
 
-        doc.save(`report-${month}.pdf`);
-    }
+    doc.save(`report-${month}.pdf`);
 }
 
 
@@ -75,7 +74,8 @@ export default function MonthlyReportPage({
 }: {
   params: { month: string };
 }) {
-  const [year, month] = params.month.split("-").map(Number);
+  const { month: monthSlug } = params;
+  const [year, month] = monthSlug.split("-").map(Number);
   const monthDate = new Date(year, month - 1);
 
   const monthName = monthDate.toLocaleString("default", {
@@ -95,7 +95,7 @@ export default function MonthlyReportPage({
   const handleDownload = async () => {
       // Dummy insights for now, ideally this would be a fresh fetch for the month
       const insights = "Monthly spending was high on Bore Construction. Consider reviewing vendor contracts for potential savings.";
-      await generatePdf(params.month, monthName, sortedTransactions, insights);
+      await generatePdf(monthSlug, monthName, sortedTransactions, insights);
   };
 
   return (
@@ -181,4 +181,3 @@ export default function MonthlyReportPage({
     </div>
   );
 }
-

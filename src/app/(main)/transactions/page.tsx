@@ -150,8 +150,8 @@ export default function TransactionsPage() {
                 ))
             ) : (
                 visibleTransactions.map(t => (
-                    <Card key={t.id} className={getCategoryColorClass(t.category)}>
-                        <CardContent className="p-4">
+                    <Card key={t.id}>
+                        <CardContent className={`p-4 ${getCategoryColorClass(t.category)}`}>
                             {renderTransactionItem(t)}
                         </CardContent>
                     </Card>

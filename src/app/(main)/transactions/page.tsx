@@ -87,7 +87,7 @@ export default function TransactionsPage() {
             const matchesSearch = searchTerm.trim() === '' ||
                 t.title.toLowerCase().includes(searchTermLower) ||
                 t.vendor.toLowerCase().includes(searchTermLower) ||
-                t.description.toLowerCase().includes(searchTermLower);
+                (t.description && t.description.toLowerCase().includes(searchTermLower));
             return matchesCategory && matchesSearch;
         })
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
@@ -237,5 +237,3 @@ export default function TransactionsPage() {
     </div>
   );
 }
-
-    

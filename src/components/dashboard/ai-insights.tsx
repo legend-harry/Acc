@@ -1,5 +1,5 @@
+
 import { generateSpendingInsights } from "@/ai/flows/generate-spending-insights";
-import { transactions as allTransactions } from "@/lib/data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lightbulb } from "lucide-react";
 import type { Transaction } from "@/types";
@@ -7,7 +7,7 @@ import type { Transaction } from "@/types";
 function formatDataForAI(data: Transaction[]): string {
   const headers = "Date,Category,Amount,Description";
   const rows = data.map(t => 
-    `${t.date.toISOString().split('T')[0]},"${t.category}","${t.amount}","${t.description.replace(/"/g, '""')}"`
+    `${new Date(t.date).toISOString().split('T')[0]},"${t.category}","${t.amount}","${(t.description || '').replace(/"/g, '""')}"`
   );
   return [headers, ...rows].join('\n');
 }
@@ -21,8 +21,8 @@ function formatInsights(text: string) {
 export async function AIInsights({transactions}: {transactions?: Transaction[]}) {
   let content: React.ReactNode = "Could not generate insights at this time.";
   try {
-    const dataToAnalyze = transactions || allTransactions;
-    if (dataToAnalyze.length > 0) {
+    const dataToAnalyze = transactions;
+    if (dataToAnalyze && dataToAnalyze.length > 0) {
         const spendingData = formatDataForAI(dataToAnalyze);
         const result = await generateSpendingInsights({ spendingData });
         if (result.insights) {

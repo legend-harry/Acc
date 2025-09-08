@@ -1,3 +1,6 @@
+
+"use client";
+
 import { PageHeader } from "@/components/page-header";
 import {
   Card,
@@ -6,21 +9,52 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DollarSign, Activity, CreditCard } from "lucide-react";
-import { formatCurrency, transactions, budgets, formatDate } from "@/lib/data";
+import { formatCurrency, formatDate } from "@/lib/data";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { CategoryPieChart } from "@/components/dashboard/category-pie-chart";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BudgetComparisonChart } from "@/components/dashboard/budget-comparison-chart";
+import { useTransactions, useBudgets } from "@/hooks/use-database";
 
 export default function DashboardPage() {
+  const { transactions, loading: transactionsLoading } = useTransactions();
+  const { budgets, loading: budgetsLoading } = useBudgets();
+
+  if (transactionsLoading || budgetsLoading) {
+    return (
+      <div>
+        <PageHeader
+          title="Dashboard"
+          description="A summary of your financial activity."
+        />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+        </div>
+        <div className="mt-6">
+          <Skeleton className="h-96 w-full" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <div className="lg:col-span-2">
+            <Skeleton className="h-96 w-full" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-96 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const totalSpending = transactions.reduce((sum, t) => sum + t.amount, 0);
   const transactionCount = transactions.length;
-  
-  const mostRecentTransaction = transactions.reduce((latest, current) => {
-    return latest.date > current.date ? latest : current;
-  });
+
+  const mostRecentTransaction = transactions.length > 0 ? transactions.reduce((latest, current) => {
+    return new Date(latest.date) > new Date(current.date) ? latest : current;
+  }) : null;
 
   return (
     <div>
@@ -61,10 +95,16 @@ export default function DashboardPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(mostRecentTransaction.amount)}</div>
-            <p className="text-xs text-muted-foreground">
-              On {formatDate(mostRecentTransaction.date)} for {mostRecentTransaction.category}
-            </p>
+            {mostRecentTransaction ? (
+              <>
+                <div className="text-2xl font-bold">{formatCurrency(mostRecentTransaction.amount)}</div>
+                <p className="text-xs text-muted-foreground">
+                  On {formatDate(mostRecentTransaction.date)} for {mostRecentTransaction.category}
+                </p>
+              </>
+            ) : (
+              <div className="text-2xl font-bold">-</div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -81,7 +121,7 @@ export default function DashboardPage() {
       </div>
        <div className="mt-6">
         <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-            <AIInsights />
+            <AIInsights transactions={transactions}/>
         </Suspense>
       </div>
     </div>

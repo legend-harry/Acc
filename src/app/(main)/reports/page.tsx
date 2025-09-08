@@ -1,3 +1,7 @@
+
+"use client";
+
+import { useMemo } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,26 +13,61 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Download, ChevronRight } from "lucide-react";
-import { transactions, formatCurrency } from "@/lib/data";
+import { formatCurrency } from "@/lib/data";
 import Link from "next/link";
+import { useTransactions } from '@/hooks/use-database';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ReportsPage() {
-  const monthWiseSummary = transactions.reduce((acc, t) => {
-    const monthYear = t.date.toLocaleString("default", {
-      month: "long",
-      year: "numeric",
-    });
-    if (!acc[monthYear]) {
-      acc[monthYear] = { total: 0, count: 0, date: t.date };
-    }
-    acc[monthYear].total += t.amount;
-    acc[monthYear].count += 1;
-    return acc;
-  }, {} as Record<string, { total: number; count: number, date: Date }>);
+  const { transactions, loading } = useTransactions();
 
-  const sortedMonths = Object.entries(monthWiseSummary).sort(([, a], [, b]) => {
-      return b.date.getTime() - a.date.getTime();
-  });
+  const monthWiseSummary = useMemo(() => {
+    return transactions.reduce((acc, t) => {
+        const date = new Date(t.date);
+        const monthYear = date.toLocaleString("default", {
+            month: "long",
+            year: "numeric",
+        });
+        if (!acc[monthYear]) {
+            acc[monthYear] = { total: 0, count: 0, date: date };
+        }
+        acc[monthYear].total += t.amount;
+        acc[monthYear].count += 1;
+        return acc;
+    }, {} as Record<string, { total: number; count: number, date: Date }>);
+  }, [transactions]);
+
+  const sortedMonths = useMemo(() => {
+      return Object.entries(monthWiseSummary).sort(([, a], [, b]) => {
+          return b.date.getTime() - a.date.getTime();
+      });
+  }, [monthWiseSummary]);
+
+  if (loading) {
+      return (
+          <div>
+              <PageHeader
+                title="Reports"
+                description="Generate and export summaries of your expenses."
+              />
+               <div className="space-y-8">
+                <Card>
+                    <CardHeader>
+                         <Skeleton className="h-8 w-48" />
+                         <Skeleton className="h-4 w-64 mt-2" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {Array.from({length: 3}).map((_, i) => (
+                                <Skeleton key={i} className="h-20 w-full rounded-lg" />
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+               </div>
+          </div>
+      )
+  }
 
   return (
     <div>
@@ -46,10 +85,6 @@ export default function ReportsPage() {
                   A breakdown of your spending by month. Select a month to view details.
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="mr-2 h-4 w-4" />
-                Export All
-              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -81,10 +116,6 @@ export default function ReportsPage() {
                   A complete log of all your transactions.
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="mr-2 h-4 w-4" />
-                Export Log
-              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -93,7 +124,7 @@ export default function ReportsPage() {
                     <li key={t.id} className="flex justify-between items-center">
                         <div>
                             <p className="font-medium">{t.title}</p>
-                            <p className="text-sm text-muted-foreground">{t.date.toLocaleDateString()}</p>
+                            <p className="text-sm text-muted-foreground">{new Date(t.date).toLocaleDateString()}</p>
                         </div>
                         <p className="font-mono text-sm">{formatCurrency(t.amount)}</p>
                     </li>

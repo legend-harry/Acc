@@ -1,6 +1,7 @@
+
 export type Transaction = {
   id: string;
-  date: Date;
+  date: string; // Store as ISO string for Firebase compatibility
   invoiceNo: string;
   glCode: string;
   title: string;
@@ -21,6 +22,7 @@ export type Budget = {
 };
 
 export type BudgetSummary = {
+  id: string;
   glCode: string;
   category: string;
   budget: number;

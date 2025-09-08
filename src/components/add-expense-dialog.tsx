@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -22,7 +23,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { categories, formatCurrency } from "@/lib/data";
+import { formatCurrency } from "@/lib/data";
+import { useCategories } from "@/hooks/use-database";
+import { db } from "@/lib/firebase";
+import { ref, push, set } from "firebase/database";
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
+
 
 export function AddExpenseDialog({
   children,
@@ -33,6 +39,7 @@ export function AddExpenseDialog({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const { categories, loading: categoriesLoading } = useCategories();
 
   const handleReceiptChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -47,31 +54,66 @@ export function AddExpenseDialog({
     }
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     const formData = new FormData(event.currentTarget);
-    
-    // Add receipt data if available
-    if (receiptPreview) {
-        formData.append('receiptUrl', receiptPreview);
-    }
-
     const data = Object.fromEntries(formData.entries());
-    console.log("New Expense:", data);
+    
+    let receiptUrl = "";
+    if (receiptPreview) {
+        try {
+            const storage = getStorage();
+            const newReceiptRef = storageRef(storage, `receipts/${new Date().getTime()}`);
+            await uploadString(newReceiptRef, receiptPreview, 'data_url');
+            receiptUrl = await getDownloadURL(newReceiptRef);
+        } catch (error) {
+            console.error("Error uploading receipt:", error);
+            toast({
+                variant: "destructive",
+                title: "Receipt Upload Failed",
+                description: "There was an error uploading your receipt image.",
+            });
+            setIsLoading(false);
+            return;
+        }
+    }
+    
+    const newExpense = {
+        ...data,
+        amount: Number(data.amount),
+        quantity: Number(data.qty) || 0,
+        ratePerUnit: 0, // This can be calculated or added as a field
+        date: data.date ? new Date(data.date as string).toISOString() : new Date().toISOString(),
+        receiptUrl: receiptUrl,
+    };
+    
+    try {
+        const transactionsRef = ref(db, 'transactions');
+        const newTransactionRef = push(transactionsRef);
+        await set(newTransactionRef, newExpense);
+        
+        setIsLoading(false);
+        setOpen(false);
+        setReceiptPreview(null);
+        (event.target as HTMLFormElement).reset();
+        
+        toast({
+            title: "Expense Added",
+            description: `Successfully added ${formatCurrency(
+            Number(data.amount)
+            )} for ${data.title}.`,
+        });
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      setOpen(false);
-      setReceiptPreview(null);
-      toast({
-        title: "Expense Added",
-        description: `Successfully added ${formatCurrency(
-          Number(data.amount)
-        )} for ${data.title}.`,
-      });
-    }, 1000);
+    } catch (error) {
+        console.error("Failed to add expense:", error);
+        setIsLoading(false);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to save the expense to the database.",
+        });
+    }
   };
 
   return (
@@ -134,11 +176,15 @@ export function AddExpenseDialog({
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
+                  {categoriesLoading ? (
+                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                  ) : (
+                    categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -240,7 +286,7 @@ export function AddExpenseDialog({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || categoriesLoading}>
               {isLoading ? "Saving..." : "Save Expense"}
             </Button>
           </DialogFooter>

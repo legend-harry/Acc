@@ -1,7 +1,9 @@
 
+"use client";
+
 import { use, useMemo } from 'react';
 import { PageHeader } from "@/components/page-header";
-import { transactions, formatCurrency, budgets, formatDate } from "@/lib/data";
+import { formatCurrency, formatDate } from "@/lib/data";
 import {
   Card,
   CardContent,
@@ -28,15 +30,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BudgetComparisonChart } from '@/components/dashboard/budget-comparison-chart';
 import { ReportDownloadButton } from './report-download-button';
 import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
+import { useTransactions, useBudgets } from '@/hooks/use-database';
 
 
 export default function MonthlyReportPage({
   params,
 }: {
-  params: Promise<{ month: string }>;
+  params: { month: string };
 }) {
-  const { month: monthSlug } = use(params);
+  const { month: monthSlug } = params;
   const [year, month] = monthSlug.split("-").map(Number);
+  const { transactions, loading: transactionsLoading } = useTransactions();
+  const { budgets, loading: budgetsLoading } = useBudgets();
 
   const monthDate = useMemo(() => new Date(year, month - 1), [year, month]);
 
@@ -46,14 +51,19 @@ export default function MonthlyReportPage({
   }), [monthDate]);
 
   const monthlyTransactions = useMemo(() => transactions.filter(
-    (t) =>
-      t.date.getFullYear() === year && t.date.getMonth() === month - 1
-  ), [year, month]);
+    (t) => {
+        const tDate = new Date(t.date);
+        return tDate.getFullYear() === year && tDate.getMonth() === month - 1
+    }
+  ), [transactions, year, month]);
 
   const sortedTransactions = useMemo(() => [...monthlyTransactions].sort(
-    (a, b) => b.date.getTime() - a.date.getTime()
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   ), [monthlyTransactions]);
 
+  if (transactionsLoading || budgetsLoading) {
+      return <div>Loading...</div>
+  }
 
   return (
     <div>

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PageHeader } from "@/components/page-header";
 import {
   Card,
@@ -18,13 +18,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, transactions, formatDate } from "@/lib/data";
+import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Receipt } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
 import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
+import { useTransactions } from '@/hooks/use-database';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const TRANSACTIONS_PER_PAGE = 20;
@@ -66,7 +68,11 @@ const ReceiptPreviewDialog = ({ transaction }: { transaction: Transaction }) => 
 
 
 export default function TransactionsPage() {
-    const sortedTransactions = [...transactions].sort((a, b) => b.date.getTime() - a.date.getTime());
+    const { transactions, loading } = useTransactions();
+    const sortedTransactions = useMemo(() => 
+        [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        [transactions]
+    );
     const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
 
     const visibleTransactions = sortedTransactions.slice(0, visibleCount);
@@ -97,26 +103,38 @@ export default function TransactionsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {visibleTransactions.map((t) => (
-                <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
-                  <TableCell>{formatDate(t.date)}</TableCell>
-                  <TableCell>
-                    <div className="font-medium">{t.title}</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      {t.vendor}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(t.amount)}
-                  </TableCell>
-                   <TableCell className="text-center">
-                    {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-5 w-16 float-right" /></TableCell>
+                    <TableCell />
+                  </TableRow>
+                ))
+              ) : (
+                visibleTransactions.map((t) => (
+                  <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
+                    <TableCell>{formatDate(t.date)}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{t.title}</div>
+                      <div className="hidden text-sm text-muted-foreground md:inline">
+                        {t.vendor}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(t.amount)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
            {visibleCount < sortedTransactions.length && (

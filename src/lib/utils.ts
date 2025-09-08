@@ -1,7 +1,6 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { categories } from "./data";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -33,19 +32,26 @@ const badgeColors = [
   "bg-orange-100/30 text-orange-800 border-orange-200/50",
 ];
 
-
-const categoryColorMap = new Map<string, string>();
-const categoryBadgeColorMap = new Map<string, string>();
-
-categories.forEach((category, index) => {
-  categoryColorMap.set(category, pastelColors[index % pastelColors.length]);
-  categoryBadgeColorMap.set(category, badgeColors[index % badgeColors.length]);
-});
+// We need a consistent mapping, so we can't rely on index.
+// Let's create a function that generates a hash from the category name.
+const getHash = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+}
 
 export function getCategoryColorClass(category: string): string {
-  return categoryColorMap.get(category) || "hover:bg-muted/50";
+  if (!category) return "hover:bg-muted/50";
+  const index = getHash(category) % pastelColors.length;
+  return pastelColors[index];
 }
 
 export function getCategoryBadgeColorClass(category: string): string {
-  return categoryBadgeColorMap.get(category) || "";
+  if (!category) return "";
+  const index = getHash(category) % badgeColors.length;
+  return badgeColors[index];
 }

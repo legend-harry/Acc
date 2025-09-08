@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,40 +14,95 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { categories, formatCurrency } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock budgets for demonstration
-const initialBudgets: Record<string, number> = {
-  "Bore": 150000,
-  "Road": 70000,
-  "Labour": 30000,
-};
+import { useBudgets, useCategories } from "@/hooks/use-database";
+import { db } from "@/lib/firebase";
+import { ref, set, update } from "firebase/database";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BudgetsPage() {
-  const [budgets, setBudgets] = useState<Record<string, number>>(initialBudgets);
+  const { budgets, loading: budgetsLoading } = useBudgets();
+  const { categories, loading: categoriesLoading } = useCategories();
+  const [localBudgets, setLocalBudgets] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (!budgetsLoading) {
+      const budgetMap = budgets.reduce((acc, budget) => {
+        acc[budget.category] = budget.budget;
+        return acc;
+      }, {} as Record<string, number>);
+      setLocalBudgets(budgetMap);
+    }
+  }, [budgets, budgetsLoading]);
+
   const handleBudgetChange = (category: string, value: string) => {
     const amount = parseInt(value, 10);
-    setBudgets((prev) => ({
+    setLocalBudgets((prev) => ({
       ...prev,
       [category]: isNaN(amount) ? 0 : amount,
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Budgets Saved",
-        description: "Your new budget goals have been updated.",
-      });
-    }, 1000);
+    
+    // Find which budget item in the original budgets array corresponds to the updated local budget
+    const updates: Record<string, any> = {};
+    Object.keys(localBudgets).forEach(category => {
+        const budgetItem = budgets.find(b => b.category === category);
+        if (budgetItem && budgetItem.id) {
+            updates[`/budgets/${budgetItem.id}/budget`] = localBudgets[category];
+        }
+    });
+
+    try {
+        await update(ref(db), updates);
+        toast({
+            title: "Budgets Saved",
+            description: "Your new budget goals have been updated.",
+        });
+    } catch (error) {
+        console.error("Failed to save budgets:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not save budgets.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
+  
+  if (budgetsLoading || categoriesLoading) {
+      return (
+          <div>
+              <PageHeader
+                title="Budgets"
+                description="Set and manage your monthly spending goals."
+              />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Category Budgets</CardTitle>
+                  <CardDescription>
+                    Define a monthly budget for each category to track your spending.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-6">
+                    {Array.from({length: 5}).map((_, i) => (
+                        <div key={i} className="grid grid-cols-3 items-center gap-4">
+                            <Skeleton className="h-6 w-24" />
+                            <div className="col-span-2">
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+              </Card>
+          </div>
+      )
+  }
 
   return (
     <div>
@@ -71,7 +127,7 @@ export default function BudgetsPage() {
                   id={`budget-${category}`}
                   type="number"
                   placeholder="e.g., 500"
-                  value={budgets[category] || ""}
+                  value={localBudgets[category] || ""}
                   onChange={(e) => handleBudgetChange(category, e.target.value)}
                   className="w-full"
                 />

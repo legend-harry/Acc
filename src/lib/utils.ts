@@ -7,16 +7,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 const pastelColors = [
-  "bg-red-50/50 hover:bg-red-50",
-  "bg-green-50/50 hover:bg-green-50",
-  "bg-blue-50/50 hover:bg-blue-50",
-  "bg-yellow-50/50 hover:bg-yellow-50",
-  "bg-purple-50/50 hover:bg-purple-50",
-  "bg-pink-50/50 hover:bg-pink-50",
-  "bg-indigo-50/50 hover:bg-indigo-50",
-  "bg-cyan-50/50 hover:bg-cyan-50",
-  "bg-teal-50/50 hover:bg-teal-50",
-  "bg-orange-50/50 hover:bg-orange-50",
+  "bg-red-100/70 hover:bg-red-100",
+  "bg-green-100/70 hover:bg-green-100",
+  "bg-blue-100/70 hover:bg-blue-100",
+  "bg-yellow-100/70 hover:bg-yellow-100",
+  "bg-purple-100/70 hover:bg-purple-100",
+  "bg-pink-100/70 hover:bg-pink-100",
+  "bg-indigo-100/70 hover:bg-indigo-100",
+  "bg-cyan-100/70 hover:bg-cyan-100",
+  "bg-teal-100/70 hover:bg-teal-100",
+  "bg-orange-100/70 hover:bg-orange-100",
 ];
 
 const categoryColorMap = new Map<string, string>();

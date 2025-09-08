@@ -108,7 +108,8 @@ async function seedDatabase() {
         const transactionsRef = ref(db, 'transactions');
         const transactionsData: Record<string, any> = {};
         transactions.forEach(t => {
-            transactionsData[t.id] = { ...t, id: undefined }; // remove id from object
+            const { id, ...rest } = t;
+            transactionsData[id] = rest;
         });
         await set(transactionsRef, transactionsData);
         console.log('Transactions seeded successfully.');
@@ -116,7 +117,8 @@ async function seedDatabase() {
         const budgetsRef = ref(db, 'budgets');
         const budgetsData: Record<string, any> = {};
         budgets.forEach(b => {
-            budgetsData[b.id] = { ...b, id: undefined }; // remove id from object
+            const { id, ...rest } = b;
+            budgetsData[id] = rest;
         });
         await set(budgetsRef, budgetsData);
         console.log('Budgets seeded successfully.');

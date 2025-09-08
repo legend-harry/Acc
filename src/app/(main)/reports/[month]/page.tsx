@@ -1,69 +1,72 @@
 
-"use client";
-
-import { use, useMemo } from 'react';
+import { use, useMemo, Suspense } from 'react';
 import { PageHeader } from "@/components/page-header";
-import { formatCurrency, formatDate } from "@/lib/data";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { CategoryPieChart } from "@/components/dashboard/category-pie-chart";
-import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AIInsights } from '@/components/dashboard/ai-insights';
-import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BudgetComparisonChart } from '@/components/dashboard/budget-comparison-chart';
 import { ReportDownloadButton } from './report-download-button';
-import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
-import { useTransactions, useBudgets } from '@/hooks/use-database';
+import { db } from '@/lib/firebase';
+import { get, ref } from "firebase/database";
+import type { Transaction, BudgetSummary } from "@/types";
+import { ReportClientContent } from './report-client-content';
 
+async function getTransactions(): Promise<Transaction[]> {
+  const transactionsRef = ref(db, 'transactions');
+  const snapshot = await get(transactionsRef);
+  const data = snapshot.val();
+  if (data) {
+    return Object.keys(data).map(key => ({
+      ...data[key],
+      id: key,
+      date: new Date(data[key].date),
+    }));
+  }
+  return [];
+}
 
-export default function MonthlyReportPage({
+async function getBudgets(): Promise<BudgetSummary[]> {
+    const budgetsRef = ref(db, 'budgets');
+    const snapshot = await get(budgetsRef);
+    const data = snapshot.val();
+    if (data) {
+        return Object.keys(data).map(key => ({
+            ...data[key],
+            id: key,
+        }));
+    }
+    return [];
+}
+
+export default async function MonthlyReportPage({
   params,
 }: {
   params: { month: string };
 }) {
   const { month: monthSlug } = params;
   const [year, month] = monthSlug.split("-").map(Number);
-  const { transactions, loading: transactionsLoading } = useTransactions();
-  const { budgets, loading: budgetsLoading } = useBudgets();
+  
+  const transactions = await getTransactions();
+  const budgets = await getBudgets();
 
-  const monthDate = useMemo(() => new Date(year, month - 1), [year, month]);
+  const monthDate = new Date(year, month - 1);
 
-  const monthName = useMemo(() => monthDate.toLocaleString("default", {
+  const monthName = monthDate.toLocaleString("default", {
     month: "long",
     year: "numeric",
-  }), [monthDate]);
+  });
 
-  const monthlyTransactions = useMemo(() => transactions.filter(
+  const monthlyTransactions = transactions.filter(
     (t) => {
         const tDate = new Date(t.date);
         return tDate.getFullYear() === year && tDate.getMonth() === month - 1
     }
-  ), [transactions, year, month]);
+  );
 
-  const sortedTransactions = useMemo(() => [...monthlyTransactions].sort(
+  const sortedTransactions = [...monthlyTransactions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  ), [monthlyTransactions]);
-
-  if (transactionsLoading || budgetsLoading) {
-      return <div>Loading...</div>
-  }
+  );
 
   return (
     <div>
@@ -85,62 +88,8 @@ export default function MonthlyReportPage({
         description={`A detailed summary of your ${monthlyTransactions.length} transactions for ${monthName}.`}
       />
 
-    <div className="mt-6">
-        <BudgetComparisonChart budgets={budgets} transactions={monthlyTransactions} />
-    </div>
+    <ReportClientContent budgets={budgets} monthlyTransactions={monthlyTransactions} sortedTransactions={sortedTransactions} monthName={monthName} />
 
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        <div className="lg:col-span-2">
-            <OverviewChart transactions={monthlyTransactions} />
-        </div>
-        <div className="space-y-6">
-            <CategoryPieChart transactions={monthlyTransactions} />
-        </div>
-      </div>
-
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Transactions for {monthName}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedTransactions.map((t) => (
-                <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
-                  <TableCell>{formatDate(t.date)}</TableCell>
-                  <TableCell>
-                    <div className="font-medium">{t.title}</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      {t.vendor}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(t.amount)}
-                  </TableCell>
-                </TableRow>
-              ))}
-               {sortedTransactions.length === 0 && (
-                <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">
-                        No transactions for this month.
-                    </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
       <div className="mt-6">
         <Suspense fallback={<Skeleton className="h-48 w-full" />}>
             <AIInsights transactions={monthlyTransactions}/>

@@ -1,3 +1,4 @@
+
 "use client";
 import * as React from "react";
 import { Pie, PieChart, Cell, Sector } from "recharts";
@@ -64,8 +65,8 @@ const renderActiveShape = (props: any) => {
         />
         <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
         <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="font-medium">{formatCurrency(value)}</text>
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))">
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="font-medium" style={{ background: 'rgba(128, 128, 128, 0.5)' }}>{formatCurrency(value)}</text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" style={{ background: 'rgba(128, 128, 128, 0.5)' }}>
           {`(Rate: ${(percent * 100).toFixed(2)}%)`}
         </text>
       </g>

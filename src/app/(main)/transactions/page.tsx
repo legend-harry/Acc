@@ -19,8 +19,49 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, transactions } from "@/lib/data";
 import { Button } from '@/components/ui/button';
+import { ChevronRight, Receipt } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import Image from 'next/image';
+import { Transaction } from '@/types';
+
 
 const TRANSACTIONS_PER_PAGE = 20;
+
+const ReceiptPreviewDialog = ({ transaction }: { transaction: Transaction }) => {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-6 w-6">
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Receipt for {transaction.title}</DialogTitle>
+        </DialogHeader>
+        <div className="mt-4 overflow-auto">
+          <div className="w-full min-w-[600px]">
+            {transaction.receiptUrl ? (
+                <Image
+                    src={transaction.receiptUrl}
+                    alt={`Receipt for ${transaction.title}`}
+                    width={1200}
+                    height={1600}
+                    className="w-full h-auto object-contain"
+                />
+            ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                    <Receipt className="h-12 w-12 mb-4" />
+                    <p>No receipt image available.</p>
+                </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 
 export default function TransactionsPage() {
     const sortedTransactions = [...transactions].sort((a, b) => b.date.getTime() - a.date.getTime());
@@ -50,6 +91,7 @@ export default function TransactionsPage() {
                 <TableHead>Description</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="w-12">Receipt</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -67,6 +109,9 @@ export default function TransactionsPage() {
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(t.amount)}
+                  </TableCell>
+                   <TableCell className="text-center">
+                    {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
                   </TableCell>
                 </TableRow>
               ))}

@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DollarSign, Activity, CreditCard } from "lucide-react";
-import { formatCurrency, transactions, budgets } from "@/lib/data";
+import { formatCurrency, transactions, budgets, formatDate } from "@/lib/data";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { CategoryPieChart } from "@/components/dashboard/category-pie-chart";
 import { AIInsights } from "@/components/dashboard/ai-insights";
@@ -63,7 +63,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(mostRecentTransaction.amount)}</div>
             <p className="text-xs text-muted-foreground">
-              On {mostRecentTransaction.date.toLocaleDateString()} for {mostRecentTransaction.category}
+              On {formatDate(mostRecentTransaction.date)} for {mostRecentTransaction.category}
             </p>
           </CardContent>
         </Card>

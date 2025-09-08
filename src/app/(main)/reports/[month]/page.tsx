@@ -1,7 +1,7 @@
 
 import { use, useMemo } from 'react';
 import { PageHeader } from "@/components/page-header";
-import { transactions, formatCurrency, budgets } from "@/lib/data";
+import { transactions, formatCurrency, budgets, formatDate } from "@/lib/data";
 import {
   Card,
   CardContent,
@@ -105,7 +105,7 @@ export default function MonthlyReportPage({
             <TableBody>
               {sortedTransactions.map((t) => (
                 <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
-                  <TableCell>{t.date.toLocaleDateString()}</TableCell>
+                  <TableCell>{formatDate(t.date)}</TableCell>
                   <TableCell>
                     <div className="font-medium">{t.title}</div>
                     <div className="hidden text-sm text-muted-foreground md:inline">

@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, transactions } from "@/lib/data";
+import { formatCurrency, transactions, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Receipt } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -99,7 +99,7 @@ export default function TransactionsPage() {
             <TableBody>
               {visibleTransactions.map((t) => (
                 <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
-                  <TableCell>{t.date.toLocaleDateString()}</TableCell>
+                  <TableCell>{formatDate(t.date)}</TableCell>
                   <TableCell>
                     <div className="font-medium">{t.title}</div>
                     <div className="hidden text-sm text-muted-foreground md:inline">

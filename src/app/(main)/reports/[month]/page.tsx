@@ -91,9 +91,7 @@ export default async function MonthlyReportPage({
     <ReportClientContent budgets={budgets} monthlyTransactions={monthlyTransactions} sortedTransactions={sortedTransactions} monthName={monthName} />
 
       <div className="mt-6">
-        <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-            <AIInsights transactions={monthlyTransactions}/>
-        </Suspense>
+        <AIInsights transactions={monthlyTransactions}/>
       </div>
     </div>
   );

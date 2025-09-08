@@ -69,10 +69,8 @@ export default async function DashboardPage() {
         <DashboardClientContent transactions={transactions} budgets={budgets} />
       </Suspense>
        <div className="mt-6">
-        <Suspense fallback={<Skeleton className="h-48 w-full" />}>
             <AIInsights transactions={transactions}/>
-        </Suspense>
-      </div>
+       </div>
     </div>
   );
 }

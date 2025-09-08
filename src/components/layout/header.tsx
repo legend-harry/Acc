@@ -1,9 +1,9 @@
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import { PlusCircle, Wallet } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AddExpenseDialog } from "@/components/add-expense-dialog";
 
 export function Header() {
   const isMobile = useIsMobile();
@@ -17,10 +17,10 @@ export function Header() {
         </div>
       )}
       <div className="flex-1" />
-      <Button>
+      <AddExpenseDialog>
         <PlusCircle className="mr-2 h-4 w-4" />
         Add Expense
-      </Button>
+      </AddExpenseDialog>
     </header>
   );
 }

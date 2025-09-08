@@ -1,9 +1,10 @@
 import { generateSpendingInsights } from "@/ai/flows/generate-spending-insights";
-import { transactions } from "@/lib/data";
+import { transactions as allTransactions } from "@/lib/data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lightbulb } from "lucide-react";
+import type { Transaction } from "@/types";
 
-function formatDataForAI(data: typeof transactions): string {
+function formatDataForAI(data: Transaction[]): string {
   const headers = "Date,Category,Amount,Description";
   const rows = data.map(t => 
     `${t.date.toISOString().split('T')[0]},"${t.category}","${t.amount}","${t.description.replace(/"/g, '""')}"`
@@ -11,13 +12,24 @@ function formatDataForAI(data: typeof transactions): string {
   return [headers, ...rows].join('\n');
 }
 
-export async function AIInsights() {
-  let insights = "Could not generate insights at this time.";
+function formatInsights(text: string) {
+    return text.split('\n').map(line => line.replace(/•/g, '').trim()).filter(line => line.length > 0).map((line, index) => (
+        <li key={index} className="mb-2">{line}</li>
+    ));
+}
+
+export async function AIInsights({transactions}: {transactions?: Transaction[]}) {
+  let content: React.ReactNode = "Could not generate insights at this time.";
   try {
-    const spendingData = formatDataForAI(transactions);
-    const result = await generateSpendingInsights({ spendingData });
-    if (result.insights) {
-      insights = result.insights;
+    const dataToAnalyze = transactions || allTransactions;
+    if (dataToAnalyze.length > 0) {
+        const spendingData = formatDataForAI(dataToAnalyze);
+        const result = await generateSpendingInsights({ spendingData });
+        if (result.insights) {
+          content = <ul>{formatInsights(result.insights)}</ul>;
+        }
+    } else {
+        content = "Not enough data to generate insights.";
     }
   } catch (error) {
     console.error("Error generating AI insights:", error);
@@ -36,7 +48,7 @@ export async function AIInsights() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-sm text-muted-foreground whitespace-pre-wrap">{insights}</div>
+        <div className="text-sm text-muted-foreground">{content}</div>
       </CardContent>
     </Card>
   );

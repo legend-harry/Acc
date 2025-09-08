@@ -1,4 +1,4 @@
-import type { Transaction } from '@/types';
+import type { Transaction, BudgetSummary } from '@/types';
 
 const rawData = `Date	Invoice No	G/L Code	Title	Amount	Qty 	unit 	Rate /Unit	Vendor	Description	Notes
 2025-09-08	Nil	5001-Miscellaneous Expenses	Miscellaneous Expenses	₹90,000	1	AU		Multiple 	for Clearing the weed , Errecting the coconut plants 	Spent by Mom on our behalf 
@@ -33,6 +33,23 @@ const rawData = `Date	Invoice No	G/L Code	Title	Amount	Qty 	unit 	Rate /Unit	Ven
 8/29/25	Nil	5013-Labour 	Labour 	₹25,200	42	Days	₹600	Rambabu Salary 42 days till 31st October	Salary	Labour
 9/6/25	Nil	5004-Weed Removal	Weed Removal	₹1,100	1	LS	₹1,100	Weedremoval	Spray Weed revoer + labour + Spray Can Rent 	Labour`;
 
+export const budgets: BudgetSummary[] = [
+    { glCode: '5001', category: 'Misc', budget: 100000 },
+    { glCode: '5002', category: 'Bore', budget: 60000 },
+    { glCode: '5003', category: 'Road', budget: 0 },
+    { glCode: '5004', category: 'Weed Removal', budget: 0 },
+    { glCode: '5005', category: 'LT Connection', budget: 500000 },
+    { glCode: '5006', category: 'Electrical', budget: 100000 },
+    { glCode: '5007', category: 'Pond Prep', budget: 0 },
+    { glCode: '5008', category: 'Seed', budget: 0 },
+    { glCode: '5009', category: 'Feed', budget: 0 },
+    { glCode: '5010', category: 'Transport', budget: 0 },
+    { glCode: '5011', category: 'Lab/Testing', budget: 0 },
+    { glCode: '5012', category: 'Tree Cutting', budget: 5000 },
+    { glCode: '5013', category: 'Labour', budget: 0 },
+    { glCode: '5014', category: 'IT Setup', budget: 8000 },
+];
+
 const parseAmount = (amount: string) => parseFloat(amount.replace('₹', '').replace(/,/g, '')) || 0;
 
 const parseDate = (dateStr: string) => {
@@ -43,8 +60,6 @@ const parseDate = (dateStr: string) => {
         return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
       } else { // MM/DD/YY
         const year = parseInt(parts[2]);
-        // Assuming 2-digit years '00'-'29' are 2000s, and '30'-'99' are 1900s.
-        // The data seems to be for 2025, so this logic should be fine.
         return new Date((year < 30 ? 2000 : 1900) + year, parseInt(parts[0]) - 1, parseInt(parts[1]));
       }
     }
@@ -53,20 +68,21 @@ const parseDate = (dateStr: string) => {
 
 const lines = rawData.trim().split('\n').slice(1);
 
+const categoryMapping: Record<string, string> = {
+    'Miscellaneous Expenses': 'Misc',
+    'Bore Construction': 'Bore',
+    'Road Work': 'Road',
+    'Weed Removal': 'Weed Removal',
+    'Tress Cutting': 'Tree Cutting',
+    'IT Setup': 'IT Setup',
+    'Labour': 'Labour'
+};
+
 export const transactions: Transaction[] = lines.map((line, index) => {
     const columns = line.split('\t').map(c => c.trim());
     
     const title = columns[3] || 'Untitled';
-    let category = title
-      .replace(/ Expenses/gi, '')
-      .replace(/ Construction/gi, '')
-      .replace(/ Work/gi, '')
-      .replace(/ Removal/gi, '')
-      .replace(/ Setup/gi, '')
-      .trim();
-    if (category === 'Miscellaneous') category = 'Misc';
-    if (category === 'Tress Cutting') category = 'Tree Cutting';
-    if (category === 'IT') category = 'IT Setup';
+    const category = categoryMapping[title] || title;
 
     return {
         id: `txn_${index + 1}`,
@@ -85,7 +101,7 @@ export const transactions: Transaction[] = lines.map((line, index) => {
     };
 });
 
-export const categories = [...new Set(transactions.map(t => t.category))];
+export const categories = [...new Set(budgets.map(b => b.category))];
 
 export const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {

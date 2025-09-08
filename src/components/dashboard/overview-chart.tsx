@@ -1,6 +1,6 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
 import {
   Card,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/chart"
 import type { Transaction } from "@/types";
 import { useMemo } from "react";
+import { formatCurrency } from "@/lib/data";
 
 const chartConfig = {
   amount: {
@@ -59,7 +60,7 @@ export function OverviewChart({ transactions }: OverviewChartProps) {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
-          <BarChart accessibilityLayer data={data}>
+          <BarChart accessibilityLayer data={data} margin={{ top: 20, right: 20, left: 20, bottom: 5 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="month"
@@ -67,9 +68,14 @@ export function OverviewChart({ transactions }: OverviewChartProps) {
               tickMargin={10}
               axisLine={false}
             />
+             <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
+            />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} hideLabel />}
             />
             <Bar
               dataKey="amount"

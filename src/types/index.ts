@@ -18,3 +18,9 @@ export type Budget = {
   category: string;
   amount: number;
 };
+
+export type BudgetSummary = {
+  glCode: string;
+  category: string;
+  budget: number;
+};

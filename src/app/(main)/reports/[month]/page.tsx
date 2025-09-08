@@ -1,5 +1,8 @@
+"use client";
+
+import { useMemo } from 'react';
 import { PageHeader } from "@/components/page-header";
-import { transactions, formatCurrency } from "@/lib/data";
+import { transactions, formatCurrency, budgets } from "@/lib/data";
 import {
   Card,
   CardContent,
@@ -17,9 +20,55 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { CategoryPieChart } from "@/components/dashboard/category-pie-chart";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { AIInsights } from '@/components/dashboard/ai-insights';
+import { Suspense } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { BudgetComparisonChart } from '@/components/dashboard/budget-comparison-chart';
+
+async function generatePdf(month: string, monthName: string, monthlyTransactions: any[], insights: string) {
+    if (typeof window !== 'undefined') {
+        const jsPDF = (await import('jspdf')).default;
+        const doc = new jsPDF();
+
+        doc.setFontSize(22);
+        doc.text(`Expense Report: ${monthName}`, 14, 20);
+        
+        doc.setFontSize(12);
+        doc.text(`Total Transactions: ${monthlyTransactions.length}`, 14, 30);
+
+        const tableColumn = ["Date", "Description", "Category", "Amount"];
+        const tableRows: (string|number)[][] = [];
+
+        monthlyTransactions.forEach(ticket => {
+            const ticketData = [
+                ticket.date.toLocaleDateString(),
+                ticket.title,
+                ticket.category,
+                formatCurrency(ticket.amount)
+            ];
+            tableRows.push(ticketData);
+        });
+
+        (doc as any).autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 40,
+        });
+        
+        const finalY = (doc as any).lastAutoTable.finalY;
+
+        doc.setFontSize(16);
+        doc.text("AI Insights", 14, finalY + 15);
+        doc.setFontSize(10);
+        doc.text(insights, 14, finalY + 22, { maxWidth: 180 });
+
+        doc.save(`report-${month}.pdf`);
+    }
+}
+
 
 export default function MonthlyReportPage({
   params,
@@ -34,27 +83,43 @@ export default function MonthlyReportPage({
     year: "numeric",
   });
 
-  const monthlyTransactions = transactions.filter(
+  const monthlyTransactions = useMemo(() => transactions.filter(
     (t) =>
       t.date.getFullYear() === year && t.date.getMonth() === month - 1
-  );
+  ), [year, month]);
 
-  const sortedTransactions = [...monthlyTransactions].sort(
+  const sortedTransactions = useMemo(() => [...monthlyTransactions].sort(
     (a, b) => b.date.getTime() - a.date.getTime()
-  );
+  ), [monthlyTransactions]);
+
+  const handleDownload = async () => {
+      // Dummy insights for now, ideally this would be a fresh fetch for the month
+      const insights = "Monthly spending was high on Bore Construction. Consider reviewing vendor contracts for potential savings.";
+      await generatePdf(params.month, monthName, sortedTransactions, insights);
+  };
 
   return (
     <div>
-        <Button asChild variant="ghost" className="mb-4">
-            <Link href="/reports">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Reports
-            </Link>
-        </Button>
+        <div className="flex justify-between items-center mb-4">
+            <Button asChild variant="ghost">
+                <Link href="/reports">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Reports
+                </Link>
+            </Button>
+             <Button variant="outline" size="sm" onClick={handleDownload}>
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+            </Button>
+        </div>
       <PageHeader
         title={monthName}
         description={`A detailed summary of your ${monthlyTransactions.length} transactions for ${monthName}.`}
       />
+
+    <div className="mt-6">
+        <BudgetComparisonChart budgets={budgets} transactions={monthlyTransactions} />
+    </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2">
@@ -108,6 +173,12 @@ export default function MonthlyReportPage({
           </Table>
         </CardContent>
       </Card>
+      <div className="mt-6">
+        <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+            <AIInsights transactions={monthlyTransactions}/>
+        </Suspense>
+      </div>
     </div>
   );
 }
+

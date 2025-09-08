@@ -6,12 +6,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DollarSign, Activity, CreditCard } from "lucide-react";
-import { formatCurrency, transactions } from "@/lib/data";
+import { formatCurrency, transactions, budgets } from "@/lib/data";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { CategoryPieChart } from "@/components/dashboard/category-pie-chart";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BudgetComparisonChart } from "@/components/dashboard/budget-comparison-chart";
 
 export default function DashboardPage() {
   const totalSpending = transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -66,6 +67,9 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
+      </div>
+       <div className="mt-6">
+        <BudgetComparisonChart budgets={budgets} transactions={transactions} />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2">

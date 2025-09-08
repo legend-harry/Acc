@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { Pie, PieChart } from "recharts";
+import { Pie, PieChart, Cell } from "recharts";
 import {
   ChartConfig,
   ChartContainer,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/chart";
 import type { Transaction } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/data";
 
 const chartColors = [
     "hsl(var(--chart-1))",
@@ -18,6 +19,7 @@ const chartColors = [
     "hsl(var(--chart-3))",
     "hsl(var(--chart-4))",
     "hsl(var(--chart-5))",
+    "hsl(var(--chart-6))",
   ];
   
 interface CategoryPieChartProps {
@@ -32,23 +34,36 @@ export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
     }, {} as Record<string, number>);
 
     const chartData = Object.entries(categorySpending)
-      .map(([category, amount], index) => ({
+      .map(([category, amount]) => ({
         name: category,
         value: amount,
-        fill: chartColors[index % chartColors.length],
       }))
       .sort((a, b) => b.value - a.value);
 
-    const chartConfig: ChartConfig = chartData.reduce((acc, item) => {
+    const chartConfig: ChartConfig = chartData.reduce((acc, item, index) => {
       acc[item.name] = {
         label: item.name,
-        color: item.fill,
+        color: chartColors[index % chartColors.length],
       };
       return acc;
     }, {} as ChartConfig);
 
     return { data: chartData, config: chartConfig };
   }, [transactions]);
+
+  if (transactions.length === 0) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Spending by Category</CardTitle>
+                <CardDescription>No transactions for this period.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-center h-[280px]">
+                <p className="text-muted-foreground">No data to display</p>
+            </CardContent>
+        </Card>
+    );
+  }
 
   return (
     <Card>
@@ -64,7 +79,7 @@ export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
           <PieChart>
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} hideLabel />}
             />
             <Pie
               data={data}
@@ -72,7 +87,11 @@ export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
               nameKey="name"
               innerRadius={50}
               strokeWidth={5}
-            />
+            >
+                {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                ))}
+            </Pie>
             <ChartLegend
               content={<ChartLegendContent nameKey="name" />}
               className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"

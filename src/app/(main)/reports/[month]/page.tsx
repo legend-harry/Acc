@@ -27,6 +27,7 @@ import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BudgetComparisonChart } from '@/components/dashboard/budget-comparison-chart';
 import { ReportDownloadButton } from './report-download-button';
+import { getCategoryColorClass } from '@/lib/utils';
 
 
 export default function MonthlyReportPage({
@@ -103,7 +104,7 @@ export default function MonthlyReportPage({
             </TableHeader>
             <TableBody>
               {sortedTransactions.map((t) => (
-                <TableRow key={t.id}>
+                <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
                   <TableCell>{t.date.toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="font-medium">{t.title}</div>

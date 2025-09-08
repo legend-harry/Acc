@@ -23,6 +23,7 @@ import { ChevronRight, Receipt } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
+import { getCategoryColorClass } from '@/lib/utils';
 
 
 const TRANSACTIONS_PER_PAGE = 20;
@@ -40,14 +41,14 @@ const ReceiptPreviewDialog = ({ transaction }: { transaction: Transaction }) => 
           <DialogTitle>Receipt for {transaction.title}</DialogTitle>
         </DialogHeader>
         <div className="mt-4 overflow-auto">
-          <div className="w-full min-w-[600px]">
+          <div className="w-full min-w-[600px] relative group">
             {transaction.receiptUrl ? (
                 <Image
                     src={transaction.receiptUrl}
                     alt={`Receipt for ${transaction.title}`}
                     width={1200}
                     height={1600}
-                    className="w-full h-auto object-contain"
+                    className="w-full h-auto object-contain transition-transform duration-300 ease-in-out group-hover:scale-125"
                 />
             ) : (
                 <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
@@ -96,7 +97,7 @@ export default function TransactionsPage() {
             </TableHeader>
             <TableBody>
               {visibleTransactions.map((t) => (
-                <TableRow key={t.id}>
+                <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
                   <TableCell>{t.date.toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="font-medium">{t.title}</div>

@@ -15,6 +15,7 @@ export type Transaction = {
   notes: string;
   category: string;
   receiptUrl?: string;
+  createdBy: string;
 };
 
 export type Budget = {

@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Receipt } from 'lucide-react';
+import { ChevronRight, Receipt, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
@@ -105,7 +105,10 @@ export default function TransactionsPage() {
             <div className="flex-1">
                 <div className="font-medium">{t.title}</div>
                 <div className="text-sm text-muted-foreground">{t.vendor}</div>
-                <div className="text-xs text-muted-foreground mt-1">{formatDate(t.date)}</div>
+                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                    <span>{formatDate(t.date)}</span>
+                    <span className='flex items-center gap-1'><User className='h-3 w-3' />{t.createdBy}</span>
+                </div>
             </div>
             <div className="flex flex-col items-end ml-4">
                 <div className="font-medium text-lg">{formatCurrency(t.amount)}</div>
@@ -179,6 +182,7 @@ export default function TransactionsPage() {
                 <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Description</TableHead>
+                    <TableHead>User</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="w-12">Receipt</TableHead>
@@ -190,6 +194,7 @@ export default function TransactionsPage() {
                     <TableRow key={i}>
                         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                         <TableCell className="text-right"><Skeleton className="h-5 w-16 float-right" /></TableCell>
                         <TableCell />
@@ -205,6 +210,7 @@ export default function TransactionsPage() {
                             {t.vendor}
                         </div>
                         </TableCell>
+                        <TableCell>{t.createdBy}</TableCell>
                         <TableCell>
                         <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
                         </TableCell>
@@ -219,7 +225,7 @@ export default function TransactionsPage() {
                 )}
                 {!loading && filteredTransactions.length === 0 && (
                      <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
+                        <TableCell colSpan={6} className="h-24 text-center">
                             No transactions match your filters.
                         </TableCell>
                     </TableRow>

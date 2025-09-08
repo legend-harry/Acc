@@ -29,6 +29,7 @@ import { db } from "@/lib/firebase";
 import { ref, push, set } from "firebase/database";
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { ScrollArea } from "./ui/scroll-area";
+import { useUser } from "@/context/user-context";
 
 
 export function AddExpenseDialog({
@@ -41,6 +42,7 @@ export function AddExpenseDialog({
   const { toast } = useToast();
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const { categories, loading: categoriesLoading } = useCategories();
+  const { user } = useUser();
 
   const handleReceiptChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -88,6 +90,7 @@ export function AddExpenseDialog({
         date: data.date ? new Date(data.date as string).toISOString() : new Date().toISOString(),
         createdAt: new Date().toISOString(),
         receiptUrl: receiptUrl,
+        createdBy: user,
     };
     
     try {
@@ -120,9 +123,7 @@ export function AddExpenseDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button asChild>
-        <div onClick={() => setOpen(true)}>{children}</div>
-      </Button>
+      <div onClick={() => setOpen(true)}>{children}</div>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add New Expense</DialogTitle>

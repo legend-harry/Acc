@@ -27,7 +27,7 @@ import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BudgetComparisonChart } from '@/components/dashboard/budget-comparison-chart';
 import { ReportDownloadButton } from './report-download-button';
-import { getCategoryColorClass } from '@/lib/utils';
+import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
 
 
 export default function MonthlyReportPage({
@@ -113,7 +113,7 @@ export default function MonthlyReportPage({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{t.category}</Badge>
+                    <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(t.amount)}

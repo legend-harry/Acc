@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -23,7 +24,7 @@ import { ChevronRight, Receipt } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
-import { getCategoryColorClass } from '@/lib/utils';
+import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
 
 
 const TRANSACTIONS_PER_PAGE = 20;
@@ -106,7 +107,7 @@ export default function TransactionsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{t.category}</Badge>
+                    <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(t.amount)}

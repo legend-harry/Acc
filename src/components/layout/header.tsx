@@ -115,7 +115,7 @@ export function Header() {
         <AddExpenseDialog>
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Add Expense
+                Add Transaction
             </Button>
         </AddExpenseDialog>
       </div>

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, ReactNode } from 'react';
 import { PageHeader } from "@/components/page-header";
 import {
   Card,
@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Filter, Receipt, User } from 'lucide-react';
+import { ChevronRight, Receipt, User, ArrowUp, ArrowDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
@@ -81,6 +81,14 @@ const isToday = (someDate: Date | string) => {
            date.getFullYear() === today.getFullYear();
 };
 
+const getStatusBadge = (status: 'completed' | 'credit' | 'expected') => {
+    switch(status) {
+        case 'credit': return <Badge variant="destructive" className="capitalize text-xs">Credit</Badge>
+        case 'expected': return <Badge variant="secondary" className="capitalize text-xs text-blue-600 border-blue-300 bg-blue-100">Expected</Badge>
+        default: return null;
+    }
+}
+
 export default function TransactionsPage() {
     const { transactions, loading } = useTransactions();
     const { categories } = useCategories();
@@ -120,7 +128,7 @@ export default function TransactionsPage() {
     const renderTransactionItem = (t: Transaction) => (
         <div key={t.id} className="flex justify-between items-center py-3">
             <div className="flex-1">
-                <div className="font-medium">{t.title}</div>
+                <div className="font-medium flex items-center gap-2">{t.title} {t.type === 'expense' && getStatusBadge(t.status)}</div>
                 <div className="text-sm text-muted-foreground">{t.vendor}</div>
                  <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                     <div className="flex items-center gap-2">
@@ -132,7 +140,7 @@ export default function TransactionsPage() {
                 </div>
             </div>
             <div className="flex flex-col items-end ml-4">
-                <div className="font-medium text-lg">{formatCurrency(t.amount)}</div>
+                <div className={`font-medium text-lg ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(t.amount)}</div>
                 <Badge variant="outline" className={`mt-1 text-xs ${getCategoryBadgeColorClass(t.category)}`}>{t.category}</Badge>
             </div>
             {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
@@ -142,19 +150,36 @@ export default function TransactionsPage() {
     const renderGroupedTransactions = (transactionsToRender: Transaction[]) => {
         const grouped: React.ReactNode[] = [];
         let lastDate: string | null = null;
-    
+        let dailyIncome = 0;
+        let dailyExpense = 0;
+        
+        const renderSeparator = (date: string, income: number, expense: number) => {
+             return (
+                <div key={`sep-${date}`} className="flex items-center gap-4 py-3 my-2 bg-muted/80 rounded-md px-4">
+                    <span className="text-sm font-bold text-foreground">{date}</span>
+                    <Separator className="flex-1 bg-border" orientation="vertical" />
+                    <div className="flex gap-4 text-sm">
+                        {income > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/> Received: {formatCurrency(income)}</span>}
+                        {expense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/> Spent: {formatCurrency(expense)}</span>}
+                    </div>
+                </div>
+            );
+        }
+
         transactionsToRender.forEach((t, index) => {
             const currentDate = formatDate(t.date);
             if (currentDate !== lastDate) {
-                grouped.push(
-                    <div key={`sep-${currentDate}`} className="flex items-center gap-4 py-2">
-                        <Separator className="flex-1" />
-                        <span className="text-sm font-medium text-muted-foreground">{currentDate}</span>
-                        <Separator className="flex-1" />
-                    </div>
-                );
+                if(lastDate) {
+                    grouped.push(renderSeparator(lastDate, dailyIncome, dailyExpense));
+                }
                 lastDate = currentDate;
+                dailyIncome = 0;
+                dailyExpense = 0;
             }
+
+            if(t.type === 'income') dailyIncome += t.amount;
+            else dailyExpense += t.amount;
+
             if (isMobile) {
                  grouped.push(
                     <Card key={t.id}>
@@ -167,17 +192,20 @@ export default function TransactionsPage() {
                  grouped.push(
                     <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
                         <TableCell>
-                        <div className="font-medium">{t.title}</div>
-                        <div className="hidden text-sm text-muted-foreground md:inline">
-                            {t.vendor}
-                        </div>
+                            <div className="font-medium flex items-center gap-2">
+                                {t.title} 
+                                {t.type === 'expense' && getStatusBadge(t.status)}
+                            </div>
+                            <div className="hidden text-sm text-muted-foreground md:inline">
+                                {t.vendor}
+                            </div>
                         </TableCell>
                         <TableCell>{t.createdBy}</TableCell>
                         <TableCell>
                         <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-medium">
-                        {formatCurrency(t.amount)}
+                        <TableCell className={`text-right font-medium ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(t.amount)}
                         </TableCell>
                         <TableCell className="text-center">
                         {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
@@ -186,6 +214,11 @@ export default function TransactionsPage() {
                  )
             }
         });
+        
+        if (lastDate) {
+            grouped.push(renderSeparator(lastDate, dailyIncome, dailyExpense));
+        }
+
         return grouped;
     }
 

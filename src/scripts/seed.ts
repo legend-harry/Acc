@@ -19,7 +19,9 @@ const transactions = [
         "notes": "Spent by Mom on our behalf",
         "category": "Miscellaneous Expenses",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "2",
@@ -37,7 +39,9 @@ const transactions = [
         "notes": "Bore - Materials",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "3",
@@ -55,7 +59,9 @@ const transactions = [
         "notes": "Bore - Materials",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "4",
@@ -73,7 +79,9 @@ const transactions = [
         "notes": "Bore - Materials",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "5",
@@ -91,7 +99,9 @@ const transactions = [
         "notes": "Bore - Materials",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "6",
@@ -109,7 +119,9 @@ const transactions = [
         "notes": "Bore - Materials",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "7",
@@ -127,7 +139,9 @@ const transactions = [
         "notes": "Bore - Materials",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "8",
@@ -145,7 +159,9 @@ const transactions = [
         "notes": "Bore - Materials",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "9",
@@ -163,7 +179,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "10",
@@ -181,7 +199,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "11",
@@ -199,7 +219,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "12",
@@ -217,7 +239,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "13",
@@ -235,7 +259,9 @@ const transactions = [
         "notes": "Road Work - Services",
         "category": "Road Work",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "14",
@@ -253,7 +279,9 @@ const transactions = [
         "notes": "Road Work - Materials",
         "category": "Road Work",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "15",
@@ -271,7 +299,9 @@ const transactions = [
         "notes": "Road Work - Materials",
         "category": "Road Work",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "16",
@@ -289,7 +319,9 @@ const transactions = [
         "notes": "Road Work - Service",
         "category": "Road Work",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "17",
@@ -307,7 +339,9 @@ const transactions = [
         "notes": "Road Work - Service",
         "category": "Road Work",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "18",
@@ -325,7 +359,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "19",
@@ -343,7 +379,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "20",
@@ -361,7 +399,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "21",
@@ -379,7 +419,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "22",
@@ -397,7 +439,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "23",
@@ -415,7 +459,9 @@ const transactions = [
         "notes": "Tree Cutting - Services",
         "category": "Tree Cutting",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "24",
@@ -433,7 +479,9 @@ const transactions = [
         "notes": "IT-Infra - Materials",
         "category": "IT Setup",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "25",
@@ -451,7 +499,9 @@ const transactions = [
         "notes": "IT-Infra - Materials",
         "category": "IT Setup",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "26",
@@ -469,7 +519,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "27",
@@ -487,7 +539,9 @@ const transactions = [
         "notes": "Bore - Materials",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "28",
@@ -505,7 +559,9 @@ const transactions = [
         "notes": "Bore - Materials",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "29",
@@ -523,7 +579,9 @@ const transactions = [
         "notes": "Bore - Services",
         "category": "Bore Construction",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "30",
@@ -541,7 +599,9 @@ const transactions = [
         "notes": "Labour",
         "category": "Labour",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "31",
@@ -559,7 +619,9 @@ const transactions = [
         "notes": "Labour",
         "category": "Weed Removal",
         "receiptUrl": "",
-        "createdBy": "Vijay"
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     }
 ];
 

@@ -30,6 +30,7 @@ import { ref, push, set } from "firebase/database";
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { ScrollArea } from "./ui/scroll-area";
 import { useUser } from "@/context/user-context";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 
 export function AddExpenseDialog({
@@ -43,6 +44,7 @@ export function AddExpenseDialog({
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const { categories, loading: categoriesLoading } = useCategories();
   const { user } = useUser();
+  const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
 
   const handleReceiptChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -82,7 +84,7 @@ export function AddExpenseDialog({
         }
     }
     
-    const newExpense = {
+    const newTransaction = {
         ...data,
         amount: Number(data.amount),
         quantity: Number(data.qty) || 0,
@@ -91,12 +93,14 @@ export function AddExpenseDialog({
         createdAt: new Date().toISOString(),
         receiptUrl: receiptUrl,
         createdBy: user,
+        type: data.type,
+        status: data.status,
     };
     
     try {
         const transactionsRef = ref(db, 'transactions');
         const newTransactionRef = push(transactionsRef);
-        await set(newTransactionRef, newExpense);
+        await set(newTransactionRef, newTransaction);
         
         setIsLoading(false);
         setOpen(false);
@@ -104,7 +108,7 @@ export function AddExpenseDialog({
         (event.target as HTMLFormElement).reset();
         
         toast({
-            title: "Expense Added",
+            title: "Transaction Added",
             description: `Successfully added ${formatCurrency(
             Number(data.amount)
             )} for ${data.title}.`,
@@ -116,7 +120,7 @@ export function AddExpenseDialog({
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Failed to save the expense to the database.",
+            description: "Failed to save the transaction to the database.",
         });
     }
   };
@@ -126,14 +130,57 @@ export function AddExpenseDialog({
       <div onClick={() => setOpen(true)}>{children}</div>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add New Expense</DialogTitle>
+          <DialogTitle>Add New Transaction</DialogTitle>
           <DialogDescription>
-            Enter the details of your expense. Click save when you're done.
+            Enter the details of your transaction. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <ScrollArea className="max-h-[70vh] p-1">
             <div className="grid gap-4 py-4 pr-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Type</Label>
+                    <RadioGroup
+                      name="type"
+                      defaultValue="expense"
+                      className="col-span-3 flex gap-4"
+                      onValueChange={(value) => setTransactionType(value as 'expense' | 'income')}
+                    >
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="expense" id="r-expense" />
+                        <Label htmlFor="r-expense">Expense</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="income" id="r-income" />
+                        <Label htmlFor="r-income">Income</Label>
+                        </div>
+                    </RadioGroup>
+                </div>
+
+                {transactionType === 'expense' && (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Status</Label>
+                      <RadioGroup name="status" defaultValue="completed" className="col-span-3 flex gap-4">
+                          <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="completed" id="r-completed" />
+                              <Label htmlFor="r-completed">Completed</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="credit" id="r-credit" />
+                              <Label htmlFor="r-credit">Credit</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="expected" id="r-expected" />
+                              <Label htmlFor="r-expected">Expected</Label>
+                          </div>
+                      </RadioGroup>
+                  </div>
+                )}
+                 {transactionType === 'income' && (
+                    <Input type="hidden" name="status" value="completed" />
+                 )}
+
+
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="date" className="text-right">
                     Date
@@ -292,7 +339,7 @@ export function AddExpenseDialog({
               </Button>
             </DialogClose>
             <Button type="submit" disabled={isLoading || categoriesLoading}>
-              {isLoading ? "Saving..." : "Save Expense"}
+              {isLoading ? "Saving..." : "Save Transaction"}
             </Button>
           </DialogFooter>
         </form>

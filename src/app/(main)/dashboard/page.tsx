@@ -17,6 +17,9 @@ async function getTransactions(): Promise<Transaction[]> {
       ...data[key],
       id: key,
       date: new Date(data[key].date),
+      // Set default values for older records
+      type: data[key].type || 'expense', 
+      status: data[key].status || 'completed'
     }));
   }
   return [];

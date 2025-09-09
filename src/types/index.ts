@@ -16,6 +16,8 @@ export type Transaction = {
   category: string;
   receiptUrl?: string;
   createdBy: string;
+  type: 'expense' | 'income';
+  status: 'completed' | 'credit' | 'expected';
 };
 
 export type Budget = {

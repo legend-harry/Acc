@@ -2,6 +2,28 @@
 import { db } from '../src/lib/firebase';
 import { ref, set } from 'firebase/database';
 
+console.log(`
+This is a destructive script that will overwrite the data in your Firebase Realtime Database.
+It is intended for initial setup and not for migrating existing data.
+
+If you want to update existing transactions (e.g., add the 'status' field),
+please use the migration script instead by running:
+
+npm run migrate
+
+To proceed with seeding and overwriting data, you must run this script with an explicit --force flag:
+
+tsx scripts/seed.ts --force
+`);
+
+const force = process.argv.includes('--force');
+
+if (!force) {
+    console.log('Exiting: --force flag not provided.');
+    process.exit(0);
+}
+
+
 const transactions = [
     {
         "id": "1",
@@ -18,7 +40,10 @@ const transactions = [
         "description": "for Clearing the weed , Errecting the coconut plants",
         "notes": "Spent by Mom on our behalf",
         "category": "Miscellaneous Expenses",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "2",
@@ -35,7 +60,10 @@ const transactions = [
         "description": "5' Supreme C Singe Pipes",
         "notes": "Bore - Materials",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "3",
@@ -52,7 +80,10 @@ const transactions = [
         "description": "5HP Pump Set",
         "notes": "Bore - Materials",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "4",
@@ -69,7 +100,10 @@ const transactions = [
         "description": "L&T Starter 9-14A",
         "notes": "Bore - Materials",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "5",
@@ -86,7 +120,10 @@ const transactions = [
         "description": "2.5 Sqmm 3 core flat cable",
         "notes": "Bore - Materials",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "6",
@@ -103,7 +140,10 @@ const transactions = [
         "description": "75mm supreme 8 kg hdpe Pipe",
         "notes": "Bore - Materials",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "7",
@@ -120,7 +160,10 @@ const transactions = [
         "description": "75mm Hdhpe ss nipple",
         "notes": "Bore - Materials",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "8",
@@ -137,7 +180,10 @@ const transactions = [
         "description": "75mm Iron Clamps",
         "notes": "Bore - Materials",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "9",
@@ -154,7 +200,10 @@ const transactions = [
         "description": "Transport of Pump, Pipes",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "10",
@@ -171,7 +220,10 @@ const transactions = [
         "description": "Drilling Bore - 6\" Bore @ 200 Feet @110/Foot",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "11",
@@ -188,7 +240,10 @@ const transactions = [
         "description": "Round Pebbles @150/Bag",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "12",
@@ -205,7 +260,10 @@ const transactions = [
         "description": "Labour Cost for Unloading Material",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "13",
@@ -222,7 +280,10 @@ const transactions = [
         "description": "JCB 5.10 hrs @ 1200 , Tractor 4 Trips @ 3500, Diesel , Beta",
         "notes": "Road Work - Services",
         "category": "Road Work",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "14",
@@ -239,7 +300,10 @@ const transactions = [
         "description": "Gravel Boulders 3 Trucks @10,000 / Truck",
         "notes": "Road Work - Materials",
         "category": "Road Work",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "15",
@@ -256,7 +320,10 @@ const transactions = [
         "description": "Gravel Dust 1 Trucks @13,000 / Truck",
         "notes": "Road Work - Materials",
         "category": "Road Work",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "16",
@@ -273,7 +340,10 @@ const transactions = [
         "description": "200/Truck Driver Beta",
         "notes": "Road Work - Service",
         "category": "Road Work",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "17",
@@ -290,7 +360,10 @@ const transactions = [
         "description": "Labour Cost for Laying the Road",
         "notes": "Road Work - Service",
         "category": "Road Work",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "18",
@@ -307,7 +380,10 @@ const transactions = [
         "description": "Bore Digging Equipment Transporter",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "19",
@@ -324,7 +400,10 @@ const transactions = [
         "description": "Pipe Extraction Equipment Transporter",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "20",
@@ -341,7 +420,10 @@ const transactions = [
         "description": "Advance Payment",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "21",
@@ -358,7 +440,10 @@ const transactions = [
         "description": "Advance Payment",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "22",
@@ -375,7 +460,10 @@ const transactions = [
         "description": "Advance Payment",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "23",
@@ -392,7 +480,10 @@ const transactions = [
         "description": "Cutting Coconut trees",
         "notes": "Tree Cutting - Services",
         "category": "Tree Cutting",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "24",
@@ -409,7 +500,10 @@ const transactions = [
         "description": "Godrej Solar Camera",
         "notes": "IT-Infra - Materials",
         "category": "IT Setup",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "25",
@@ -426,7 +520,10 @@ const transactions = [
         "description": "Godrej Solar Camera",
         "notes": "IT-Infra - Materials",
         "category": "IT Setup",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "26",
@@ -443,7 +540,10 @@ const transactions = [
         "description": "Diesel for Bore Drilling (8 days)",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "27",
@@ -460,7 +560,10 @@ const transactions = [
         "description": "Pipes",
         "notes": "Bore - Materials",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "28",
@@ -477,7 +580,10 @@ const transactions = [
         "description": "Pipes",
         "notes": "Bore - Materials",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "29",
@@ -494,7 +600,10 @@ const transactions = [
         "description": "Transport of Pump, Pipes from Palakol to Agarru",
         "notes": "Bore - Services",
         "category": "Bore Construction",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "30",
@@ -511,7 +620,10 @@ const transactions = [
         "description": "Salary",
         "notes": "Labour",
         "category": "Labour",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     },
     {
         "id": "31",
@@ -528,7 +640,10 @@ const transactions = [
         "description": "Spray Weed revoer + labour + Spray Can Rent",
         "notes": "Labour",
         "category": "Weed Removal",
-        "receiptUrl": ""
+        "receiptUrl": "",
+        "createdBy": "Vijay",
+        "type": "expense",
+        "status": "completed"
     }
 ];
 
@@ -571,9 +686,11 @@ async function seedDatabase() {
 
     } catch (error) {
         console.error('Error seeding database:', error);
+        process.exit(1);
+    } finally {
+        // The script hangs without this.
+        process.exit(0);
     }
 }
 
 seedDatabase();
-
-    

@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "migrate": "tsx scripts/migrate-transactions.ts"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",

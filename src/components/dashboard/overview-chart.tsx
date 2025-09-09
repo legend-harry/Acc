@@ -36,8 +36,11 @@ export function OverviewChart({ transactions }: OverviewChartProps) {
         
         transactions.forEach(t => {
             const date = new Date(t.date);
-            const month = date.toLocaleString('default', { month: 'short', year: '2-digit' });
-            monthlySpending[month] = (monthlySpending[month] || 0) + t.amount;
+            // Ensure date is valid before processing
+            if (!isNaN(date.getTime())) {
+                const month = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+                monthlySpending[month] = (monthlySpending[month] || 0) + t.amount;
+            }
         });
         
         const sortedMonths = Object.keys(monthlySpending).sort((a, b) => {

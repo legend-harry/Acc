@@ -93,20 +93,12 @@ export default function ReportsPage() {
   const { transactions, loading } = useTransactions();
   
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
-  const [selectedMonth, setSelectedMonth] = useState<string>((new Date().getMonth() + 1).toString());
 
-  const { availableYears, availableMonths } = useMemo(() => {
-    const years = [...new Set(transactions.map(t => new Date(t.date).getFullYear().toString()))];
-    const months = [...Array(12).keys()].map(m => (m + 1).toString());
-    return { availableYears: years, availableMonths: months };
-  }, [transactions]);
-
-  const monthWiseSummary = useMemo(() => {
-    return transactions
-        .filter(t => {
-            const date = new Date(t.date);
-            return date.getFullYear().toString() === selectedYear;
-        })
+  const { availableYears, monthWiseSummary } = useMemo(() => {
+    const years = [...new Set(transactions.map(t => new Date(t.date).getFullYear().toString()))].sort((a,b) => Number(b) - Number(a));
+    
+    const summary = transactions
+        .filter(t => new Date(t.date).getFullYear().toString() === selectedYear)
         .reduce((acc, t) => {
             const date = new Date(t.date);
             const monthYear = date.toLocaleString("default", {
@@ -120,12 +112,13 @@ export default function ReportsPage() {
             acc[monthYear].count += 1;
             return acc;
         }, {} as Record<string, { total: number; count: number, date: Date }>);
+
+    return { availableYears: years, monthWiseSummary: summary };
   }, [transactions, selectedYear]);
 
   const sortedMonths = useMemo(() => {
       return Object.entries(monthWiseSummary)
-        .sort(([, a], [, b]) => b.date.getTime() - a.date.getTime())
-        .slice(0, 3);
+        .sort(([, a], [, b]) => b.date.getTime() - a.date.getTime());
   }, [monthWiseSummary]);
 
    useEffect(() => {

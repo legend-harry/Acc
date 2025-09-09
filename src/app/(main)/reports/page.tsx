@@ -121,6 +121,11 @@ export default function ReportsPage() {
         .sort(([, a], [, b]) => b.date.getTime() - a.date.getTime());
   }, [monthWiseSummary]);
 
+   const sortedTransactions = useMemo(() => {
+    return [...transactions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [transactions]);
+
+
    useEffect(() => {
         if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
             setSelectedYear(availableYears[0]);
@@ -222,7 +227,7 @@ export default function ReportsPage() {
           </CardHeader>
           <CardContent>
              <ul className="space-y-3">
-                {transactions.slice(0, 10).map(t => (
+                {sortedTransactions.slice(0, 10).map(t => (
                     <li key={t.id} className="flex justify-between items-center">
                         <div>
                             <p className="font-medium">{t.title}</p>
@@ -231,11 +236,14 @@ export default function ReportsPage() {
                         <p className="font-mono text-sm">{formatCurrency(t.amount)}</p>
                     </li>
                 ))}
-                {transactions.length > 10 && (
+                {sortedTransactions.length > 10 && (
                     <>
                         <Separator />
-                        <li className="text-center text-sm text-muted-foreground">...and {transactions.length - 10} more transactions.</li>
+                        <li className="text-center text-sm text-muted-foreground">...and {sortedTransactions.length - 10} more transactions.</li>
                     </>
+                )}
+                 {sortedTransactions.length === 0 && (
+                    <li className="text-center text-sm text-muted-foreground py-4">No transactions found.</li>
                 )}
              </ul>
           </CardContent>

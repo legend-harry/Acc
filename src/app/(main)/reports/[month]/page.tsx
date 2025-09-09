@@ -17,7 +17,7 @@ export default function MonthlyReportPage({
 }: {
   params: { month: string };
 }) {
-  const { month: monthSlug } = params;
+  const monthSlug = params.month;
   const [year, month] = monthSlug.split("-").map(Number);
   
   const { transactions, loading: transactionsLoading } = useTransactions();

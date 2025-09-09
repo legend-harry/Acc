@@ -162,7 +162,7 @@ export default function TransactionsPage() {
                 .filter(t => t.type === 'income')
                 .reduce((sum, t) => sum + t.amount, 0);
             const dailyExpense = dailyTransactions
-                .filter(t => t.type === 'expense' && t.status === 'completed')
+                .filter(t => t.type === 'expense')
                 .reduce((sum, t) => sum + t.amount, 0);
 
             const dailyNet = dailyIncome - dailyExpense;
@@ -344,3 +344,5 @@ export default function TransactionsPage() {
     </div>
   );
 }
+
+    

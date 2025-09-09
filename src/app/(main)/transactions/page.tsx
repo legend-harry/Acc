@@ -30,6 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
 
 const TRANSACTIONS_PER_PAGE = 20;
@@ -87,6 +88,7 @@ export default function TransactionsPage() {
     
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
+    const [sortBy, setSortBy] = useState("createdAt");
     const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
 
     const filteredTransactions = useMemo(() => 
@@ -100,8 +102,13 @@ export default function TransactionsPage() {
                 (t.description && t.description.toLowerCase().includes(searchTermLower));
             return matchesCategory && matchesSearch;
         })
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-        [transactions, searchTerm, selectedCategory]
+        .sort((a, b) => {
+            if (sortBy === 'createdAt') {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            }
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
+        }),
+        [transactions, searchTerm, selectedCategory, sortBy]
     );
 
     const visibleTransactions = filteredTransactions.slice(0, visibleCount);
@@ -115,10 +122,9 @@ export default function TransactionsPage() {
             <div className="flex-1">
                 <div className="font-medium">{t.title}</div>
                 <div className="text-sm text-muted-foreground">{t.vendor}</div>
-                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                     <div className="flex items-center gap-2">
-                        <span>{formatDate(t.date)}</span>
-                        {isToday(t.createdAt) && (
+                         {isToday(t.createdAt) && (
                             <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>
                         )}
                     </div>
@@ -132,6 +138,56 @@ export default function TransactionsPage() {
             {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
         </div>
     );
+
+    const renderGroupedTransactions = (transactionsToRender: Transaction[]) => {
+        const grouped: React.ReactNode[] = [];
+        let lastDate: string | null = null;
+    
+        transactionsToRender.forEach((t, index) => {
+            const currentDate = formatDate(t.date);
+            if (currentDate !== lastDate) {
+                grouped.push(
+                    <div key={`sep-${currentDate}`} className="flex items-center gap-4 py-2">
+                        <Separator className="flex-1" />
+                        <span className="text-sm font-medium text-muted-foreground">{currentDate}</span>
+                        <Separator className="flex-1" />
+                    </div>
+                );
+                lastDate = currentDate;
+            }
+            if (isMobile) {
+                 grouped.push(
+                    <Card key={t.id}>
+                        <CardContent className={`p-4 ${getCategoryColorClass(t.category)}`}>
+                            {renderTransactionItem(t)}
+                        </CardContent>
+                    </Card>
+                );
+            } else {
+                 grouped.push(
+                    <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
+                        <TableCell>
+                        <div className="font-medium">{t.title}</div>
+                        <div className="hidden text-sm text-muted-foreground md:inline">
+                            {t.vendor}
+                        </div>
+                        </TableCell>
+                        <TableCell>{t.createdBy}</TableCell>
+                        <TableCell>
+                        <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                        {formatCurrency(t.amount)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                        {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
+                        </TableCell>
+                    </TableRow>
+                 )
+            }
+        });
+        return grouped;
+    }
 
   return (
     <div>
@@ -148,17 +204,28 @@ export default function TransactionsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="max-w-sm"
             />
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full md:w-[280px]">
-                    <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            <div className='flex gap-4'>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-full md:w-[200px]">
+                        <SelectValue placeholder="Filter by category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {categories.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-full md:w-[180px]">
+                        <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="createdAt">Date Added</SelectItem>
+                        <SelectItem value="date">Expense Date</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
         </CardContent>
     </Card>
 
@@ -169,13 +236,7 @@ export default function TransactionsPage() {
                     <Card key={i}><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
                 ))
             ) : (
-                visibleTransactions.map(t => (
-                    <Card key={t.id}>
-                        <CardContent className={`p-4 ${getCategoryColorClass(t.category)}`}>
-                            {renderTransactionItem(t)}
-                        </CardContent>
-                    </Card>
-                ))
+                renderGroupedTransactions(visibleTransactions)
             )}
              {visibleCount < filteredTransactions.length && (
                 <div className="text-center mt-4">
@@ -197,7 +258,6 @@ export default function TransactionsPage() {
             <Table>
                 <TableHeader>
                 <TableRow>
-                    <TableHead>Date</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>User</TableHead>
                     <TableHead>Category</TableHead>
@@ -209,7 +269,6 @@ export default function TransactionsPage() {
                 {loading ? (
                     Array.from({ length: 10 }).map((_, i) => (
                     <TableRow key={i}>
-                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
@@ -218,34 +277,7 @@ export default function TransactionsPage() {
                     </TableRow>
                     ))
                 ) : (
-                    visibleTransactions.map((t) => (
-                    <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
-                        <TableCell>
-                            <div className="flex items-center gap-2">
-                                <span>{formatDate(t.date)}</span>
-                                {isToday(t.createdAt) && (
-                                    <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>
-                                )}
-                            </div>
-                        </TableCell>
-                        <TableCell>
-                        <div className="font-medium">{t.title}</div>
-                        <div className="hidden text-sm text-muted-foreground md:inline">
-                            {t.vendor}
-                        </div>
-                        </TableCell>
-                        <TableCell>{t.createdBy}</TableCell>
-                        <TableCell>
-                        <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                        {formatCurrency(t.amount)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                        {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
-                        </TableCell>
-                    </TableRow>
-                    ))
+                    renderGroupedTransactions(visibleTransactions)
                 )}
                 {!loading && filteredTransactions.length === 0 && (
                      <TableRow>

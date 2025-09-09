@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Receipt, User, ArrowUp, ArrowDown, AlertTriangle, Info } from 'lucide-react';
+import { ChevronRight, Receipt, User, ArrowUp, ArrowDown, AlertTriangle, Info, MoreVertical, Trash2, Edit } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
@@ -31,7 +31,21 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { remove, ref } from 'firebase/database';
+import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { EditTransactionDialog } from '@/components/edit-transaction-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const TRANSACTIONS_PER_PAGE = 20;
 
@@ -73,6 +87,48 @@ const ReceiptPreviewDialog = ({ transaction }: { transaction: Transaction }) => 
   );
 };
 
+const DeleteConfirmationDialog = ({
+  transaction,
+  onConfirm,
+  isOpen,
+  onOpenChange,
+}: {
+  transaction: Transaction;
+  onConfirm: () => void;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}) => {
+  const [isLocked, setIsLocked] = useState(true);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setIsLocked(true);
+      const timer = setTimeout(() => setIsLocked(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the transaction
+            for <span className="font-bold">{transaction.title}</span> amounting to <span className="font-bold">{formatCurrency(transaction.amount)}</span>.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} disabled={isLocked}>
+            {isLocked ? "Confirming..." : "Yes, delete it"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
 const isToday = (someDate: Date | string) => {
     const today = new Date();
     const date = typeof someDate === 'string' ? new Date(someDate) : someDate;
@@ -93,11 +149,15 @@ export default function TransactionsPage() {
     const { transactions, loading } = useTransactions();
     const { categories } = useCategories();
     const isMobile = useIsMobile();
+    const { toast } = useToast();
     
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [sortBy, setSortBy] = useState("createdAt");
     const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
+
+    const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+    const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
 
     const filteredTransactions = useMemo(() => 
         [...transactions]
@@ -125,6 +185,47 @@ export default function TransactionsPage() {
         setVisibleCount(prevCount => prevCount + TRANSACTIONS_PER_PAGE);
     };
 
+    const handleDelete = async () => {
+      if (!deletingTransaction) return;
+
+      try {
+        await remove(ref(db, `transactions/${deletingTransaction.id}`));
+        toast({
+          title: "Transaction Deleted",
+          description: `${deletingTransaction.title} has been successfully deleted.`,
+        });
+      } catch (error) {
+        console.error("Failed to delete transaction:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not delete the transaction.",
+        });
+      } finally {
+        setDeletingTransaction(null);
+      }
+    };
+
+    const renderTransactionActions = (t: Transaction) => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => setEditingTransaction(t)}>
+            <Edit className="mr-2 h-4 w-4" />
+            <span>Edit</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setDeletingTransaction(t)} className="text-red-600">
+            <Trash2 className="mr-2 h-4 w-4" />
+            <span>Delete</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+
     const renderTransactionItem = (t: Transaction) => (
         <div key={t.id} className="flex justify-between items-center py-3">
             <div className="flex-1">
@@ -143,6 +244,7 @@ export default function TransactionsPage() {
                 <div className={`font-medium text-lg ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(t.amount)}</div>
                 <Badge variant="outline" className={`mt-1 text-xs ${getCategoryBadgeColorClass(t.category)}`}>{t.category}</Badge>
             </div>
+            {renderTransactionActions(t)}
             {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
         </div>
     );
@@ -200,7 +302,7 @@ export default function TransactionsPage() {
                 <div key={`sep-mobile-${date}`}>{separatorContent}</div>
             ) : (
                 <TableRow key={`sep-desktop-${date}`} className="hover:bg-transparent">
-                    <TableCell colSpan={6} className="p-0">
+                    <TableCell colSpan={7} className="p-0">
                        {separatorContent}
                     </TableCell>
                 </TableRow>
@@ -239,6 +341,9 @@ export default function TransactionsPage() {
                             </TableCell>
                             <TableCell className="text-center">
                                 {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
+                            </TableCell>
+                            <TableCell className="text-center">
+                                {renderTransactionActions(t)}
                             </TableCell>
                         </TableRow>
                     );
@@ -324,6 +429,7 @@ export default function TransactionsPage() {
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-center">Date Added</TableHead>
                     <TableHead className="text-center w-12">Receipt</TableHead>
+                    <TableHead className="text-center w-12">Actions</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -336,6 +442,7 @@ export default function TransactionsPage() {
                         <TableCell className="text-right"><Skeleton className="h-5 w-16 float-right" /></TableCell>
                         <TableCell />
                         <TableCell />
+                        <TableCell />
                     </TableRow>
                     ))
                 ) : (
@@ -343,7 +450,7 @@ export default function TransactionsPage() {
                 )}
                 {!loading && filteredTransactions.length === 0 && (
                      <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
+                        <TableCell colSpan={7} className="h-24 text-center">
                             No transactions match your filters.
                         </TableCell>
                     </TableRow>
@@ -358,8 +465,26 @@ export default function TransactionsPage() {
             </CardContent>
         </Card>
       )}
+
+      {editingTransaction && (
+        <EditTransactionDialog 
+            transaction={editingTransaction}
+            isOpen={!!editingTransaction}
+            onOpenChange={(isOpen) => {
+                if (!isOpen) setEditingTransaction(null);
+            }}
+        />
+      )}
+      {deletingTransaction && (
+        <DeleteConfirmationDialog 
+            transaction={deletingTransaction}
+            isOpen={!!deletingTransaction}
+            onOpenChange={(isOpen) => {
+                if (!isOpen) setDeletingTransaction(null);
+            }}
+            onConfirm={handleDelete}
+        />
+      )}
     </div>
   );
 }
-
-    

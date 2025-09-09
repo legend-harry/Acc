@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PlusCircle, Wallet, LayoutDashboard, ArrowLeftRight, Target, PieChart, Users, User, Check } from "lucide-react";
@@ -49,6 +50,11 @@ function ProfileSwitcher() {
 export function Header() {
   const isMobile = useIsMobile();
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleLinkClick = () => {
+    setMobileMenuOpen(false);
+  };
 
   const navLinks = (
     <>
@@ -58,6 +64,7 @@ export function Header() {
           variant={pathname.startsWith(item.href) ? "secondary" : "ghost"}
           asChild
           className="flex items-center justify-start gap-2"
+          onClick={handleLinkClick}
         >
           <Link href={item.href}>
             <item.icon className="h-4 w-4" />
@@ -72,7 +79,7 @@ export function Header() {
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
        <div className="flex items-center gap-4">
         {isMobile ? (
-            <Sheet>
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
                 <Button variant="outline" size="icon">
                     <Menu />

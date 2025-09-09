@@ -148,93 +148,85 @@ export default function TransactionsPage() {
     );
 
     const renderGroupedTransactions = (transactionsToRender: Transaction[]) => {
-        const grouped: React.ReactNode[] = [];
-        let lastDate: string | null = null;
-        let dailyIncome = 0;
-        let dailyExpense = 0;
-        
-        const renderSeparator = (date: string, income: number, expense: number) => {
-             const separatorContent = (
+        const groupedByDate: Record<string, Transaction[]> = transactionsToRender.reduce((acc, t) => {
+            const dateKey = formatDate(t.date);
+            if (!acc[dateKey]) {
+                acc[dateKey] = [];
+            }
+            acc[dateKey].push(t);
+            return acc;
+        }, {} as Record<string, Transaction[]>);
+
+        return Object.entries(groupedByDate).flatMap(([date, dailyTransactions]) => {
+            const dailyIncome = dailyTransactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            const dailyExpense = dailyTransactions
+                .filter(t => t.type === 'expense' && t.status === 'completed')
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            const separatorContent = (
                 <div className="flex items-center gap-4 py-3 my-2 bg-muted/80 rounded-md px-4 w-full">
                     <span className="text-sm font-bold text-foreground">{date}</span>
                     <Separator className="flex-1 bg-border" orientation="vertical" />
                     <div className="flex gap-4 text-sm">
-                        {income > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/> Received: {formatCurrency(income)}</span>}
-                        {expense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/> Spent: {formatCurrency(expense)}</span>}
+                        {dailyIncome > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/> Received: {formatCurrency(dailyIncome)}</span>}
+                        {dailyExpense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/> Spent: {formatCurrency(dailyExpense)}</span>}
                     </div>
                 </div>
             );
-            
-            if (isMobile) {
-                return <div key={`sep-mobile-${date}`}>{separatorContent}</div>
-            }
 
-            return (
+            const separator = isMobile ? (
+                <div key={`sep-mobile-${date}`}>{separatorContent}</div>
+            ) : (
                 <TableRow key={`sep-desktop-${date}`} className="hover:bg-transparent">
                     <TableCell colSpan={6} className="p-0">
                        {separatorContent}
                     </TableCell>
                 </TableRow>
-            )
-        }
+            );
 
-        transactionsToRender.forEach((t, index) => {
-            const currentDate = formatDate(t.date);
-            if (currentDate !== lastDate) {
-                if(lastDate) {
-                    grouped.push(renderSeparator(lastDate, dailyIncome, dailyExpense));
+            const transactionElements = dailyTransactions.map(t => {
+                if (isMobile) {
+                    return (
+                        <Card key={t.id}>
+                            <CardContent className={`p-4 ${getCategoryColorClass(t.category)}`}>
+                                {renderTransactionItem(t)}
+                            </CardContent>
+                        </Card>
+                    );
+                } else {
+                    return (
+                        <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
+                            <TableCell>
+                                <div className="font-medium flex items-center gap-2">
+                                    {t.title} 
+                                    {getStatusBadge(t.status)}
+                                </div>
+                                <div className="hidden text-sm text-muted-foreground md:inline">
+                                    {t.vendor}
+                                </div>
+                            </TableCell>
+                            <TableCell>{t.createdBy}</TableCell>
+                            <TableCell>
+                                <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
+                            </TableCell>
+                            <TableCell className={`text-right font-medium ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                                 {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
+                            </TableCell>
+                             <TableCell className="text-center">
+                                {isToday(t.createdAt) && <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>}
+                            </TableCell>
+                            <TableCell className="text-center">
+                                {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
+                            </TableCell>
+                        </TableRow>
+                    );
                 }
-                lastDate = currentDate;
-                dailyIncome = 0;
-                dailyExpense = 0;
-            }
+            });
 
-            if(t.type === 'income') dailyIncome += t.amount;
-            else if (t.status === 'completed') dailyExpense += t.amount;
-
-            if (isMobile) {
-                 grouped.push(
-                    <Card key={t.id}>
-                        <CardContent className={`p-4 ${getCategoryColorClass(t.category)}`}>
-                            {renderTransactionItem(t)}
-                        </CardContent>
-                    </Card>
-                );
-            } else {
-                 grouped.push(
-                    <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
-                        <TableCell>
-                            <div className="font-medium flex items-center gap-2">
-                                {t.title} 
-                                {getStatusBadge(t.status)}
-                            </div>
-                            <div className="hidden text-sm text-muted-foreground md:inline">
-                                {t.vendor}
-                            </div>
-                        </TableCell>
-                        <TableCell>{t.createdBy}</TableCell>
-                        <TableCell>
-                        <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
-                        </TableCell>
-                        <TableCell className={`text-right font-medium ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                             {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
-                        </TableCell>
-                         <TableCell className="text-center">
-                            {isToday(t.createdAt) && <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>}
-                        </TableCell>
-                        <TableCell className="text-center">
-                        {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
-                        </TableCell>
-                    </TableRow>
-                 )
-            }
+            return [separator, ...transactionElements];
         });
-        
-        if (lastDate) {
-            grouped.push(renderSeparator(lastDate, dailyIncome, dailyExpense));
-        }
-
-        return grouped;
     }
 
   return (

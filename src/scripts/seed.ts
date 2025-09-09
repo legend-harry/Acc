@@ -1,6 +1,28 @@
 
-import { db } from '../src/lib/firebase';
+import { db } from '../lib/firebase';
 import { ref, set } from 'firebase/database';
+
+console.log(`
+This is a destructive script that will overwrite the data in your Firebase Realtime Database.
+It is intended for initial setup and not for migrating existing data.
+
+If you want to update existing transactions (e.g., add the 'status' field),
+please use the migration script instead by running:
+
+npm run migrate
+
+To proceed with seeding and overwriting data, you must run this script with an explicit --force flag:
+
+tsx scripts/seed.ts --force
+`);
+
+const force = process.argv.includes('--force');
+
+if (!force) {
+    console.log('Exiting: --force flag not provided.');
+    process.exit(0);
+}
+
 
 const transactions = [
     {
@@ -664,10 +686,13 @@ async function seedDatabase() {
 
     } catch (error) {
         console.error('Error seeding database:', error);
+        process.exit(1);
+    } finally {
+        // The script hangs without this.
+        process.exit(0);
     }
 }
 
 seedDatabase();
-
 
     

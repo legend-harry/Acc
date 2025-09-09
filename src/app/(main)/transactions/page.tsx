@@ -154,8 +154,8 @@ export default function TransactionsPage() {
         let dailyExpense = 0;
         
         const renderSeparator = (date: string, income: number, expense: number) => {
-             return (
-                <div key={`sep-${date}`} className="flex items-center gap-4 py-3 my-2 bg-muted/80 rounded-md px-4">
+             const separatorContent = (
+                <div className="flex items-center gap-4 py-3 my-2 bg-muted/80 rounded-md px-4 w-full">
                     <span className="text-sm font-bold text-foreground">{date}</span>
                     <Separator className="flex-1 bg-border" orientation="vertical" />
                     <div className="flex gap-4 text-sm">
@@ -164,6 +164,18 @@ export default function TransactionsPage() {
                     </div>
                 </div>
             );
+            
+            if (isMobile) {
+                return <div key={`sep-${date}`}>{separatorContent}</div>
+            }
+
+            return (
+                <TableRow key={`sep-${date}`} className="hover:bg-transparent">
+                    <TableCell colSpan={6} className="p-0">
+                       {separatorContent}
+                    </TableCell>
+                </TableRow>
+            )
         }
 
         transactionsToRender.forEach((t, index) => {
@@ -178,7 +190,7 @@ export default function TransactionsPage() {
             }
 
             if(t.type === 'income') dailyIncome += t.amount;
-            else dailyExpense += t.amount;
+            else if (t.status === 'completed') dailyExpense += t.amount;
 
             if (isMobile) {
                  grouped.push(
@@ -194,7 +206,7 @@ export default function TransactionsPage() {
                         <TableCell>
                             <div className="font-medium flex items-center gap-2">
                                 {t.title} 
-                                {t.type === 'expense' && getStatusBadge(t.status)}
+                                {getStatusBadge(t.status)}
                             </div>
                             <div className="hidden text-sm text-muted-foreground md:inline">
                                 {t.vendor}
@@ -205,7 +217,10 @@ export default function TransactionsPage() {
                         <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
                         </TableCell>
                         <TableCell className={`text-right font-medium ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(t.amount)}
+                             {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
+                        </TableCell>
+                         <TableCell className="text-center">
+                            {isToday(t.createdAt) && <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>}
                         </TableCell>
                         <TableCell className="text-center">
                         {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
@@ -295,7 +310,8 @@ export default function TransactionsPage() {
                     <TableHead>User</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="w-12">Receipt</TableHead>
+                    <TableHead className="text-center">Date Added</TableHead>
+                    <TableHead className="text-center w-12">Receipt</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -306,6 +322,7 @@ export default function TransactionsPage() {
                         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                         <TableCell className="text-right"><Skeleton className="h-5 w-16 float-right" /></TableCell>
+                        <TableCell />
                         <TableCell />
                     </TableRow>
                     ))
@@ -332,3 +349,4 @@ export default function TransactionsPage() {
     </div>
   );
 }
+

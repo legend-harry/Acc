@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
@@ -34,13 +35,16 @@ export function OverviewChart({ transactions }: OverviewChartProps) {
         const monthlySpending: Record<string, number> = {};
         
         transactions.forEach(t => {
-            const month = t.date.toLocaleString('default', { month: 'short', year: '2-digit' });
+            const date = new Date(t.date);
+            const month = date.toLocaleString('default', { month: 'short', year: '2-digit' });
             monthlySpending[month] = (monthlySpending[month] || 0) + t.amount;
         });
         
         const sortedMonths = Object.keys(monthlySpending).sort((a, b) => {
-            const dateA = new Date(`1 ${a}`);
-            const dateB = new Date(`1 ${b}`);
+            const [monthA, yearA] = a.split(' ');
+            const [monthB, yearB] = b.split(' ');
+            const dateA = new Date(`1 ${monthA} 20${yearA}`);
+            const dateB = new Date(`1 ${monthB} 20${yearB}`);
             return dateA.getTime() - dateB.getTime();
         });
 

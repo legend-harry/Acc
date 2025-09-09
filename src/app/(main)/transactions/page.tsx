@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Receipt, User, ArrowUp, ArrowDown, AlertTriangle, Info, MoreVertical, Trash2, Edit } from 'lucide-react';
+import { ChevronRight, Receipt, User, ArrowUp, ArrowDown, AlertTriangle, Info, MoreVertical, Trash2, Edit, Calendar as CalendarIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
@@ -47,6 +47,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+
 
 const TRANSACTIONS_PER_PAGE = 20;
 
@@ -156,6 +161,7 @@ export default function TransactionsPage() {
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [sortBy, setSortBy] = useState("createdAt");
     const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
@@ -169,7 +175,15 @@ export default function TransactionsPage() {
                 t.title.toLowerCase().includes(searchTermLower) ||
                 t.vendor.toLowerCase().includes(searchTermLower) ||
                 (t.description && t.description.toLowerCase().includes(searchTermLower));
-            return matchesCategory && matchesSearch;
+            
+            const tDate = new Date(t.date);
+            const matchesDate = !selectedDate || (
+                tDate.getFullYear() === selectedDate.getFullYear() &&
+                tDate.getMonth() === selectedDate.getMonth() &&
+                tDate.getDate() === selectedDate.getDate()
+            );
+
+            return matchesCategory && matchesSearch && matchesDate;
         })
         .sort((a, b) => {
             if (sortBy === 'createdAt') {
@@ -177,7 +191,7 @@ export default function TransactionsPage() {
             }
             return new Date(b.date).getTime() - new Date(a.date).getTime();
         }),
-        [transactions, searchTerm, selectedCategory, sortBy]
+        [transactions, searchTerm, selectedCategory, sortBy, selectedDate]
     );
 
     const visibleTransactions = filteredTransactions.slice(0, visibleCount);
@@ -391,6 +405,29 @@ export default function TransactionsPage() {
                         <SelectItem value="date">Expense Date</SelectItem>
                     </SelectContent>
                 </Select>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                        variant={"outline"}
+                        className={cn(
+                            "w-[280px] justify-start text-left font-normal",
+                            !selectedDate && "text-muted-foreground"
+                        )}
+                        >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+                 {selectedDate && <Button variant="ghost" onClick={() => setSelectedDate(undefined)}>Reset</Button>}
             </div>
         </CardContent>
     </Card>

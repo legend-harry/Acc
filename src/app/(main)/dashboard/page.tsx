@@ -1,47 +1,18 @@
 
+"use client";
+
 import { PageHeader } from "@/components/page-header";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AIInsights } from "@/components/dashboard/ai-insights";
-import { db } from "@/lib/firebase";
-import { get, ref } from "firebase/database";
-import type { Transaction, BudgetSummary } from "@/types";
 import { DashboardClientContent } from "@/components/dashboard/dashboard-client-content";
+import { useTransactions, useBudgets } from "@/hooks/use-database";
 
-async function getTransactions(): Promise<Transaction[]> {
-  const transactionsRef = ref(db, 'transactions');
-  const snapshot = await get(transactionsRef);
-  const data = snapshot.val();
-  if (data) {
-    return Object.keys(data).map(key => ({
-      ...data[key],
-      id: key,
-      date: new Date(data[key].date),
-      // Set default values for older records
-      type: data[key].type || 'expense', 
-      status: data[key].status || 'completed'
-    }));
-  }
-  return [];
-}
+export default function DashboardPage() {
+  const { transactions, loading: transactionsLoading } = useTransactions();
+  const { budgets, loading: budgetsLoading } = useBudgets();
 
-async function getBudgets(): Promise<BudgetSummary[]> {
-    const budgetsRef = ref(db, 'budgets');
-    const snapshot = await get(budgetsRef);
-    const data = snapshot.val();
-    if (data) {
-        return Object.keys(data).map(key => ({
-            ...data[key],
-            id: key,
-        }));
-    }
-    return [];
-}
-
-
-export default async function DashboardPage() {
-  const transactions = await getTransactions();
-  const budgets = await getBudgets();
+  const loading = transactionsLoading || budgetsLoading;
 
   return (
     <div>
@@ -49,7 +20,7 @@ export default async function DashboardPage() {
         title="Dashboard"
         description="A summary of your financial activity."
       />
-      <Suspense fallback={
+      {loading ? (
          <div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Skeleton className="h-28 w-full" />
@@ -68,12 +39,15 @@ export default async function DashboardPage() {
               </div>
             </div>
           </div>
-      }>
-        <DashboardClientContent transactions={transactions} budgets={budgets} />
-      </Suspense>
-       <div className="mt-6">
-            <AIInsights transactions={transactions}/>
-       </div>
+      ) : (
+        <>
+            <DashboardClientContent transactions={transactions} budgets={budgets} />
+            <div className="mt-6">
+                <AIInsights transactions={transactions}/>
+            </div>
+        </>
+      )}
     </div>
   );
 }
+

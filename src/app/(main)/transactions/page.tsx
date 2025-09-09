@@ -166,11 +166,11 @@ export default function TransactionsPage() {
             );
             
             if (isMobile) {
-                return <div key={`sep-${date}`}>{separatorContent}</div>
+                return <div key={`sep-mobile-${date}`}>{separatorContent}</div>
             }
 
             return (
-                <TableRow key={`sep-${date}`} className="hover:bg-transparent">
+                <TableRow key={`sep-desktop-${date}`} className="hover:bg-transparent">
                     <TableCell colSpan={6} className="p-0">
                        {separatorContent}
                     </TableCell>
@@ -349,4 +349,3 @@ export default function TransactionsPage() {
     </div>
   );
 }
-

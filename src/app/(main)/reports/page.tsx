@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,36 +12,127 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Download, ChevronRight } from "lucide-react";
-import { formatCurrency } from "@/lib/data";
+import { Download, ChevronRight, FileSpreadsheet } from "lucide-react";
+import { formatCurrency, formatDate } from "@/lib/data";
 import Link from "next/link";
 import { useTransactions } from '@/hooks/use-database';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+function exportToCsv(filename: string, rows: any[][]) {
+    const processRow = (row: any[]) => {
+        let finalVal = '';
+        for (let j = 0; j < row.length; j++) {
+            let innerValue = row[j] === null || row[j] === undefined ? '' : row[j].toString();
+            if (row[j] instanceof Date) {
+                innerValue = row[j].toLocaleString();
+            }
+            let result = innerValue.replace(/"/g, '""');
+            if (result.search(/("|,|\n)/g) >= 0)
+                result = '"' + result + '"';
+            if (j > 0)
+                finalVal += ',';
+            finalVal += result;
+        }
+        return finalVal + '\n';
+    };
+
+    let csvFile = '';
+    for (let i = 0; i < rows.length; i++) {
+        csvFile += processRow(rows[i]);
+    }
+
+    const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
+function ExportButton({ transactions }: { transactions: any[] }) {
+    const handleExport = () => {
+        const headers = [
+            "ID", "Date", "Created At", "Title", "Description", "Category", "Amount", 
+            "Type", "Status", "Vendor", "Created By", "Invoice No", "GL Code", "Notes"
+        ];
+        const rows = transactions.map(t => [
+            t.id,
+            formatDate(t.date),
+            t.createdAt.toLocaleString(),
+            t.title,
+            t.description,
+            t.category,
+            t.amount,
+            t.type,
+            t.status,
+            t.vendor,
+            t.createdBy,
+            t.invoiceNo,
+            t.glCode,
+            t.notes
+        ]);
+        exportToCsv('transactions.csv', [headers, ...rows]);
+    };
+
+    return (
+        <Button onClick={handleExport} variant="outline">
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Export All
+        </Button>
+    );
+}
+
 
 export default function ReportsPage() {
   const { transactions, loading } = useTransactions();
+  
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState<string>((new Date().getMonth() + 1).toString());
 
-  const monthWiseSummary = useMemo(() => {
-    return transactions.reduce((acc, t) => {
-        const date = new Date(t.date);
-        const monthYear = date.toLocaleString("default", {
-            month: "long",
-            year: "numeric",
-        });
-        if (!acc[monthYear]) {
-            acc[monthYear] = { total: 0, count: 0, date: date };
-        }
-        acc[monthYear].total += t.amount;
-        acc[monthYear].count += 1;
-        return acc;
-    }, {} as Record<string, { total: number; count: number, date: Date }>);
+  const { availableYears, availableMonths } = useMemo(() => {
+    const years = [...new Set(transactions.map(t => new Date(t.date).getFullYear().toString()))];
+    const months = [...Array(12).keys()].map(m => (m + 1).toString());
+    return { availableYears: years, availableMonths: months };
   }, [transactions]);
 
+  const monthWiseSummary = useMemo(() => {
+    return transactions
+        .filter(t => {
+            const date = new Date(t.date);
+            return date.getFullYear().toString() === selectedYear;
+        })
+        .reduce((acc, t) => {
+            const date = new Date(t.date);
+            const monthYear = date.toLocaleString("default", {
+                month: "long",
+                year: "numeric",
+            });
+            if (!acc[monthYear]) {
+                acc[monthYear] = { total: 0, count: 0, date: date };
+            }
+            acc[monthYear].total += t.amount;
+            acc[monthYear].count += 1;
+            return acc;
+        }, {} as Record<string, { total: number; count: number, date: Date }>);
+  }, [transactions, selectedYear]);
+
   const sortedMonths = useMemo(() => {
-      return Object.entries(monthWiseSummary).sort(([, a], [, b]) => {
-          return b.date.getTime() - a.date.getTime();
-      });
+      return Object.entries(monthWiseSummary)
+        .sort(([, a], [, b]) => b.date.getTime() - a.date.getTime())
+        .slice(0, 3);
   }, [monthWiseSummary]);
+
+   useEffect(() => {
+        if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
+            setSelectedYear(availableYears[0]);
+        }
+    }, [availableYears, selectedYear]);
 
   if (loading) {
       return (
@@ -85,6 +176,19 @@ export default function ReportsPage() {
                   A breakdown of your spending by month. Select a month to view details.
                 </CardDescription>
               </div>
+              <div className="flex gap-2">
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {availableYears.map(year => (
+                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                 <ExportButton transactions={transactions} />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -103,6 +207,11 @@ export default function ReportsPage() {
                         </div>
                     </Link>
                 )})}
+                 {sortedMonths.length === 0 && (
+                    <div className="text-center py-10 text-muted-foreground">
+                        No transactions found for the selected year.
+                    </div>
+                )}
             </div>
           </CardContent>
         </Card>

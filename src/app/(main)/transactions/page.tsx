@@ -165,17 +165,20 @@ export default function TransactionsPage() {
                 .filter(t => t.type === 'expense' && t.status === 'completed')
                 .reduce((sum, t) => sum + t.amount, 0);
 
+            const dailyNet = dailyIncome - dailyExpense;
+
             const separatorContent = (
-                <div className="flex items-center gap-4 py-3 my-2 bg-muted/80 rounded-md px-4 w-full">
+                <div className="flex justify-between items-center gap-4 py-3 my-2 bg-muted/80 rounded-md px-4 w-full">
                     <span className="text-sm font-bold text-foreground">{date}</span>
-                    <Separator className="flex-1 bg-border" orientation="vertical" />
-                    <div className="flex gap-4 text-sm">
-                        {dailyIncome > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/> Received: {formatCurrency(dailyIncome)}</span>}
-                        {dailyExpense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/> Spent: {formatCurrency(dailyExpense)}</span>}
+                    <div className="flex items-center gap-4 text-sm">
+                        {dailyIncome > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/>{formatCurrency(dailyIncome)}</span>}
+                        {dailyExpense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/>{formatCurrency(dailyExpense)}</span>}
+                        {(dailyIncome > 0 || dailyExpense > 0) && <Separator orientation="vertical" className="h-5 bg-border" />}
+                        <span className={`font-bold ${dailyNet >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(dailyNet)}</span>
                     </div>
                 </div>
             );
-
+            
             const separator = isMobile ? (
                 <div key={`sep-mobile-${date}`}>{separatorContent}</div>
             ) : (

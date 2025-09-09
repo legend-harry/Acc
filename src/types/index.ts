@@ -1,8 +1,8 @@
 
 export type Transaction = {
   id: string;
-  date: string; // Store as ISO string for Firebase compatibility
-  createdAt: string; // Store as ISO string for Firebase compatibility
+  date: Date;
+  createdAt: Date;
   invoiceNo: string;
   glCode: string;
   title:string;

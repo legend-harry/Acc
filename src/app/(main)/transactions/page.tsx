@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Filter, Receipt, User } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
 import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
@@ -72,6 +72,13 @@ const ReceiptPreviewDialog = ({ transaction }: { transaction: Transaction }) => 
   );
 };
 
+const isToday = (someDate: Date | string) => {
+    const today = new Date();
+    const date = typeof someDate === 'string' ? new Date(someDate) : someDate;
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+};
 
 export default function TransactionsPage() {
     const { transactions, loading } = useTransactions();
@@ -93,7 +100,7 @@ export default function TransactionsPage() {
                 (t.description && t.description.toLowerCase().includes(searchTermLower));
             return matchesCategory && matchesSearch;
         })
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
         [transactions, searchTerm, selectedCategory]
     );
 
@@ -109,7 +116,12 @@ export default function TransactionsPage() {
                 <div className="font-medium">{t.title}</div>
                 <div className="text-sm text-muted-foreground">{t.vendor}</div>
                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                    <span>{formatDate(t.date)}</span>
+                    <div className="flex items-center gap-2">
+                        <span>{formatDate(t.date)}</span>
+                        {isToday(t.createdAt) && (
+                            <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>
+                        )}
+                    </div>
                     <span className='flex items-center gap-1'><User className='h-3 w-3' />{t.createdBy}</span>
                 </div>
             </div>
@@ -208,7 +220,14 @@ export default function TransactionsPage() {
                 ) : (
                     visibleTransactions.map((t) => (
                     <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
-                        <TableCell>{formatDate(t.date)}</TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-2">
+                                <span>{formatDate(t.date)}</span>
+                                {isToday(t.createdAt) && (
+                                    <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>
+                                )}
+                            </div>
+                        </TableCell>
                         <TableCell>
                         <div className="font-medium">{t.title}</div>
                         <div className="hidden text-sm text-muted-foreground md:inline">

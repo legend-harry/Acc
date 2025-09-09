@@ -20,6 +20,7 @@ export function useTransactions() {
           ...data[key],
           id: key,
           date: new Date(data[key].date), // Ensure date is a Date object
+          createdAt: new Date(data[key].createdAt), // Ensure createdAt is a Date object
         }));
         setTransactions(transactionsList);
       } else {

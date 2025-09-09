@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Receipt, User, ArrowUp, ArrowDown } from 'lucide-react';
+import { ChevronRight, Receipt, User, ArrowUp, ArrowDown, AlertTriangle, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
@@ -158,23 +158,40 @@ export default function TransactionsPage() {
         }, {} as Record<string, Transaction[]>);
 
         return Object.entries(groupedByDate).flatMap(([date, dailyTransactions]) => {
-            const dailyIncome = dailyTransactions
-                .filter(t => t.type === 'income')
+            
+            const completedIncome = dailyTransactions
+                .filter(t => t.type === 'income' && t.status === 'completed')
                 .reduce((sum, t) => sum + t.amount, 0);
-            const dailyExpense = dailyTransactions
-                .filter(t => t.type === 'expense')
+            const completedExpense = dailyTransactions
+                .filter(t => t.type === 'expense' && t.status === 'completed')
+                .reduce((sum, t) => sum + t.amount, 0);
+            const completedNet = completedIncome - completedExpense;
+
+            const creditTotal = dailyTransactions
+                .filter(t => t.status === 'credit')
                 .reduce((sum, t) => sum + t.amount, 0);
 
-            const dailyNet = dailyIncome - dailyExpense;
+            const expectedTotal = dailyTransactions
+                .filter(t => t.status === 'expected')
+                .reduce((sum, t) => sum + t.amount, 0);
 
             const separatorContent = (
                 <div className="flex justify-between items-center gap-4 py-3 my-2 bg-muted/80 rounded-md px-4 w-full">
                     <span className="text-sm font-bold text-foreground">{date}</span>
                     <div className="flex items-center gap-4 text-sm">
-                        {dailyIncome > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/>{formatCurrency(dailyIncome)}</span>}
-                        {dailyExpense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/>{formatCurrency(dailyExpense)}</span>}
-                        {(dailyIncome > 0 || dailyExpense > 0) && <Separator orientation="vertical" className="h-5 bg-border" />}
-                        <span className={`font-bold ${dailyNet >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(dailyNet)}</span>
+                        {completedIncome > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/>{formatCurrency(completedIncome)}</span>}
+                        {completedExpense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/>{formatCurrency(completedExpense)}</span>}
+                        
+                        {(completedIncome > 0 || completedExpense > 0) && <Separator orientation="vertical" className="h-5 bg-border" />}
+                        
+                        <span className={`font-bold ${completedNet >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(completedNet)}</span>
+
+                        {(creditTotal > 0 || expectedTotal > 0) && (
+                            <div className="flex items-center gap-2 pl-2 border-l">
+                                {creditTotal > 0 && <span className="flex items-center text-xs font-medium text-red-600"><AlertTriangle className="h-3 w-3 mr-1" />({formatCurrency(creditTotal)})</span>}
+                                {expectedTotal > 0 && <span className="flex items-center text-xs font-medium text-blue-600"><Info className="h-3 w-3 mr-1" />({formatCurrency(expectedTotal)})</span>}
+                            </div>
+                        )}
                     </div>
                 </div>
             );

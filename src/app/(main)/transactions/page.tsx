@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Filter, Receipt, User } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Transaction } from '@/types';
 import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
@@ -45,6 +45,9 @@ const ReceiptPreviewDialog = ({ transaction }: { transaction: Transaction }) => 
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Receipt for {transaction.title}</DialogTitle>
+           <DialogDescription>
+            Viewing the receipt image for the transaction: {transaction.title} dated {formatDate(transaction.date)}.
+          </DialogDescription>
         </DialogHeader>
         <div className="mt-4 overflow-auto">
           <div className="w-full min-w-[600px] relative group">

@@ -175,7 +175,7 @@ const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
 
       if (isNegative) {
         return (
-          <span className="bg-gray-400/30 px-2 py-1 rounded-md text-red-300 font-bold text-lg">
+          <span className="bg-white/30 px-2 py-1 rounded-md text-red-300 font-bold text-lg">
             {formattedSum}
           </span>
         )

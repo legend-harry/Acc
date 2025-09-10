@@ -393,16 +393,17 @@ function TransactionsPageContent() {
       />
 
     <Card className="mb-6">
-        <CardContent className="p-4 flex flex-col md:flex-row gap-4">
-            <Input 
-                placeholder="Search by title, vendor, description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-            />
-            <div className='flex gap-4'>
+        <CardContent className="p-4">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+                <div className="md:col-span-2 lg:col-span-1 xl:col-span-1">
+                    <Input 
+                        placeholder="Search by title, vendor..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
                 <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger className="w-full md:w-[180px]">
+                    <SelectTrigger>
                         <SelectValue placeholder="Filter by type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -414,7 +415,7 @@ function TransactionsPageContent() {
                     </SelectContent>
                 </Select>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-full md:w-[200px]">
+                    <SelectTrigger>
                         <SelectValue placeholder="Filter by category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -425,7 +426,7 @@ function TransactionsPageContent() {
                     </SelectContent>
                 </Select>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full md:w-[180px]">
+                    <SelectTrigger>
                         <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
@@ -433,12 +434,12 @@ function TransactionsPageContent() {
                         <SelectItem value="date">Expense Date</SelectItem>
                     </SelectContent>
                 </Select>
-                <Popover>
+                 <Popover>
                     <PopoverTrigger asChild>
                         <Button
                         variant={"outline"}
                         className={cn(
-                            "w-[280px] justify-start text-left font-normal",
+                            "w-full justify-start text-left font-normal",
                             !selectedDate && "text-muted-foreground"
                         )}
                         >

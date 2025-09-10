@@ -28,7 +28,7 @@ import { useCategories } from "@/hooks/use-database";
 import { db } from "@/lib/firebase";
 import { ref, push, set } from "firebase/database";
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
-import { ScrollArea } from "./ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUser } from "@/context/user-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
@@ -347,5 +347,3 @@ export function AddExpenseDialog({
     </Dialog>
   );
 }
-
-    

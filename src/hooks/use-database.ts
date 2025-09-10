@@ -73,7 +73,7 @@ export function useCategories() {
 
     useEffect(() => {
         if (!loading) {
-            const uniqueCategories = [...new Set(budgets.map(b => b.category))];
+            const uniqueCategories = [...new Set(budgets.map(b => b.category))].sort();
             setCategories(uniqueCategories);
         }
     }, [budgets, loading]);

@@ -16,7 +16,7 @@ import { useUser } from "@/context/user-context";
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
-  { href: "/budgets", icon: Target, label: "Budgets" },
+  { href: "/planner", icon: Target, label: "Planner" },
   { href: "/reports", icon: PieChart, label: "Reports" },
 ];
 
@@ -86,9 +86,9 @@ export function Header() {
                 </Button>
                 </SheetTrigger>
                 <SheetContent side="left">
-                    <SheetHeader className="sr-only">
-                        <SheetTitle>Navigation Menu</SheetTitle>
-                        <SheetDescription>Main navigation links for the application.</SheetDescription>
+                    <SheetHeader>
+                        <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                        <SheetDescription className="sr-only">Main navigation links for the application.</SheetDescription>
                     </SheetHeader>
                     <nav className="grid gap-2 text-lg font-medium mt-8">
                         <div className="flex items-center gap-2 font-bold mb-4 px-2.5">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from "react";
@@ -19,7 +20,7 @@ import { formatCurrency } from "@/lib/data";
 
 const chartConfig = {
   budget: {
-    label: "Budget",
+    label: "Planned",
     color: "hsl(var(--chart-2))",
   },
   actual: {
@@ -55,9 +56,9 @@ export function BudgetComparisonChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Budget vs. Actual Spending</CardTitle>
+        <CardTitle>Planned vs. Actual Spending</CardTitle>
         <CardDescription>
-          Comparison of your budgeted and actual expenses.
+          Comparison of your planned and actual expenses.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -93,7 +94,7 @@ export function BudgetComparisonChart({
               dataKey="budget"
               fill="var(--color-budget)"
               radius={5}
-              name="Budget"
+              name="Planned"
             />
             <Bar
               dataKey="actual"

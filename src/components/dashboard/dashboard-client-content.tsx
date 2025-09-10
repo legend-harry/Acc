@@ -151,10 +151,10 @@ export function DashboardClientContent({ transactions, budgets }: { transactions
          </Card>
       )}
 
-
-       <div className="mt-6">
+      <div className="mt-6">
         <BudgetComparisonChart budgets={budgets} transactions={completedTransactions} />
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2">
             <OverviewChart transactions={completedTransactions} />

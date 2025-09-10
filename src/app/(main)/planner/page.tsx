@@ -15,11 +15,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useBudgets, useCategories } from "@/hooks/use-database";
+import { useBudgets } from "@/hooks/use-database";
 import { db } from "@/lib/firebase";
-import { ref, set, update, push } from "firebase/database";
+import { ref, set, update, push, remove } from "firebase/database";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,51 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import type { BudgetSummary } from "@/types";
+
+function DeleteCategoryDialog({
+  category,
+  onConfirm,
+  isOpen,
+  onOpenChange,
+}: {
+  category: BudgetSummary;
+  onConfirm: () => void;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}) {
+  return (
+    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the 
+            <span className="font-bold"> "{category.category}"</span> category and its budget. 
+            Existing transactions will not be affected.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>
+            Yes, delete it
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
 
 function AddCategoryDialog({ onSave }: { onSave: () => void }) {
   const [open, setOpen] = useState(false);
@@ -134,10 +179,11 @@ function AddCategoryDialog({ onSave }: { onSave: () => void }) {
 
 export default function PlannerPage() {
   const { budgets, loading: budgetsLoading } = useBudgets();
-  const { categories, loading: categoriesLoading } = useCategories();
   const [localBudgets, setLocalBudgets] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [deletingCategory, setDeletingCategory] = useState<BudgetSummary | null>(null);
+
 
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -162,14 +208,22 @@ export default function PlannerPage() {
   const handleSave = async () => {
     setIsLoading(true);
     
-    // Find which budget item in the original budgets array corresponds to the updated local budget
     const updates: Record<string, any> = {};
     Object.keys(localBudgets).forEach(category => {
         const budgetItem = budgets.find(b => b.category === category);
-        if (budgetItem && budgetItem.id) {
+        if (budgetItem && budgetItem.id && budgetItem.budget !== localBudgets[category]) {
             updates[`/budgets/${budgetItem.id}/budget`] = localBudgets[category];
         }
     });
+
+    if (Object.keys(updates).length === 0) {
+        toast({
+            title: "No Changes",
+            description: "There were no changes to save.",
+        });
+        setIsLoading(false);
+        return;
+    }
 
     try {
         await update(ref(db), updates);
@@ -188,8 +242,28 @@ export default function PlannerPage() {
         setIsLoading(false);
     }
   };
+
+  const handleDeleteCategory = async () => {
+    if (!deletingCategory) return;
+    try {
+        await remove(ref(db, `budgets/${deletingCategory.id}`));
+        toast({
+            title: "Category Deleted",
+            description: `The "${deletingCategory.category}" category has been deleted.`,
+        });
+        setDeletingCategory(null);
+        setRefreshKey(k => k + 1); // Force a refresh
+    } catch (error) {
+        console.error("Failed to delete category:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not delete the category.",
+        });
+    }
+  }
   
-  if (budgetsLoading || categoriesLoading) {
+  if (budgetsLoading) {
       return (
           <div>
               <PageHeader
@@ -237,23 +311,26 @@ export default function PlannerPage() {
           </div>
         </CardHeader>
         <CardContent className="grid gap-6">
-          {categories.map((category) => (
-            <div key={category} className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor={`budget-${category}`}>{category}</Label>
-              <div className="col-span-2 flex items-center gap-2">
+          {budgets.map((budget) => (
+            <div key={budget.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-4">
+              <Label htmlFor={`budget-${budget.category}`}>{budget.category}</Label>
+              <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">₹</span>
                 <Input
-                  id={`budget-${category}`}
+                  id={`budget-${budget.category}`}
                   type="number"
                   placeholder="e.g., 500"
-                  value={localBudgets[category] || ""}
-                  onChange={(e) => handleBudgetChange(category, e.target.value)}
+                  value={localBudgets[budget.category] || ""}
+                  onChange={(e) => handleBudgetChange(budget.category, e.target.value)}
                   className="w-full"
                 />
               </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setDeletingCategory(budget)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           ))}
-           {categories.length === 0 && (
+           {budgets.length === 0 && (
               <p className="text-muted-foreground text-center col-span-3">No categories found. Add one to get started.</p>
            )}
         </CardContent>
@@ -263,6 +340,16 @@ export default function PlannerPage() {
           </Button>
         </CardFooter>
       </Card>
+      {deletingCategory && (
+        <DeleteCategoryDialog 
+            category={deletingCategory}
+            isOpen={!!deletingCategory}
+            onOpenChange={(isOpen) => {
+                if (!isOpen) setDeletingCategory(null);
+            }}
+            onConfirm={handleDeleteCategory}
+        />
+      )}
     </div>
   );
 }

@@ -27,6 +27,9 @@ export function useTransactions() {
         setTransactions([]);
       }
       setLoading(false);
+    }, (error) => {
+        console.error("Firebase read failed: " + error.name);
+        setLoading(false);
     });
 
     return () => {
@@ -52,10 +55,13 @@ export function useBudgets() {
                     ...data[key],
                     id: key
                 }));
-                setBudgets(budgetList);
+                setBudgets(budgetList.sort((a, b) => a.category.localeCompare(b.category)));
             } else {
                 setBudgets([]);
             }
+            setLoading(false);
+        }, (error) => {
+            console.error("Firebase read failed: " + error.name);
             setLoading(false);
         });
 
@@ -69,14 +75,9 @@ export function useBudgets() {
 
 export function useCategories() {
     const { budgets, loading } = useBudgets();
-    const [categories, setCategories] = useState<string[]>([]);
-
-    useEffect(() => {
-        if (!loading) {
-            const uniqueCategories = [...new Set(budgets.map(b => b.category))].sort();
-            setCategories(uniqueCategories);
-        }
-    }, [budgets, loading]);
+    
+    // We derive categories directly from budgets. No need for separate state.
+    const categories = loading ? [] : [...new Set(budgets.map(b => b.category))].sort();
 
     return { categories, loading };
 }

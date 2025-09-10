@@ -153,6 +153,8 @@ const getStatusBadge = (status: 'completed' | 'credit' | 'expected') => {
 }
 
 const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     const netSum = useMemo(() => {
         return transactions.reduce((sum, t) => {
             if (t.type === 'income') {
@@ -169,15 +171,28 @@ const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
 
     return (
         <div className="fixed bottom-6 right-6 z-50">
-            <div className="bg-primary text-primary-foreground rounded-full h-20 w-20 flex items-center justify-center flex-col shadow-lg text-center leading-tight">
-                <span className="text-xs">Net Sum</span>
-                <span className={cn("font-bold text-lg", netSum < 0 && "text-red-300")}>
-                    {formatCurrency(netSum)}
-                </span>
+            <div 
+                className={cn(
+                    "bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all duration-300 ease-in-out",
+                    isExpanded ? "h-16 w-auto px-6" : "h-16 w-16"
+                )}
+                onClick={() => setIsExpanded(!isExpanded)}
+            >
+                {isExpanded ? (
+                     <div className="flex flex-col text-center leading-tight">
+                        <span className="text-xs">Net Sum</span>
+                        <span className={cn("font-bold text-lg", netSum < 0 && "text-red-300")}>
+                            {formatCurrency(netSum)}
+                        </span>
+                    </div>
+                ) : (
+                    <span className="font-semibold">Total</span>
+                )}
             </div>
         </div>
     );
 };
+
 
 function TransactionsPageContent() {
     const { transactions, loading } = useTransactions();
@@ -592,3 +607,5 @@ export default function TransactionsPage() {
         </React.Suspense>
     )
 }
+
+    

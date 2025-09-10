@@ -42,7 +42,7 @@ const renderActiveShape = (props: any) => {
   
     return (
       <g>
-        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="text-lg font-bold">
+        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="text-xl font-bold">
           {payload.name}
         </text>
         <Sector
@@ -65,8 +65,8 @@ const renderActiveShape = (props: any) => {
         />
         <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
         <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="font-medium" style={{ filter: 'drop-shadow(0 0 2px hsl(var(--background)))' }}>{formatCurrency(value)}</text>
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" style={{ filter: 'drop-shadow(0 0 2px hsl(var(--background)))' }}>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-base font-medium" style={{ filter: 'drop-shadow(0 0 2px hsl(var(--background)))' }}>{formatCurrency(value)}</text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={20} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-sm" style={{ filter: 'drop-shadow(0 0 2px hsl(var(--background)))' }}>
           {`(Rate: ${(percent * 100).toFixed(2)}%)`}
         </text>
       </g>

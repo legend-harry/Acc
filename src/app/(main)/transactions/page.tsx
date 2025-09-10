@@ -159,7 +159,7 @@ export default function TransactionsPage() {
     
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
-    const [selectedType, setSelectedType] = useState("all");
+    const [selectedStatus, setSelectedStatus] = useState("all");
     const [sortBy, setSortBy] = useState("createdAt");
     const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -172,7 +172,12 @@ export default function TransactionsPage() {
         .filter(t => {
             const searchTermLower = searchTerm.toLowerCase();
             const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
-            const matchesType = selectedType === 'all' || t.type === selectedType;
+            const matchesStatus = selectedStatus === 'all' || 
+                                  (selectedStatus === 'expense' && t.type === 'expense') ||
+                                  (selectedStatus === 'income' && t.type === 'income') ||
+                                  (selectedStatus === 'credit' && t.status === 'credit') ||
+                                  (selectedStatus === 'expected' && t.status === 'expected');
+
             const matchesSearch = searchTerm.trim() === '' ||
                 t.title.toLowerCase().includes(searchTermLower) ||
                 t.vendor.toLowerCase().includes(searchTermLower) ||
@@ -185,7 +190,7 @@ export default function TransactionsPage() {
                 tDate.getDate() === selectedDate.getDate()
             );
 
-            return matchesCategory && matchesSearch && matchesDate && matchesType;
+            return matchesCategory && matchesSearch && matchesDate && matchesStatus;
         })
         .sort((a, b) => {
             if (sortBy === 'createdAt') {
@@ -193,7 +198,7 @@ export default function TransactionsPage() {
             }
             return new Date(b.date).getTime() - new Date(a.date).getTime();
         }),
-        [transactions, searchTerm, selectedCategory, sortBy, selectedDate, selectedType]
+        [transactions, searchTerm, selectedCategory, sortBy, selectedDate, selectedStatus]
     );
 
     const visibleTransactions = filteredTransactions.slice(0, visibleCount);
@@ -387,7 +392,7 @@ export default function TransactionsPage() {
                 className="max-w-sm"
             />
             <div className='flex gap-4'>
-                <Select value={selectedType} onValueChange={setSelectedType}>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                     <SelectTrigger className="w-full md:w-[180px]">
                         <SelectValue placeholder="Filter by type" />
                     </SelectTrigger>
@@ -395,6 +400,8 @@ export default function TransactionsPage() {
                         <SelectItem value="all">All Types</SelectItem>
                         <SelectItem value="expense">Expense</SelectItem>
                         <SelectItem value="income">Income</SelectItem>
+                        <SelectItem value="credit">Credit</SelectItem>
+                        <SelectItem value="expected">Expected</SelectItem>
                     </SelectContent>
                 </Select>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -538,5 +545,3 @@ export default function TransactionsPage() {
     </div>
   );
 }
-
-    

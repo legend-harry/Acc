@@ -18,15 +18,17 @@ const profiles = ["Ammu", "Vijay", "Divyesh", "Anvika", "Guest"];
 export function ProfileSelectorDialog({
   isOpen,
   onOpenChange,
+  onProfileSelect,
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onProfileSelect: () => void;
 }) {
   const { user, setUser } = useUser();
 
   const handleSelect = (profile: string) => {
     setUser(profile);
-    onOpenChange(false);
+    onProfileSelect();
   };
 
   return (

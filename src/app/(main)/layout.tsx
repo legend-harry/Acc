@@ -11,28 +11,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // This logic could be expanded to check for time elapsed
-        // but for now, we'll show it on every visibility change
-        // if the user was previously hidden.
-        setShowProfileDialog(true);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Initial check in case the app loads into a visible state
-    // from a background tab.
-    if (document.visibilityState === 'visible') {
-        setShowProfileDialog(true);
+    // Check if a profile has already been selected in this session
+    const profileSelected = sessionStorage.getItem('profileSelected');
+    if (!profileSelected) {
+      setShowProfileDialog(true);
     }
-
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
   }, []);
+
+  const handleProfileSelect = () => {
+    sessionStorage.setItem('profileSelected', 'true');
+    setShowProfileDialog(false);
+  };
 
   return (
     <UserProvider>
@@ -42,7 +31,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 {children}
             </main>
         </div>
-        <ProfileSelectorDialog isOpen={showProfileDialog} onOpenChange={setShowProfileDialog} />
+        <ProfileSelectorDialog 
+            isOpen={showProfileDialog} 
+            onOpenChange={(isOpen) => {
+                 if (!isOpen) {
+                    // If the user closes the dialog without selecting,
+                    // we still mark it as handled for the session.
+                    handleProfileSelect();
+                } else {
+                    setShowProfileDialog(true);
+                }
+            }}
+            onProfileSelect={handleProfileSelect}
+        />
     </UserProvider>
   );
 }

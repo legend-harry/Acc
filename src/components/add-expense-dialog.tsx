@@ -136,7 +136,7 @@ export function AddExpenseDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <ScrollArea className="max-h-[70vh] p-1">
+          <ScrollArea className="h-96 w-full p-1">
             <div className="grid gap-4 py-4 pr-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">Type</Label>

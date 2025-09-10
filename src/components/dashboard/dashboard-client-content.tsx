@@ -6,84 +6,147 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription
+  CardDescription,
 } from "@/components/ui/card";
-import { DollarSign, Activity, CreditCard, AlertTriangle, Info } from "lucide-react";
+import {
+  DollarSign,
+  Activity,
+  CreditCard,
+  AlertTriangle,
+  Info,
+} from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { CategoryPieChart } from "@/components/dashboard/category-pie-chart";
 import { BudgetComparisonChart } from "@/components/dashboard/budget-comparison-chart";
 import type { Transaction, BudgetSummary } from "@/types";
+import { useMemo } from "react";
 
-export function DashboardClientContent({ transactions, budgets }: { transactions: Transaction[], budgets: BudgetSummary[] }) {
+type TransactionStatus = "completed" | "credit" | "expected";
 
-  const completedTransactions = transactions.filter(t => t.status === 'completed');
-  const creditTransactions = transactions.filter(t => t.status === 'credit');
-  const expectedTransactions = transactions.filter(t => t.status === 'expected');
+export function DashboardClientContent({
+  transactions,
+  budgets,
+}: {
+  transactions: Transaction[];
+  budgets: BudgetSummary[];
+}) {
+  // ✅ Pre-compute values efficiently with useMemo
+  const {
+    completedTransactions,
+    creditTransactions,
+    expectedTransactions,
+    totalSpending,
+    totalCredit,
+    totalExpected,
+    transactionCount,
+    mostRecentTransaction,
+  } = useMemo(() => {
+    const completed = transactions.filter((t) => t.status === "completed");
+    const credit = transactions.filter((t) => t.status === "credit");
+    const expected = transactions.filter((t) => t.status === "expected");
 
-  const totalSpending = transactions.filter(t => t.type === 'expense' && (t.status === 'completed' || t.status === 'credit')).reduce((sum, t) => sum + t.amount, 0);
-  const totalCredit = creditTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const totalExpected = expectedTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const transactionCount = completedTransactions.length;
+    const spending = transactions
+      .filter(
+        (t) =>
+          t.type === "expense" &&
+          (t.status === "completed" || t.status === "credit")
+      )
+      .reduce((sum, t) => sum + t.amount, 0);
 
-  const mostRecentTransaction = completedTransactions.length > 0 ? completedTransactions.reduce((latest, current) => {
-    return new Date(latest.date) > new Date(current.date) ? latest : current;
-  }) : null;
+    const creditSum = credit.reduce((sum, t) => sum + t.amount, 0);
+    const expectedSum = expected.reduce((sum, t) => sum + t.amount, 0);
+
+    const mostRecent =
+      completed.length > 0
+        ? completed.reduce((latest, current) =>
+            new Date(latest.date) > new Date(current.date) ? latest : current
+          )
+        : null;
+
+    return {
+      completedTransactions: completed,
+      creditTransactions: credit,
+      expectedTransactions: expected,
+      totalSpending: spending,
+      totalCredit: creditSum,
+      totalExpected: expectedSum,
+      transactionCount: completed.length,
+      mostRecentTransaction: mostRecent,
+    };
+  }, [transactions]);
 
   return (
     <>
+      {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {/* Total Spending */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Spending</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalSpending)}</div>
+            <div className="text-2xl font-bold">
+              {formatCurrency(totalSpending)}
+            </div>
             <p className="text-xs text-muted-foreground">
               Includes completed and credit transactions
             </p>
           </CardContent>
         </Card>
+
+        {/* Credit Due */}
         <Card className="bg-red-500/10 border-red-500/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-red-700">
               Credit Due
             </CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-700">{formatCurrency(totalCredit)}</div>
-             <p className="text-xs text-red-700/80">
+            <div className="text-2xl font-bold text-red-700">
+              {formatCurrency(totalCredit)}
+            </div>
+            <p className="text-xs text-red-700/80">
               Across {creditTransactions.length} transactions
             </p>
           </CardContent>
         </Card>
-         <Card className="bg-blue-500/10 border-blue-500/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+
+        {/* Expected Transactions */}
+        <Card className="bg-blue-500/10 border-blue-500/20">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-blue-700">
               Expected
             </CardTitle>
             <Info className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-700">{formatCurrency(totalExpected)}</div>
-             <p className="text-xs text-blue-700/80">
+            <div className="text-2xl font-bold text-blue-700">
+              {formatCurrency(totalExpected)}
+            </div>
+            <p className="text-xs text-blue-700/80">
               Across {expectedTransactions.length} transactions
             </p>
           </CardContent>
         </Card>
+
+        {/* Last Expense */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Last Expense</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {mostRecentTransaction ? (
               <>
-                <div className="text-2xl font-bold">{formatCurrency(mostRecentTransaction.amount)}</div>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(mostRecentTransaction.amount)}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  On {formatDate(mostRecentTransaction.date)} for {mostRecentTransaction.category}
+                  On {formatDate(mostRecentTransaction.date)} for{" "}
+                  {mostRecentTransaction.category ?? "Uncategorized"}
                 </p>
               </>
             ) : (
@@ -91,11 +154,11 @@ export function DashboardClientContent({ transactions, budgets }: { transactions
             )}
           </CardContent>
         </Card>
-         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Completed Txns
-            </CardTitle>
+
+        {/* Completed Transactions Count */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Completed Txns</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -107,60 +170,98 @@ export function DashboardClientContent({ transactions, budgets }: { transactions
         </Card>
       </div>
 
+      {/* Credit Reminders */}
       {creditTransactions.length > 0 && (
-         <Card className="mt-6 border-red-500/50 bg-red-500/5">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-600">
-                    <AlertTriangle className="h-5 w-5" />
-                    Credit Reminders
-                </CardTitle>
-                <CardDescription className="text-red-600/80">You have outstanding credit payments.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ul className="space-y-2 text-sm">
-                    {creditTransactions.map(t => (
-                        <li key={t.id} className="flex justify-between items-center">
-                            <span>{t.title} ({t.vendor})</span>
-                            <span className="font-bold">{formatCurrency(t.amount)}</span>
-                        </li>
-                    ))}
-                </ul>
-            </CardContent>
-         </Card>
+        <Card className="mt-6 border-red-500/50 bg-red-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Credit Reminders
+            </CardTitle>
+            <CardDescription className="text-red-600/80">
+              You have outstanding credit payments.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              {creditTransactions
+                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // sort by date
+                .map((t) => (
+                  <li
+                    key={t.id}
+                    className="flex justify-between items-center"
+                  >
+                    <span>
+                      {t.title} ({t.vendor})
+                    </span>
+                    <span className="font-bold">{formatCurrency(t.amount)}</span>
+                  </li>
+                ))}
+            </ul>
+          </CardContent>
+        </Card>
       )}
 
-       {expectedTransactions.length > 0 && (
-         <Card className="mt-6 border-blue-500/50 bg-blue-500/5">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-blue-600">
-                    <Info className="h-5 w-5" />
-                    Expected Transactions
-                </Title>
-                <CardDescription className="text-blue-600/80">These are upcoming or planned transactions.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ul className="space-y-2 text-sm">
-                    {expectedTransactions.map(t => (
-                        <li key={t.id} className="flex justify-between items-center">
-                            <span>{t.title} (due {formatDate(t.date)})</span>
-                            <span className="font-bold">{formatCurrency(t.amount)}</span>
-                        </li>
-                    ))}
-                </ul>
-            </CardContent>
-         </Card>
+      {/* Expected Transactions */}
+      {expectedTransactions.length > 0 && (
+        <Card className="mt-6 border-blue-500/50 bg-blue-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-600">
+              <Info className="h-5 w-5" />
+              Expected Transactions
+            </CardTitle>
+            <CardDescription className="text-blue-600/80">
+              These are upcoming or planned transactions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              {expectedTransactions.map((t) => (
+                <li key={t.id} className="flex justify-between items-center">
+                  <span>
+                    {t.title} (due {formatDate(t.date)})
+                  </span>
+                  <span className="font-bold">{formatCurrency(t.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       )}
 
+      {/* Budget Comparison Chart */}
       <div className="mt-6">
-        <BudgetComparisonChart budgets={budgets} transactions={completedTransactions} />
+        {budgets.length > 0 ? (
+          <BudgetComparisonChart
+            budgets={budgets}
+            transactions={completedTransactions}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground text-center">
+            No budget data available.
+          </p>
+        )}
       </div>
 
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2">
+          {completedTransactions.length > 0 ? (
             <OverviewChart transactions={completedTransactions} />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center">
+              No transaction history yet.
+            </p>
+          )}
         </div>
         <div className="space-y-6">
+          {completedTransactions.length > 0 ? (
             <CategoryPieChart transactions={completedTransactions} />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center">
+              No category data available.
+            </p>
+          )}
         </div>
       </div>
     </>

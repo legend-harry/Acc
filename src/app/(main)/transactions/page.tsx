@@ -2,7 +2,8 @@
 "use client";
 
 import * as React from 'react';
-import { useState, useMemo, ReactNode } from 'react';
+import { useState, useMemo, useEffect, ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
 import {
   Card,
@@ -151,12 +152,13 @@ const getStatusBadge = (status: 'completed' | 'credit' | 'expected') => {
     }
 }
 
-export default function TransactionsPage() {
+function TransactionsPageContent() {
     const { transactions, loading } = useTransactions();
     const { categories } = useCategories();
     const isMobile = useIsMobile();
     const { toast } = useToast();
-    
+    const searchParams = useSearchParams();
+
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [selectedStatus, setSelectedStatus] = useState("all");
@@ -166,6 +168,13 @@ export default function TransactionsPage() {
 
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+
+    useEffect(() => {
+        const statusFromUrl = searchParams.get('status');
+        if (statusFromUrl && ['all', 'expense', 'income', 'credit', 'expected'].includes(statusFromUrl)) {
+            setSelectedStatus(statusFromUrl);
+        }
+    }, [searchParams]);
 
     const filteredTransactions = useMemo(() => 
         [...transactions]
@@ -544,4 +553,12 @@ export default function TransactionsPage() {
       )}
     </div>
   );
+}
+
+export default function TransactionsPage() {
+    return (
+        <React.Suspense fallback={<div>Loading...</div>}>
+            <TransactionsPageContent />
+        </React.Suspense>
+    )
 }

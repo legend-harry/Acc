@@ -21,6 +21,7 @@ import { CategoryPieChart } from "@/components/dashboard/category-pie-chart";
 import { BudgetComparisonChart } from "@/components/dashboard/budget-comparison-chart";
 import type { Transaction, BudgetSummary } from "@/types";
 import { useMemo } from "react";
+import Link from "next/link";
 
 type TransactionStatus = "completed" | "credit" | "expected";
 
@@ -183,18 +184,21 @@ export function DashboardClientContent({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-1 text-sm">
               {creditTransactions
                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // sort by date
                 .map((t) => (
-                  <li
-                    key={t.id}
-                    className="flex justify-between items-center"
-                  >
-                    <span>
-                      {t.title} ({t.vendor})
-                    </span>
-                    <span className="font-bold">{formatCurrency(t.amount)}</span>
+                  <li key={t.id}>
+                    <Link href={`/transactions?status=credit`} className="block p-2 -m-2 rounded-md hover:bg-red-500/10 transition-colors">
+                        <div
+                          className="flex justify-between items-center"
+                        >
+                          <span>
+                            {t.title} ({t.vendor})
+                          </span>
+                          <span className="font-bold">{formatCurrency(t.amount)}</span>
+                        </div>
+                    </Link>
                   </li>
                 ))}
             </ul>
@@ -215,15 +219,23 @@ export function DashboardClientContent({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-sm">
-              {expectedTransactions.map((t) => (
-                <li key={t.id} className="flex justify-between items-center">
-                  <span>
-                    {t.title} (due {formatDate(t.date)})
-                  </span>
-                  <span className="font-bold">{formatCurrency(t.amount)}</span>
-                </li>
-              ))}
+            <ul className="space-y-1 text-sm">
+              {expectedTransactions
+                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                .map((t) => (
+                   <li key={t.id}>
+                    <Link href={`/transactions?status=expected`} className="block p-2 -m-2 rounded-md hover:bg-blue-500/10 transition-colors">
+                        <div
+                          className="flex justify-between items-center"
+                        >
+                          <span>
+                            {t.title} (due {formatDate(t.date)})
+                          </span>
+                          <span className="font-bold">{formatCurrency(t.amount)}</span>
+                        </div>
+                    </Link>
+                  </li>
+                ))}
             </ul>
           </CardContent>
         </Card>

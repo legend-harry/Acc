@@ -45,30 +45,30 @@ export function DashboardClientContent({ transactions, budgets }: { transactions
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-red-500/10 border-red-500/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-red-700">
               Credit Due
             </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalCredit)}</div>
-             <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-red-700">{formatCurrency(totalCredit)}</div>
+             <p className="text-xs text-red-700/80">
               Across {creditTransactions.length} transactions
             </p>
           </CardContent>
         </Card>
-         <Card>
+         <Card className="bg-blue-500/10 border-blue-500/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-blue-700">
               Expected
             </CardTitle>
-            <Info className="h-4 w-4 text-muted-foreground" />
+            <Info className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalExpected)}</div>
-             <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-blue-700">{formatCurrency(totalExpected)}</div>
+             <p className="text-xs text-blue-700/80">
               Across {expectedTransactions.length} transactions
             </p>
           </CardContent>
@@ -135,7 +135,7 @@ export function DashboardClientContent({ transactions, budgets }: { transactions
                 <CardTitle className="flex items-center gap-2 text-blue-600">
                     <Info className="h-5 w-5" />
                     Expected Transactions
-                </CardTitle>
+                </Title>
                 <CardDescription className="text-blue-600/80">These are upcoming or planned transactions.</CardDescription>
             </CardHeader>
             <CardContent>

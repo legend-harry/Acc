@@ -171,20 +171,13 @@ const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
 
     const NetSumDisplay = () => {
       const isNegative = netSum < 0;
-      const formattedSum = formatCurrency(netSum);
-
-      if (isNegative) {
-        return (
-          <span className="bg-white/30 px-2 py-1 rounded-md text-red-300 font-bold text-lg">
-            {formattedSum}
-          </span>
-        )
-      }
+      const formattedSum = formatCurrency(Math.abs(netSum));
+      
       return (
-        <span className="font-bold text-lg">
-          {formattedSum}
+        <span className="font-bold text-lg text-white">
+          {isNegative ? '-' : ''}{formattedSum}
         </span>
-      );
+      )
     };
 
     return (

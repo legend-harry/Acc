@@ -22,6 +22,7 @@ import { BudgetComparisonChart } from "@/components/dashboard/budget-comparison-
 import type { Transaction, BudgetSummary } from "@/types";
 import { useMemo } from "react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 type TransactionStatus = "completed" | "credit" | "expected";
 
@@ -77,61 +78,81 @@ export function DashboardClientContent({
     };
   }, [transactions]);
 
+  const tileLinkClasses = "hover:bg-muted/50 transition-colors";
+
   return (
     <>
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {/* Total Spending */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Spending</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(totalSpending)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Includes completed and credit transactions
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/transactions">
+          <Card className={cn(tileLinkClasses, "h-full")}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Spending
+              </CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(totalSpending)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Includes completed and credit transactions
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
         {/* Credit Due */}
-        <Card className="bg-red-500/10 border-red-500/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-red-700">
-              Credit Due
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-700">
-              {formatCurrency(totalCredit)}
-            </div>
-            <p className="text-xs text-red-700/80">
-              Across {creditTransactions.length} transactions
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/transactions?status=credit">
+          <Card
+            className={cn(
+              "bg-red-500/10 border-red-500/20 h-full",
+              tileLinkClasses
+            )}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-red-700">
+                Credit Due
+              </CardTitle>
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-700">
+                {formatCurrency(totalCredit)}
+              </div>
+              <p className="text-xs text-red-700/80">
+                Across {creditTransactions.length} transactions
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
         {/* Expected Transactions */}
-        <Card className="bg-blue-500/10 border-blue-500/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-blue-700">
-              Expected
-            </CardTitle>
-            <Info className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-700">
-              {formatCurrency(totalExpected)}
-            </div>
-            <p className="text-xs text-blue-700/80">
-              Across {expectedTransactions.length} transactions
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/transactions?status=expected">
+          <Card
+            className={cn(
+              "bg-blue-500/10 border-blue-500/20 h-full",
+              tileLinkClasses
+            )}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-blue-700">
+                Expected
+              </CardTitle>
+              <Info className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-700">
+                {formatCurrency(totalExpected)}
+              </div>
+              <p className="text-xs text-blue-700/80">
+                Across {expectedTransactions.length} transactions
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
         {/* Last Expense */}
         <Card>
@@ -159,7 +180,9 @@ export function DashboardClientContent({
         {/* Completed Transactions Count */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Completed Txns</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Completed Txns
+            </CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -186,18 +209,24 @@ export function DashboardClientContent({
           <CardContent>
             <ul className="space-y-1 text-sm">
               {creditTransactions
-                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // sort by date
+                .sort(
+                  (a, b) =>
+                    new Date(a.date).getTime() - new Date(b.date).getTime()
+                ) // sort by date
                 .map((t) => (
                   <li key={t.id}>
-                    <Link href={`/transactions?status=credit`} className="block p-2 -m-2 rounded-md hover:bg-red-500/10 transition-colors">
-                        <div
-                          className="flex justify-between items-center"
-                        >
-                          <span>
-                            {t.title} ({t.vendor})
-                          </span>
-                          <span className="font-bold">{formatCurrency(t.amount)}</span>
-                        </div>
+                    <Link
+                      href={`/transactions?status=credit`}
+                      className="block p-2 -m-2 rounded-md hover:bg-red-500/10 transition-colors"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span>
+                          {t.title} ({t.vendor})
+                        </span>
+                        <span className="font-bold">
+                          {formatCurrency(t.amount)}
+                        </span>
+                      </div>
                     </Link>
                   </li>
                 ))}
@@ -221,18 +250,24 @@ export function DashboardClientContent({
           <CardContent>
             <ul className="space-y-1 text-sm">
               {expectedTransactions
-                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                .sort(
+                  (a, b) =>
+                    new Date(a.date).getTime() - new Date(b.date).getTime()
+                )
                 .map((t) => (
-                   <li key={t.id}>
-                    <Link href={`/transactions?status=expected`} className="block p-2 -m-2 rounded-md hover:bg-blue-500/10 transition-colors">
-                        <div
-                          className="flex justify-between items-center"
-                        >
-                          <span>
-                            {t.title} (due {formatDate(t.date)})
-                          </span>
-                          <span className="font-bold">{formatCurrency(t.amount)}</span>
-                        </div>
+                  <li key={t.id}>
+                    <Link
+                      href={`/transactions?status=expected`}
+                      className="block p-2 -m-2 rounded-md hover:bg-blue-500/10 transition-colors"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span>
+                          {t.title} (due {formatDate(t.date)})
+                        </span>
+                        <span className="font-bold">
+                          {formatCurrency(t.amount)}
+                        </span>
+                      </div>
                     </Link>
                   </li>
                 ))}

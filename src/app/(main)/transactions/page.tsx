@@ -152,6 +152,33 @@ const getStatusBadge = (status: 'completed' | 'credit' | 'expected') => {
     }
 }
 
+const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
+    const netSum = useMemo(() => {
+        return transactions.reduce((sum, t) => {
+            if (t.type === 'income') {
+                return sum + t.amount;
+            }
+            if (t.type === 'expense') {
+                return sum - t.amount;
+            }
+            return sum;
+        }, 0);
+    }, [transactions]);
+
+    if (transactions.length === 0) return null;
+
+    return (
+        <div className="fixed bottom-6 right-6 z-50">
+            <div className="bg-primary text-primary-foreground rounded-full h-20 w-20 flex items-center justify-center flex-col shadow-lg text-center leading-tight">
+                <span className="text-xs">Net Sum</span>
+                <span className={cn("font-bold text-lg", netSum < 0 && "text-red-300")}>
+                    {formatCurrency(netSum)}
+                </span>
+            </div>
+        </div>
+    );
+};
+
 function TransactionsPageContent() {
     const { transactions, loading } = useTransactions();
     const { categories } = useCategories();
@@ -532,6 +559,8 @@ function TransactionsPageContent() {
             </CardContent>
         </Card>
       )}
+
+      {!loading && <FloatingSum transactions={visibleTransactions} />}
 
       {editingTransaction && (
         <EditTransactionDialog 

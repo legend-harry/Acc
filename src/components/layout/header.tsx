@@ -8,7 +8,7 @@ import { PlusCircle, Wallet, LayoutDashboard, ArrowLeftRight, Target, PieChart, 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useUser } from "@/context/user-context";
@@ -86,13 +86,17 @@ export function Header() {
                 </Button>
                 </SheetTrigger>
                 <SheetContent side="left">
-                <nav className="grid gap-2 text-lg font-medium mt-8">
-                    <div className="flex items-center gap-2 font-bold mb-4 px-2.5">
-                        <Wallet className="h-7 w-7 text-primary" />
-                        <h1 className="text-xl font-bold font-headline">MedidiWallet</h1>
-                    </div>
-                    {navLinks}
-                </nav>
+                    <SheetHeader className="sr-only">
+                        <SheetTitle>Navigation Menu</SheetTitle>
+                        <SheetDescription>Main navigation links for the application.</SheetDescription>
+                    </SheetHeader>
+                    <nav className="grid gap-2 text-lg font-medium mt-8">
+                        <div className="flex items-center gap-2 font-bold mb-4 px-2.5">
+                            <Wallet className="h-7 w-7 text-primary" />
+                            <h1 className="text-xl font-bold font-headline">MedidiWallet</h1>
+                        </div>
+                        {navLinks}
+                    </nav>
                 </SheetContent>
             </Sheet>
             ) : (

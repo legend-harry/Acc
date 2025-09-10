@@ -169,6 +169,24 @@ const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
 
     if (transactions.length === 0) return null;
 
+    const NetSumDisplay = () => {
+      const isNegative = netSum < 0;
+      const formattedSum = formatCurrency(netSum);
+
+      if (isNegative) {
+        return (
+          <span className="bg-gray-500/65 px-2 py-1 rounded-md text-red-300 font-bold text-lg">
+            {formattedSum}
+          </span>
+        )
+      }
+      return (
+        <span className="font-bold text-lg">
+          {formattedSum}
+        </span>
+      );
+    };
+
     return (
         <div className="fixed bottom-6 right-6 z-50">
             <div 
@@ -181,9 +199,7 @@ const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
                 {isExpanded ? (
                      <div className="flex flex-col text-center leading-tight">
                         <span className="text-xs">Net Sum</span>
-                        <span className={cn("font-bold text-lg", netSum < 0 && "text-red-300")}>
-                            {formatCurrency(netSum)}
-                        </span>
+                        <NetSumDisplay />
                     </div>
                 ) : (
                     <span className="font-semibold">Total</span>
@@ -575,7 +591,7 @@ function TransactionsPageContent() {
         </Card>
       )}
 
-      {!loading && <FloatingSum transactions={visibleTransactions} />}
+      {!loading && <FloatingSum transactions={filteredTransactions} />}
 
       {editingTransaction && (
         <EditTransactionDialog 
@@ -607,5 +623,7 @@ export default function TransactionsPage() {
         </React.Suspense>
     )
 }
+
+    
 
     

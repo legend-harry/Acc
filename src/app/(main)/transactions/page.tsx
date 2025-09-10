@@ -159,6 +159,7 @@ export default function TransactionsPage() {
     
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
+    const [selectedType, setSelectedType] = useState("all");
     const [sortBy, setSortBy] = useState("createdAt");
     const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -171,6 +172,7 @@ export default function TransactionsPage() {
         .filter(t => {
             const searchTermLower = searchTerm.toLowerCase();
             const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
+            const matchesType = selectedType === 'all' || t.type === selectedType;
             const matchesSearch = searchTerm.trim() === '' ||
                 t.title.toLowerCase().includes(searchTermLower) ||
                 t.vendor.toLowerCase().includes(searchTermLower) ||
@@ -183,7 +185,7 @@ export default function TransactionsPage() {
                 tDate.getDate() === selectedDate.getDate()
             );
 
-            return matchesCategory && matchesSearch && matchesDate;
+            return matchesCategory && matchesSearch && matchesDate && matchesType;
         })
         .sort((a, b) => {
             if (sortBy === 'createdAt') {
@@ -191,7 +193,7 @@ export default function TransactionsPage() {
             }
             return new Date(b.date).getTime() - new Date(a.date).getTime();
         }),
-        [transactions, searchTerm, selectedCategory, sortBy, selectedDate]
+        [transactions, searchTerm, selectedCategory, sortBy, selectedDate, selectedType]
     );
 
     const visibleTransactions = filteredTransactions.slice(0, visibleCount);
@@ -385,6 +387,16 @@ export default function TransactionsPage() {
                 className="max-w-sm"
             />
             <div className='flex gap-4'>
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                    <SelectTrigger className="w-full md:w-[180px]">
+                        <SelectValue placeholder="Filter by type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="expense">Expense</SelectItem>
+                        <SelectItem value="income">Income</SelectItem>
+                    </SelectContent>
+                </Select>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger className="w-full md:w-[200px]">
                         <SelectValue placeholder="Filter by category" />
@@ -526,3 +538,5 @@ export default function TransactionsPage() {
     </div>
   );
 }
+
+    

@@ -23,11 +23,12 @@ if (!force) {
     process.exit(0);
 }
 
-const defaultProjectId = "-NztBqYtA3So9WwL0d5V";
+const pondConstructionProjectId = "-NztBqYtA3So9WwL0d5V";
+const farmExpansionProjectId = "-NztBqYtA3So9WwL0d5V";
 
 const projects = [
-    { id: defaultProjectId, name: "Default Project" },
-    { id: "proj2", name: "Farm Expansion" }
+    { id: pondConstructionProjectId, name: "Pond Construction" },
+    { id: farmExpansionProjectId, name: "Pond Construction" }
 ];
 
 const transactions = [
@@ -50,7 +51,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "2",
@@ -71,7 +72,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "3",
@@ -92,7 +93,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "4",
@@ -113,7 +114,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "5",
@@ -134,7 +135,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "6",
@@ -155,7 +156,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "7",
@@ -176,7 +177,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "8",
@@ -197,7 +198,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "9",
@@ -218,7 +219,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "10",
@@ -239,7 +240,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "11",
@@ -260,7 +261,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "12",
@@ -281,7 +282,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "13",
@@ -302,7 +303,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "14",
@@ -323,7 +324,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "15",
@@ -344,7 +345,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "16",
@@ -365,7 +366,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "17",
@@ -386,7 +387,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "18",
@@ -407,7 +408,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "19",
@@ -428,7 +429,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "20",
@@ -449,7 +450,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "21",
@@ -470,7 +471,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "22",
@@ -491,7 +492,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "23",
@@ -512,7 +513,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "24",
@@ -533,7 +534,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "25",
@@ -554,7 +555,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "26",
@@ -575,7 +576,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "27",
@@ -596,7 +597,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "28",
@@ -617,7 +618,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "29",
@@ -638,7 +639,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "30",
@@ -659,7 +660,7 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "31",
@@ -680,26 +681,347 @@ const transactions = [
         "createdBy": "Vijay",
         "type": "expense",
         "status": "completed",
-        "projectId": defaultProjectId
+        "projectId": pondConstructionProjectId
     },
-
+    {
+        "id": "-OZitWWQ82g82dZBXJ6h",
+        "amount": 312883,
+        "category": "LT Connection (Power)",
+        "createdAt": "2025-09-09T14:34:15.537Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-09T00:00:00.000Z",
+        "description": "new 25KVa Power Connection ",
+        "glCode": "",
+        "invoiceNo": "GPay ",
+        "notes": "new 25KVa Power Connection ",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "completed",
+        "title": "new 25KVa Power Connection ",
+        "type": "expense",
+        "unit": "",
+        "vendor": "APEPDCL",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZjYvC0_BSUWdC-HrPx",
+        "amount": 25000,
+        "category": "Bore Construction",
+        "createdAt": "2025-09-09T17:39:30.788Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-09T00:00:00.000Z",
+        "description": "Bore digging work",
+        "glCode": "",
+        "invoiceNo": "Gpay",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "completed",
+        "title": "Part payment for bore work-Part Payment ",
+        "type": "expense",
+        "unit": "",
+        "vendor": "Abid Ali",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZjZNAfjba7COvbRtLD",
+        "amount": 40000,
+        "category": "LT Connection (Power)",
+        "createdAt": "2025-09-09T17:41:29.486Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-09T00:00:00.000Z",
+        "description": "Extra Amount ",
+        "glCode": "",
+        "invoiceNo": "Mom",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "credit",
+        "title": "25 KVA LT power connection Extra Amount",
+        "type": "expense",
+        "unit": "",
+        "vendor": "AE",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZjZwO9TlgbPKzcUDAr",
+        "amount": 2000,
+        "category": "Weed Removal",
+        "createdAt": "2025-09-09T17:43:57.805Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-09T00:00:00.000Z",
+        "description": "2 workers @ 1000/ person ",
+        "glCode": "",
+        "invoiceNo": "Mom",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "credit",
+        "title": "Labour for De weeding ",
+        "type": "expense",
+        "unit": "",
+        "vendor": "",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZj_qdhCglkI3bKUVjS",
+        "amount": 2000,
+        "category": "Bore Construction",
+        "createdAt": "2025-09-09T17:47:56.432Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-08T00:00:00.000Z",
+        "description": "Chicken , surf, cold drink , hot drink",
+        "glCode": "",
+        "invoiceNo": "Mom",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "credit",
+        "title": "Bore Worker’s extra payment  ",
+        "type": "expense",
+        "unit": "",
+        "vendor": "Party ",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZjaR9O_7tKguNdP_1E",
+        "amount": 1000,
+        "category": "Bore Construction",
+        "createdAt": "2025-09-09T17:50:30.076Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-08T00:00:00.000Z",
+        "description": "",
+        "glCode": "",
+        "invoiceNo": "Mom",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "credit",
+        "title": "Diesel for Bore Drilling",
+        "type": "expense",
+        "unit": "",
+        "vendor": "",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZjcrR3xf78ooF8mleV",
+        "amount": 2000,
+        "category": "Weed Removal",
+        "createdAt": "2025-09-09T18:01:06.087Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-08T00:00:00.000Z",
+        "description": "Around",
+        "glCode": "",
+        "invoiceNo": "Mom",
+        "notes": "The pond",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "credit",
+        "title": "De-weeding ",
+        "type": "expense",
+        "unit": "",
+        "vendor": "",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZjleCU_PQI_2rAnA4W",
+        "amount": 6000,
+        "category": "Labour",
+        "createdAt": "2025-09-09T18:39:31.204Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-10T00:00:00.000Z",
+        "description": "1sept to 10th September ",
+        "glCode": "",
+        "invoiceNo": "",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "expected",
+        "title": "Salary",
+        "type": "expense",
+        "unit": "",
+        "vendor": "Rambabu ",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZlQHG5R-JV5Z0hkClp",
+        "amount": 6500,
+        "category": "Bore Construction",
+        "createdAt": "2025-09-10T02:21:00.385Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-08T00:00:00.000Z",
+        "description": "",
+        "glCode": "",
+        "invoiceNo": "",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "completed",
+        "title": "Pebble’s for Bore @2nd point",
+        "type": "expense",
+        "unit": "",
+        "vendor": "Gulaka Rallu",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZnfFjrq-bcDcSZxHNl",
+        "amount": 5000,
+        "category": "Bore Construction",
+        "createdAt": "2025-09-10T12:50:02.903Z",
+        "createdBy": "Vijay",
+        "date": "2025-08-13T00:00:00.000Z",
+        "description": "Bore point ",
+        "glCode": "",
+        "invoiceNo": "",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "completed",
+        "title": "Geo Survey for Bore point selection ",
+        "type": "expense",
+        "unit": "",
+        "vendor": "",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZqu6wKRPTId5XO83HQ",
+        "amount": 6000,
+        "category": "Bore Construction",
+        "createdAt": "2025-09-11T03:53:50.292Z",
+        "createdBy": "Vijay",
+        "date": "2025-07-24T00:00:00.000Z",
+        "description": "",
+        "glCode": "",
+        "invoiceNo": "",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "completed",
+        "title": "Diesel for Bore Digging ",
+        "type": "expense",
+        "unit": "",
+        "vendor": "",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZquT1DIWTJw8F_KioJ",
+        "amount": 2000,
+        "category": "Bore Construction",
+        "createdAt": "2025-09-11T03:55:20.782Z",
+        "createdBy": "Vijay",
+        "date": "2025-07-24T00:00:00.000Z",
+        "description": "",
+        "glCode": "",
+        "invoiceNo": "",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "completed",
+        "title": "Bore Digging Equipment Transportation Charges ",
+        "type": "expense",
+        "unit": "",
+        "vendor": "",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZquoz-E5EsCJVA46Qp",
+        "amount": 5000,
+        "category": "Bore Construction",
+        "createdAt": "2025-09-11T03:56:54.784Z",
+        "createdBy": "Vijay",
+        "date": "2025-07-24T00:00:00.000Z",
+        "description": "",
+        "glCode": "",
+        "invoiceNo": "",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "completed",
+        "title": "Food Expenses for Bore Digging Workers ",
+        "type": "expense",
+        "unit": "",
+        "vendor": "Bore 1",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZsS_1KfekFfHKKPrBD",
+        "amount": 2300,
+        "category": "Weed Removal",
+        "createdAt": "2025-09-11T11:08:22.068Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-11T00:00:00.000Z",
+        "description": "",
+        "glCode": "",
+        "invoiceNo": "",
+        "notes": "",
+        "quantity": 2,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "credit",
+        "title": "Weed clearing @ adda gattu ",
+        "type": "expense",
+        "unit": "Persons",
+        "vendor": "",
+        "projectId": farmExpansionProjectId
+    },
+    {
+        "id": "-OZsSqizLya2DEStX6NA",
+        "amount": 22000,
+        "category": "Bore Construction",
+        "createdAt": "2025-09-11T11:09:34.559Z",
+        "createdBy": "Vijay",
+        "date": "2025-09-11T00:00:00.000Z",
+        "description": "",
+        "glCode": "",
+        "invoiceNo": "",
+        "notes": "",
+        "quantity": 0,
+        "ratePerUnit": 0,
+        "receiptUrl": "",
+        "status": "expected",
+        "title": "Balance Payment to Abid Ali",
+        "type": "expense",
+        "unit": "",
+        "vendor": "",
+        "projectId": farmExpansionProjectId
+    }
 ];
 
 const budgets = [
-    { "id": "1", "glCode": "5001", "category": "Miscellaneous Expenses", "budget": 100000, "projectId": defaultProjectId },
-    { "id": "2", "glCode": "5002", "category": "Bore Construction", "budget": 60000, "projectId": defaultProjectId },
-    { "id": "3", "glCode": "5003", "category": "Road Work", "budget": 0, "projectId": defaultProjectId },
-    { "id": "4", "glCode": "5004", "category": "Weed Removal", "budget": 0, "projectId": defaultProjectId },
-    { "id": "5", "glCode": "5005", "category": "LT Connection (Power)", "budget": 500000, "projectId": defaultProjectId },
-    { "id": "6", "glCode": "5006", "category": "Electrical Equipments", "budget": 100000, "projectId": defaultProjectId },
-    { "id": "7", "glCode": "5007", "category": "Pond Preparation", "budget": 0, "projectId": defaultProjectId },
-    { "id": "8", "glCode": "5008", "category": "Seed", "budget": 0, "projectId": defaultProjectId },
-    { "id": "9", "glCode": "5009", "category": "Feed", "budget": 0, "projectId": defaultProjectId },
-    { "id": "10", "glCode": "5010", "category": "Transportation", "budget": 0, "projectId": defaultProjectId },
-    { "id": "11", "glCode": "5011", "category": "Lab and Testing", "budget": 0, "projectId": defaultProjectId },
-    { "id": "12", "glCode": "5012", "category": "Tree Cutting", "budget": 5000, "projectId": defaultProjectId },
-    { "id": "13", "glCode": "5013", "category": "Labour", "budget": 0, "projectId": defaultProjectId },
-    { "id": "14", "glCode": "5014", "category": "IT Setup", "budget": 8000, "projectId": defaultProjectId }
+    { "id": "b1", "glCode": "5001", "category": "Miscellaneous Expenses", "budget": 50000, "projectId": pondConstructionProjectId },
+    { "id": "b2", "glCode": "5002", "category": "Bore Construction", "budget": 160000, "projectId": pondConstructionProjectId },
+    { "id": "b3", "glCode": "5003", "category": "Road Work", "budget": 50000, "projectId": pondConstructionProjectId },
+    { "id": "b4", "glCode": "5004", "category": "Weed Removal", "budget": 8000, "projectId": pondConstructionProjectId },
+    { "id": "b5", "glCode": "5005", "category": "LT Connection (Power)", "budget": 500000, "projectId": pondConstructionProjectId },
+    { "id": "b6", "glCode": "5006", "category": "Electrical Equipments", "budget": 100000, "projectId": pondConstructionProjectId },
+    { "id": "b7", "glCode": "5007", "category": "Pond Preparation", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "b8", "glCode": "5008", "category": "Seed", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "b9", "glCode": "5009", "category": "Feed", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "b10", "glCode": "5010", "category": "Transportation", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "b11", "glCode": "5011", "category": "Lab and Testing", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "b12", "glCode": "5012", "category": "Tree Cutting", "budget": 5000, "projectId": pondConstructionProjectId },
+    { "id": "b13", "glCode": "5013", "category": "Labour", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "b14", "glCode": "5014", "category": "IT Setup", "budget": 8000, "projectId": pondConstructionProjectId },
+
+    // Budgets for Farm Expansion Project
+    { "id": "b15", "glCode": "", "category": "LT Connection (Power)", "budget": 0, "projectId": farmExpansionProjectId },
+    { "id": "b16", "glCode": "", "category": "Bore Construction", "budget": 0, "projectId": farmExpansionProjectId },
+    { "id": "b17", "glCode": "", "category": "Weed Removal", "budget": 0, "projectId": farmExpansionProjectId },
+    { "id": "b18", "glCode": "", "category": "Labour", "budget": 0, "projectId": farmExpansionProjectId },
+
 ];
 
 async function seedDatabase() {
@@ -741,3 +1063,5 @@ async function seedDatabase() {
 }
 
 seedDatabase();
+
+    

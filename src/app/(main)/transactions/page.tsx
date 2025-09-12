@@ -8,8 +8,6 @@ import { PageHeader } from "@/components/page-header";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -22,16 +20,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Receipt, User, ArrowUp, ArrowDown, AlertTriangle, Info, MoreVertical, Trash2, Edit, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronRight, Receipt, User, ArrowUp, ArrowDown, AlertTriangle, Info, MoreVertical, Trash2, Edit, Calendar as CalendarIcon, SlidersHorizontal, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { Transaction } from '@/types';
+import { Transaction, Project } from '@/types';
 import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
-import { useTransactions, useCategories } from '@/hooks/use-database';
+import { useTransactions, useCategories, useProjects } from '@/hooks/use-database';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { remove, ref } from 'firebase/database';
@@ -52,6 +49,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const TRANSACTIONS_PER_PAGE = 20;
@@ -206,42 +207,51 @@ const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
 function TransactionsPageContent() {
     const { transactions, loading } = useTransactions();
     const { categories } = useCategories();
+    const { projects } = useProjects();
     const isMobile = useIsMobile();
     const { toast } = useToast();
     const searchParams = useSearchParams();
 
+    // Filter States
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("all");
-    const [selectedStatus, setSelectedStatus] = useState("all");
-    const [sortBy, setSortBy] = useState("createdAt");
-    const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+    const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-
+    const [sortBy, setSortBy] = useState("createdAt");
+    
+    // Other States
+    const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+    const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
     useEffect(() => {
         const statusFromUrl = searchParams.get('status');
-        if (statusFromUrl && ['all', 'expense', 'income', 'credit', 'expected'].includes(statusFromUrl)) {
-            setSelectedStatus(statusFromUrl);
+        if (statusFromUrl) {
+            setSelectedStatuses(prev => [...new Set([...prev, statusFromUrl])]);
         }
     }, [searchParams]);
+
+    const isFilterActive = useMemo(() => 
+        selectedCategories.length > 0 || 
+        selectedStatuses.length > 0 || 
+        selectedProjects.length > 0 || 
+        !!selectedDate,
+    [selectedCategories, selectedStatuses, selectedProjects, selectedDate]);
 
     const filteredTransactions = useMemo(() => 
         [...transactions]
         .filter(t => {
             const searchTermLower = searchTerm.toLowerCase();
-            const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
-            const matchesStatus = selectedStatus === 'all' || 
-                                  (selectedStatus === 'expense' && t.type === 'expense') ||
-                                  (selectedStatus === 'income' && t.type === 'income') ||
-                                  (selectedStatus === 'credit' && t.status === 'credit') ||
-                                  (selectedStatus === 'expected' && t.status === 'expected');
-
             const matchesSearch = searchTerm.trim() === '' ||
                 t.title.toLowerCase().includes(searchTermLower) ||
                 t.vendor.toLowerCase().includes(searchTermLower) ||
                 (t.description && t.description.toLowerCase().includes(searchTermLower));
+
+            const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(t.category);
+            const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(t.status) || (selectedStatuses.includes('income') && t.type === 'income') || (selectedStatuses.includes('expense') && t.type === 'expense');
+            const matchesProject = selectedProjects.length === 0 || selectedProjects.includes(t.projectId);
             
             const tDate = new Date(t.date);
             const matchesDate = !selectedDate || (
@@ -250,15 +260,20 @@ function TransactionsPageContent() {
                 tDate.getDate() === selectedDate.getDate()
             );
 
-            return matchesCategory && matchesSearch && matchesDate && matchesStatus;
+            return matchesCategory && matchesSearch && matchesDate && matchesStatus && matchesProject;
         })
         .sort((a, b) => {
             if (sortBy === 'createdAt') {
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             }
+            if (sortBy === 'project') {
+                const projectA = projects.find(p => p.id === a.projectId)?.name || '';
+                const projectB = projects.find(p => p.id === b.projectId)?.name || '';
+                return projectA.localeCompare(projectB);
+            }
             return new Date(b.date).getTime() - new Date(a.date).getTime();
         }),
-        [transactions, searchTerm, selectedCategory, sortBy, selectedDate, selectedStatus]
+        [transactions, searchTerm, selectedCategories, selectedStatuses, selectedProjects, sortBy, selectedDate, projects]
     );
 
     const visibleTransactions = filteredTransactions.slice(0, visibleCount);
@@ -286,6 +301,18 @@ function TransactionsPageContent() {
       } finally {
         setDeletingTransaction(null);
       }
+    };
+    
+    const resetFilters = () => {
+        setSelectedCategories([]);
+        setSelectedStatuses([]);
+        setSelectedProjects([]);
+        setSelectedDate(undefined);
+        setSortBy("createdAt");
+    }
+
+    const handleMultiSelect = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) => {
+        setter(prev => prev.includes(value) ? prev.filter(item => item !== value) : [...prev, value]);
     };
 
     const renderTransactionActions = (t: Transaction) => (
@@ -444,71 +471,108 @@ function TransactionsPageContent() {
       />
 
     <Card className="mb-6">
-        <CardContent className="p-4">
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
-                <div className="md:col-span-2 lg:col-span-1 xl:col-span-1">
-                    <Input 
-                        placeholder="Search by title, vendor..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filter by type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="expense">Expense</SelectItem>
-                        <SelectItem value="income">Income</SelectItem>
-                        <SelectItem value="credit">Credit</SelectItem>
-                        <SelectItem value="expected">Expected</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filter by category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {categories.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="createdAt">Date Added</SelectItem>
-                        <SelectItem value="date">Expense Date</SelectItem>
-                    </SelectContent>
-                </Select>
-                 <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                        variant={"outline"}
-                        className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !selectedDate && "text-muted-foreground"
-                        )}
-                        >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+        <CardContent className="p-4 flex items-center gap-4">
+             <Input 
+                placeholder="Search by title, vendor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1"
+            />
+            <Popover open={isFilterMenuOpen} onOpenChange={setIsFilterMenuOpen}>
+                <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn(isFilterActive && "border-yellow-400 bg-yellow-50 text-yellow-900 hover:bg-yellow-100")}>
+                        <SlidersHorizontal className="mr-2 h-4 w-4" />
+                        Filter
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="end">
+                    <ScrollArea className="h-96">
+                        <div className="grid gap-4 p-4">
+                            <h4 className="font-medium leading-none">Filters & Sort</h4>
+                            
+                            <div className="grid gap-2">
+                                <Label>Status</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {['income', 'expense', 'credit', 'expected'].map(status => (
+                                        <div key={status} className="flex items-center space-x-2">
+                                            <Checkbox id={`status-${status}`} checked={selectedStatuses.includes(status)} onCheckedChange={() => handleMultiSelect(setSelectedStatuses)(status)} />
+                                            <Label htmlFor={`status-${status}`} className="font-normal capitalize">{status}</Label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <Separator />
+                             <div className="grid gap-2">
+                                <Label>Date</Label>
+                                <Calendar
+                                    mode="single"
+                                    selected={selectedDate}
+                                    onSelect={(date) => {
+                                        setSelectedDate(date);
+                                    }}
+                                    className="p-0"
+                                />
+                                {selectedDate && <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>Clear Date</Button>}
+                            </div>
+                            <Separator />
+                            <div className="grid gap-2">
+                                <Label>Projects</Label>
+                                <div className="flex flex-col gap-2">
+                                {projects.map((project: Project) => (
+                                    <div key={project.id} className="flex items-center space-x-2">
+                                        <Checkbox id={`project-${project.id}`} checked={selectedProjects.includes(project.id)} onCheckedChange={() => handleMultiSelect(setSelectedProjects)(project.id)} />
+                                        <Label htmlFor={`project-${project.id}`} className="font-normal">{project.name}</Label>
+                                    </div>
+                                ))}
+                                </div>
+                            </div>
+
+                             <Separator />
+
+                             <div className="grid gap-2">
+                                <Label>Categories</Label>
+                                <div className="flex flex-col gap-2">
+                                {categories.map(cat => (
+                                    <div key={cat} className="flex items-center space-x-2">
+                                        <Checkbox id={`cat-${cat}`} checked={selectedCategories.includes(cat)} onCheckedChange={() => handleMultiSelect(setSelectedCategories)(cat)} />
+                                        <Label htmlFor={`cat-${cat}`} className="font-normal">{cat}</Label>
+                                    </div>
+                                ))}
+                                </div>
+                            </div>
+
+                             <Separator />
+
+                            <div className="grid gap-2">
+                                <Label>Sort By</Label>
+                                <RadioGroup value={sortBy} onValueChange={setSortBy}>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="createdAt" id="sort-createdAt" />
+                                        <Label htmlFor="sort-createdAt" className="font-normal">Date Added</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="date" id="sort-date" />
+                                        <Label htmlFor="sort-date" className="font-normal">Expense Date</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="project" id="sort-project" />
+                                        <Label htmlFor="sort-project" className="font-normal">Project</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+
+                        </div>
+                    </ScrollArea>
+                    <Separator />
+                     <div className="p-4 flex justify-between items-center">
+                        <Button variant="ghost" onClick={resetFilters} disabled={!isFilterActive}>
+                            <X className="mr-2 h-4 w-4"/>
+                            Reset
                         </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
-                 {selectedDate && <Button variant="ghost" onClick={() => setSelectedDate(undefined)}>Reset</Button>}
-            </div>
+                        <p className="text-sm text-muted-foreground">{filteredTransactions.length} results</p>
+                    </div>
+                </PopoverContent>
+            </Popover>
         </CardContent>
     </Card>
 
@@ -528,15 +592,12 @@ function TransactionsPageContent() {
             )}
             {!loading && filteredTransactions.length === 0 && (
                 <div className="text-center py-10 text-muted-foreground">
-                    No transactions match your search.
+                    No transactions match your filters.
                 </div>
             )}
          </div>
       ) : (
         <Card>
-            <CardHeader>
-            <CardTitle>All Expenses</CardTitle>
-            </CardHeader>
             <CardContent>
             <Table>
                 <TableHeader>
@@ -616,9 +677,3 @@ export default function TransactionsPage() {
         </React.Suspense>
     )
 }
-
-    
-
-    
-
-    

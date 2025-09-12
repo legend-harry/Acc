@@ -39,18 +39,30 @@ export function BudgetComparisonChart({
   transactions,
 }: BudgetComparisonChartProps) {
   const data = useMemo(() => {
+    // 1. Aggregate actual spending by category
     const actuals = transactions.reduce((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + t.amount;
       return acc;
     }, {} as Record<string, number>);
 
-    return budgets
-      .map((budget) => ({
-        category: budget.category,
-        budget: budget.budget,
-        actual: actuals[budget.category] || 0,
+    // 2. Aggregate planned budgets by category
+    const planned = budgets.reduce((acc, b) => {
+        acc[b.category] = (acc[b.category] || 0) + b.budget;
+        return acc;
+    }, {} as Record<string, number>);
+
+    // 3. Combine the data
+    const allCategories = [...new Set([...Object.keys(planned), ...Object.keys(actuals)])];
+
+    return allCategories
+      .map((category) => ({
+        category: category,
+        budget: planned[category] || 0,
+        actual: actuals[category] || 0,
       }))
-      .filter((d) => d.budget > 0 || d.actual > 0);
+      .filter((d) => d.budget > 0 || d.actual > 0) // Only show categories with some activity
+      .sort((a,b) => b.budget - a.budget); // Sort by budget descending
+
   }, [budgets, transactions]);
 
   return (
@@ -73,6 +85,7 @@ export function BudgetComparisonChart({
               tickMargin={10}
               width={100}
               className="text-sm"
+              tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
             />
             <XAxis dataKey="budget" type="number" hide />
             <ChartTooltip

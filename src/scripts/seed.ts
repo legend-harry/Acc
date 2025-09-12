@@ -684,10 +684,10 @@ const transactions = [
 ];
 
 const budgets = [
-    { "id": "1", "glCode": "5001", "category": "Miscellaneous Expenses", "budget": 100000, "projectId": pondConstructionProjectId },
-    { "id": "2", "glCode": "5002", "category": "Bore Construction", "budget": 60000, "projectId": pondConstructionProjectId },
-    { "id": "3", "glCode": "5003", "category": "Road Work", "budget": 0, "projectId": pondConstructionProjectId },
-    { "id": "4", "glCode": "5004", "category": "Weed Removal", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "1", "glCode": "5001", "category": "Miscellaneous Expenses", "budget": 50000, "projectId": pondConstructionProjectId },
+    { "id": "2", "glCode": "5002", "category": "Bore Construction", "budget": 160000, "projectId": pondConstructionProjectId },
+    { "id": "3", "glCode": "5003", "category": "Road Work", "budget": 50000, "projectId": pondConstructionProjectId },
+    { "id": "4", "glCode": "5004", "category": "Weed Removal", "budget": 8000, "projectId": pondConstructionProjectId },
     { "id": "5", "glCode": "5005", "category": "LT Connection (Power)", "budget": 500000, "projectId": pondConstructionProjectId },
     { "id": "6", "glCode": "5006", "category": "Electrical Equipments", "budget": 100000, "projectId": pondConstructionProjectId },
     { "id": "7", "glCode": "5007", "category": "Pond Preparation", "budget": 0, "projectId": pondConstructionProjectId },

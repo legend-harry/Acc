@@ -1,12 +1,12 @@
 
-import { db } from '../lib/firebase';
+import { db } from '../src/lib/firebase';
 import { ref, set } from 'firebase/database';
 
 console.log(`
 This is a destructive script that will overwrite the data in your Firebase Realtime Database.
 It is intended for initial setup and not for migrating existing data.
 
-If you want to update existing transactions (e.g., add the 'status' field),
+If you want to update existing transactions (e.g., add the 'status' or 'projectId' field),
 please use the migration script instead by running:
 
 npm run migrate
@@ -23,6 +23,11 @@ if (!force) {
     process.exit(0);
 }
 
+const pondConstructionProjectId = "-NztBqYtA3So9WwL0d5V";
+
+const projects = [
+    { id: pondConstructionProjectId, name: "Pond Construction" },
+];
 
 const transactions = [
     {
@@ -43,7 +48,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "2",
@@ -63,7 +69,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "3",
@@ -83,7 +90,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "4",
@@ -103,7 +111,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "5",
@@ -123,7 +132,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "6",
@@ -143,7 +153,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "7",
@@ -163,7 +174,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "8",
@@ -183,7 +195,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "9",
@@ -203,7 +216,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "10",
@@ -223,7 +237,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "11",
@@ -243,7 +258,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "12",
@@ -263,7 +279,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "13",
@@ -283,7 +300,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "14",
@@ -303,7 +321,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "15",
@@ -323,7 +342,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "16",
@@ -343,7 +363,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "17",
@@ -363,7 +384,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "18",
@@ -383,7 +405,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "19",
@@ -403,7 +426,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "20",
@@ -423,7 +447,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "21",
@@ -443,7 +468,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "22",
@@ -463,7 +489,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "23",
@@ -483,7 +510,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "24",
@@ -503,7 +531,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "25",
@@ -523,7 +552,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "26",
@@ -543,7 +573,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "27",
@@ -563,7 +594,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "28",
@@ -583,7 +615,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "29",
@@ -603,7 +636,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "30",
@@ -623,7 +657,8 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     },
     {
         "id": "31",
@@ -643,29 +678,39 @@ const transactions = [
         "receiptUrl": "",
         "createdBy": "Vijay",
         "type": "expense",
-        "status": "completed"
+        "status": "completed",
+        "projectId": pondConstructionProjectId
     }
 ];
 
 const budgets = [
-    { "id": "1", "glCode": "5001", "category": "Miscellaneous Expenses", "budget": 100000 },
-    { "id": "2", "glCode": "5002", "category": "Bore Construction", "budget": 60000 },
-    { "id": "3", "glCode": "5003", "category": "Road Work", "budget": 0 },
-    { "id": "4", "glCode": "5004", "category": "Weed Removal", "budget": 0 },
-    { "id": "5", "glCode": "5005", "category": "LT Connection (Power)", "budget": 500000 },
-    { "id": "6", "glCode": "5006", "category": "Electrical Equipments", "budget": 100000 },
-    { "id": "7", "glCode": "5007", "category": "Pond Preparation", "budget": 0 },
-    { "id": "8", "glCode": "5008", "category": "Seed", "budget": 0 },
-    { "id": "9", "glCode": "5009", "category": "Feed", "budget": 0 },
-    { "id": "10", "glCode": "5010", "category": "Transportation", "budget": 0 },
-    { "id": "11", "glCode": "5011", "category": "Lab and Testing", "budget": 0 },
-    { "id": "12", "glCode": "5012", "category": "Tree Cutting", "budget": 5000 },
-    { "id": "13", "glCode": "5013", "category": "Labour", "budget": 0 },
-    { "id": "14", "glCode": "5014", "category": "IT Setup", "budget": 8000 }
+    { "id": "1", "glCode": "5001", "category": "Miscellaneous Expenses", "budget": 100000, "projectId": pondConstructionProjectId },
+    { "id": "2", "glCode": "5002", "category": "Bore Construction", "budget": 60000, "projectId": pondConstructionProjectId },
+    { "id": "3", "glCode": "5003", "category": "Road Work", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "4", "glCode": "5004", "category": "Weed Removal", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "5", "glCode": "5005", "category": "LT Connection (Power)", "budget": 500000, "projectId": pondConstructionProjectId },
+    { "id": "6", "glCode": "5006", "category": "Electrical Equipments", "budget": 100000, "projectId": pondConstructionProjectId },
+    { "id": "7", "glCode": "5007", "category": "Pond Preparation", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "8", "glCode": "5008", "category": "Seed", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "9", "glCode": "5009", "category": "Feed", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "10", "glCode": "5010", "category": "Transportation", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "11", "glCode": "5011", "category": "Lab and Testing", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "12", "glCode": "5012", "category": "Tree Cutting", "budget": 5000, "projectId": pondConstructionProjectId },
+    { "id": "13", "glCode": "5013", "category": "Labour", "budget": 0, "projectId": pondConstructionProjectId },
+    { "id": "14", "glCode": "5014", "category": "IT Setup", "budget": 8000, "projectId": pondConstructionProjectId }
 ];
 
 async function seedDatabase() {
     try {
+        const projectsRef = ref(db, 'projects');
+        const projectsData: Record<string, any> = {};
+        projects.forEach(p => {
+            const { id, ...rest } = p;
+            projectsData[id] = rest;
+        });
+        await set(projectsRef, projectsData);
+        console.log('Projects seeded successfully.');
+
         const transactionsRef = ref(db, 'transactions');
         const transactionsData: Record<string, any> = {};
         transactions.forEach(t => {
@@ -694,5 +739,3 @@ async function seedDatabase() {
 }
 
 seedDatabase();
-
-    

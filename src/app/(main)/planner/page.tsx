@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useBudgets } from "@/hooks/use-database";
+import { useBudgets, useProjects } from "@/hooks/use-database";
 import { db } from "@/lib/firebase";
 import { ref, set, update, push, remove } from "firebase/database";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,7 +39,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import type { BudgetSummary } from "@/types";
+import type { BudgetSummary, Project } from "@/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function DeleteCategoryDialog({
   category,
@@ -74,8 +75,92 @@ function DeleteCategoryDialog({
   );
 };
 
+function AddProjectDialog({ onSave }: { onSave: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const { toast } = useToast();
 
-function AddCategoryDialog({ onSave }: { onSave: () => void }) {
+  const handleSave = async () => {
+    if (!projectName.trim()) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Project name is required.",
+        });
+        return;
+    }
+    
+    setIsLoading(true);
+    try {
+        const projectsRef = ref(db, 'projects');
+        const newProjectRef = push(projectsRef);
+        await set(newProjectRef, {
+            name: projectName.trim(),
+        });
+        toast({
+            title: "Project Added",
+            description: `Successfully added the "${projectName.trim()}" project.`,
+        });
+        setOpen(false);
+        setProjectName("");
+        onSave();
+    } catch (error) {
+        console.error("Failed to add project:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not save the new project.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+  
+  return (
+      <Dialog open={open} onOpenChange={setOpen}>
+          <Button onClick={() => setOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add New Project
+          </Button>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Add New Project</DialogTitle>
+                  <DialogDescription>
+                      Create a new project to track expenses and budgets separately.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="project-name" className="text-right">
+                          Name
+                      </Label>
+                      <Input
+                          id="project-name"
+                          value={projectName}
+                          onChange={(e) => setProjectName(e.target.value)}
+                          className="col-span-3"
+                          placeholder="e.g., Farm Expansion"
+                      />
+                  </div>
+              </div>
+              <DialogFooter>
+                  <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                          Cancel
+                      </Button>
+                  </DialogClose>
+                  <Button onClick={handleSave} disabled={isLoading}>
+                      {isLoading ? "Saving..." : "Save Project"}
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+  );
+}
+
+
+function AddCategoryDialog({ onSave, projectId }: { onSave: () => void, projectId: string }) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [categoryName, setCategoryName] = useState("");
@@ -99,7 +184,8 @@ function AddCategoryDialog({ onSave }: { onSave: () => void }) {
         await set(newBudgetRef, {
             category: categoryName.trim(),
             budget: Number(budget) || 0,
-            glCode: "" // You may want to add a field for this
+            glCode: "", 
+            projectId: projectId
         });
         toast({
             title: "Category Added",
@@ -123,7 +209,7 @@ function AddCategoryDialog({ onSave }: { onSave: () => void }) {
   
   return (
       <Dialog open={open} onOpenChange={setOpen}>
-          <Button variant="outline" onClick={() => setOpen(true)}>
+          <Button variant="outline" onClick={() => setOpen(true)} disabled={!projectId}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add New Category
           </Button>
@@ -179,6 +265,9 @@ function AddCategoryDialog({ onSave }: { onSave: () => void }) {
 
 export default function PlannerPage() {
   const { budgets, loading: budgetsLoading } = useBudgets();
+  const { projects, loading: projectsLoading } = useProjects();
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+
   const [localBudgets, setLocalBudgets] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -188,14 +277,22 @@ export default function PlannerPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
+    if (projects.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(projects[0].id);
+    }
+  }, [projects, selectedProjectId]);
+
+  const projectBudgets = budgets.filter(b => b.projectId === selectedProjectId);
+
+  useEffect(() => {
     if (!budgetsLoading) {
-      const budgetMap = budgets.reduce((acc, budget) => {
+      const budgetMap = projectBudgets.reduce((acc, budget) => {
         acc[budget.category] = budget.budget;
         return acc;
       }, {} as Record<string, number>);
       setLocalBudgets(budgetMap);
     }
-  }, [budgets, budgetsLoading, refreshKey]);
+  }, [projectBudgets, budgetsLoading, refreshKey, selectedProjectId]);
 
   const handleBudgetChange = (category: string, value: string) => {
     const amount = parseInt(value, 10);
@@ -210,7 +307,7 @@ export default function PlannerPage() {
     
     const updates: Record<string, any> = {};
     Object.keys(localBudgets).forEach(category => {
-        const budgetItem = budgets.find(b => b.category === category);
+        const budgetItem = projectBudgets.find(b => b.category === category);
         if (budgetItem && budgetItem.id && budgetItem.budget !== localBudgets[category]) {
             updates[`/budgets/${budgetItem.id}/budget`] = localBudgets[category];
         }
@@ -263,12 +360,14 @@ export default function PlannerPage() {
     }
   }
   
-  if (budgetsLoading) {
+  const loading = budgetsLoading || projectsLoading;
+
+  if (loading) {
       return (
           <div>
               <PageHeader
                 title="Planner"
-                description="Set and manage your monthly spending goals."
+                description="Set and manage your monthly spending goals for each project."
               />
               <Card>
                 <CardHeader>
@@ -296,22 +395,37 @@ export default function PlannerPage() {
     <div>
       <PageHeader
         title="Planner"
-        description="Set and manage your monthly spending goals."
+        description="Set and manage your monthly spending goals for each project."
       />
+      <div className="flex justify-end gap-2 mb-4">
+        <AddProjectDialog onSave={() => setRefreshKey(k => k + 1)} />
+      </div>
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
                 <CardTitle>Category Budgets</CardTitle>
                 <CardDescription>
-                  Define a monthly budget for each category to track your spending.
+                  Select a project to manage its categories and budgets.
                 </CardDescription>
             </div>
-            <AddCategoryDialog onSave={() => setRefreshKey(k => k + 1)} />
+            <div className="flex gap-2">
+              <Select value={selectedProjectId} onValueChange={setSelectedProjectId} disabled={projects.length === 0}>
+                  <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select a project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      {projects.map((project: Project) => (
+                          <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+              <AddCategoryDialog onSave={() => setRefreshKey(k => k + 1)} projectId={selectedProjectId} />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="grid gap-6">
-          {budgets.map((budget) => (
+          {projectBudgets.map((budget) => (
             <div key={budget.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-4">
               <Label htmlFor={`budget-${budget.category}`}>{budget.category}</Label>
               <div className="flex items-center gap-2">
@@ -330,12 +444,18 @@ export default function PlannerPage() {
               </Button>
             </div>
           ))}
-           {budgets.length === 0 && (
-              <p className="text-muted-foreground text-center col-span-3">No categories found. Add one to get started.</p>
+           {projects.length === 0 && (
+              <p className="text-muted-foreground text-center col-span-3 py-10">No projects found. Add one to get started.</p>
+           )}
+           {projects.length > 0 && !selectedProjectId && (
+              <p className="text-muted-foreground text-center col-span-3 py-10">Please select a project.</p>
+           )}
+           {selectedProjectId && projectBudgets.length === 0 && (
+              <p className="text-muted-foreground text-center col-span-3 py-10">This project has no categories. Add one to start tracking your new project!</p>
            )}
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSave} disabled={isLoading}>
+          <Button onClick={handleSave} disabled={isLoading || projectBudgets.length === 0}>
             {isLoading ? "Saving..." : "Save Budgets"}
           </Button>
         </CardFooter>

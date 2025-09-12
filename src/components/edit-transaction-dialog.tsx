@@ -24,7 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
-import { useCategories } from "@/hooks/use-database";
+import { useCategories, useProjects } from "@/hooks/use-database";
 import { db } from "@/lib/firebase";
 import { ref, update } from "firebase/database";
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
@@ -45,13 +45,18 @@ export function EditTransactionDialog({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [receiptPreview, setReceiptPreview] = useState<string | null>(transaction.receiptUrl || null);
-  const { categories, loading: categoriesLoading } = useCategories();
+  
+  const { projects, loading: projectsLoading } = useProjects();
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(transaction.projectId);
+  const { categories, loading: categoriesLoading } = useCategories(selectedProjectId);
+
   const { user } = useUser();
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>(transaction.type);
 
   useEffect(() => {
     setReceiptPreview(transaction.receiptUrl || null);
     setTransactionType(transaction.type);
+    setSelectedProjectId(transaction.projectId);
   }, [transaction]);
 
   const handleReceiptChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,6 +77,16 @@ export function EditTransactionDialog({
     setIsLoading(true);
     const formData = new FormData(event.currentTarget);
     const data = Object.fromEntries(formData.entries());
+
+     if (!data.projectId) {
+        toast({
+            variant: "destructive",
+            title: "Project Required",
+            description: "Please select a project for this transaction.",
+        });
+        setIsLoading(false);
+        return;
+    }
     
     let receiptUrl = transaction.receiptUrl || "";
     // Check if the receipt has been changed
@@ -104,6 +119,7 @@ export function EditTransactionDialog({
         createdBy: user, // Or keep original creator? For now, update it
         type: data.type,
         status: data.status,
+        projectId: data.projectId
     };
     
     try {
@@ -225,13 +241,34 @@ export function EditTransactionDialog({
                     className="col-span-3"
                   />
                 </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="project" className="text-right">
+                    Project
+                  </Label>
+                  <Select name="projectId" defaultValue={transaction.projectId} required onValueChange={setSelectedProjectId}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select a project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projectsLoading ? (
+                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                      ) : (
+                        projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="category" className="text-right">
                     Category
                   </Label>
-                  <Select name="category" defaultValue={transaction.category} required>
+                  <Select name="category" defaultValue={transaction.category} required disabled={!selectedProjectId}>
                     <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select a category" />
+                      <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
                     </SelectTrigger>
                     <SelectContent>
                       {categoriesLoading ? (
@@ -352,7 +389,7 @@ export function EditTransactionDialog({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={isLoading || categoriesLoading}>
+            <Button type="submit" disabled={isLoading || categoriesLoading || projectsLoading}>
               {isLoading ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>

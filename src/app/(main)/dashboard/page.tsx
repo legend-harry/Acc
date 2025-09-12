@@ -2,24 +2,68 @@
 "use client";
 
 import { PageHeader } from "@/components/page-header";
-import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { DashboardClientContent } from "@/components/dashboard/dashboard-client-content";
-import { useTransactions, useBudgets } from "@/hooks/use-database";
+import { useTransactions, useBudgets, useProjects } from "@/hooks/use-database";
+import { useMemo, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Project } from "@/types";
 
 export default function DashboardPage() {
   const { transactions, loading: transactionsLoading } = useTransactions();
   const { budgets, loading: budgetsLoading } = useBudgets();
+  const { projects, loading: projectsLoading } = useProjects();
+  
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
 
-  const loading = transactionsLoading || budgetsLoading;
+  const loading = transactionsLoading || budgetsLoading || projectsLoading;
+
+  const filteredData = useMemo(() => {
+    if (selectedProjectId === "all") {
+      return {
+        transactions,
+        budgets,
+      };
+    }
+    return {
+      transactions: transactions.filter((t) => t.projectId === selectedProjectId),
+      budgets: budgets.filter((b) => b.projectId === selectedProjectId),
+    };
+  }, [transactions, budgets, selectedProjectId]);
+
+  const selectedProjectName = useMemo(() => {
+    if (selectedProjectId === "all") return "All Projects";
+    return projects.find(p => p.id === selectedProjectId)?.name || "Dashboard";
+  }, [selectedProjectId, projects]);
 
   return (
     <div>
-      <PageHeader
-        title="Dashboard"
-        description="A summary of your financial activity."
-      />
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <PageHeader
+            title={selectedProjectName}
+            description="A summary of your financial activity."
+            className="mb-0"
+          />
+        </div>
+        {loading ? <Skeleton className="h-10 w-48" /> : (
+          <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select a project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map((project: Project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
       {loading ? (
          <div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -41,9 +85,9 @@ export default function DashboardPage() {
           </div>
       ) : (
         <>
-            <DashboardClientContent transactions={transactions} budgets={budgets} />
+            <DashboardClientContent transactions={filteredData.transactions} budgets={filteredData.budgets} />
             <div className="mt-6">
-                <AIInsights transactions={transactions}/>
+                <AIInsights transactions={filteredData.transactions}/>
             </div>
         </>
       )}

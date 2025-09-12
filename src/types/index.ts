@@ -18,6 +18,7 @@ export type Transaction = {
   createdBy: string;
   type: 'expense' | 'income';
   status: 'completed' | 'credit' | 'expected';
+  projectId: string;
 };
 
 export type Budget = {
@@ -30,4 +31,11 @@ export type BudgetSummary = {
   glCode: string;
   category: string;
   budget: number;
+  projectId: string;
 };
+
+export type Project = {
+    id: string;
+    name: string;
+};
+

@@ -4,7 +4,39 @@
 import { useState, useEffect } from 'react';
 import { ref, onValue, off } from 'firebase/database';
 import { db } from '@/lib/firebase';
-import type { Transaction, BudgetSummary } from '@/types';
+import type { Transaction, BudgetSummary, Project } from '@/types';
+
+export function useProjects() {
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const projectsRef = ref(db, 'projects');
+        const listener = onValue(projectsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const projectList: Project[] = Object.keys(data).map(key => ({
+                    id: key,
+                    name: data[key].name
+                }));
+                setProjects(projectList);
+            } else {
+                setProjects([]);
+            }
+            setLoading(false);
+        }, (error) => {
+            console.error("Firebase read failed: " + error.name);
+            setLoading(false);
+        });
+
+        return () => {
+            off(projectsRef, 'value', listener);
+        };
+    }, []);
+
+    return { projects, loading };
+}
+
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -73,11 +105,13 @@ export function useBudgets() {
     return { budgets, loading };
 }
 
-export function useCategories() {
+export function useCategories(projectId?: string) {
     const { budgets, loading } = useBudgets();
     
-    // We derive categories directly from budgets. No need for separate state.
-    const categories = loading ? [] : [...new Set(budgets.map(b => b.category))].sort();
+    const categories = loading 
+        ? [] 
+        : [...new Set(budgets.filter(b => !projectId || b.projectId === projectId).map(b => b.category))].sort();
 
     return { categories, loading };
 }
+

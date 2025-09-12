@@ -20,19 +20,27 @@ async function migrateTransactions() {
 
         Object.keys(data).forEach(key => {
             const transaction = data[key];
+            let needsUpdate = false;
             // Check if the status field is missing
             if (transaction.status === undefined) {
                 updates[`/transactions/${key}/status`] = 'completed';
-                transactionsMigrated++;
+                needsUpdate = true;
             }
+            if (transaction.projectId === undefined) {
+                // Defaulting to a project id. Make sure this project exists.
+                // You might want to create a default project first if it doesn't.
+                updates[`/transactions/${key}/projectId`] = '-NztBqYtA3So9WwL0d5V'; 
+                needsUpdate = true;
+            }
+            if(needsUpdate) transactionsMigrated++;
         });
 
         if (transactionsMigrated > 0) {
             console.log(`Found ${transactionsMigrated} transactions to update.`);
             await update(ref(db), updates);
-            console.log("Successfully updated transactions with 'completed' status.");
+            console.log("Successfully updated transactions.");
         } else {
-            console.log("All transactions already have a status. No migration needed.");
+            console.log("All transactions are up to date. No migration needed.");
         }
 
     } catch (error) {

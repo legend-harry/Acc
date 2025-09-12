@@ -1,17 +1,21 @@
 
 "use client";
 
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/user-context";
 import { Check, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Label } from "./ui/label";
+import { Checkbox } from "./ui/checkbox";
 
 const profiles = ["Ammu", "Vijay", "Divyesh", "Anvika", "Guest"];
 
@@ -22,13 +26,14 @@ export function ProfileSelectorDialog({
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProfileSelect: () => void;
+  onProfileSelect: (remember: boolean) => void;
 }) {
   const { user, setUser } = useUser();
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleSelect = (profile: string) => {
     setUser(profile);
-    onProfileSelect();
+    // The dialog will be closed by the button click below
   };
 
   return (
@@ -54,6 +59,15 @@ export function ProfileSelectorDialog({
             </Button>
           ))}
         </div>
+         <DialogFooter className="flex-col gap-4 !justify-start pt-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(checked) => setRememberMe(checked as boolean)} />
+            <Label htmlFor="remember-me">Remember my choice</Label>
+          </div>
+           <Button onClick={() => onProfileSelect(rememberMe)} className="w-full">
+            Continue as {user}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

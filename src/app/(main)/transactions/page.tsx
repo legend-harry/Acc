@@ -53,6 +53,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const TRANSACTIONS_PER_PAGE = 20;
@@ -315,6 +316,14 @@ function TransactionsPageContent() {
         setter(prev => prev.includes(value) ? prev.filter(item => item !== value) : [...prev, value]);
     };
 
+    const handleSingleProjectSelect = (projectId: string) => {
+        if (projectId === 'all') {
+            setSelectedProjects([]);
+        } else {
+            setSelectedProjects([projectId]);
+        }
+    }
+
     const renderTransactionActions = (t: Transaction) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -478,6 +487,19 @@ function TransactionsPageContent() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1"
             />
+             <Select value={selectedProjects.length === 1 ? selectedProjects[0] : "all"} onValueChange={handleSingleProjectSelect}>
+                <SelectTrigger className="w-[180px] bg-card">
+                    <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Projects</SelectItem>
+                    {projects.map((project: Project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
             <Popover open={isFilterMenuOpen} onOpenChange={setIsFilterMenuOpen}>
                 <PopoverTrigger asChild>
                     <Button variant="outline" className={cn(isFilterActive && "border-yellow-400 bg-yellow-50 text-yellow-900 hover:bg-yellow-100")}>

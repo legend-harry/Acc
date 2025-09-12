@@ -11,17 +11,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
 
   useEffect(() => {
-    // Check if a profile has already been selected in this session
-    const profileSelected = sessionStorage.getItem('profileSelected');
-    if (!profileSelected) {
+    // Check if a profile has been remembered
+    const rememberedProfile = localStorage.getItem('rememberedProfile');
+    const profileSelectedInSession = sessionStorage.getItem('profileSelected');
+
+    if (!rememberedProfile && !profileSelectedInSession) {
       setShowProfileDialog(true);
     }
   }, []);
 
-  const handleProfileSelect = () => {
+  const handleProfileSelect = (remember: boolean) => {
     sessionStorage.setItem('profileSelected', 'true');
     setShowProfileDialog(false);
+    if(remember) {
+        const user = sessionStorage.getItem('userProfile'); // This will be set by the UserContext
+        if(user) localStorage.setItem('rememberedProfile', user);
+    }
   };
+
 
   return (
     <UserProvider>
@@ -37,7 +44,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                  if (!isOpen) {
                     // If the user closes the dialog without selecting,
                     // we still mark it as handled for the session.
-                    handleProfileSelect();
+                    handleProfileSelect(false);
                 } else {
                     setShowProfileDialog(true);
                 }

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 type UserContextType = {
     user: string;
@@ -11,7 +11,22 @@ type UserContextType = {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState("Vijay"); // Default user
+    const [user, setUserState] = useState("Vijay"); // Default user
+
+    useEffect(() => {
+        // On initial load, check if a profile is stored in localStorage
+        const rememberedProfile = localStorage.getItem('rememberedProfile');
+        if (rememberedProfile) {
+            setUserState(rememberedProfile);
+            sessionStorage.setItem('userProfile', rememberedProfile);
+        }
+    }, []);
+
+    const setUser = (newUser: string) => {
+        setUserState(newUser);
+        sessionStorage.setItem('userProfile', newUser);
+    };
+
 
     return (
         <UserContext.Provider value={{ user, setUser }}>

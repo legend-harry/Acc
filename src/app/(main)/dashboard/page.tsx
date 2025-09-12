@@ -49,7 +49,7 @@ export default function DashboardPage() {
         </div>
         {loading ? <Skeleton className="h-10 w-48" /> : (
           <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] bg-card">
               <SelectValue placeholder="Select a project" />
             </SelectTrigger>
             <SelectContent>
@@ -94,4 +94,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

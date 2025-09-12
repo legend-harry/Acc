@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { PwaAssets } from '@/components/pwa-assets';
 
 export const metadata: Metadata = {
-  title: 'MedidiWallet',
+  title: 'ExpenseWise',
   description: 'Budgeting and expense tracking simplified.',
   manifest: '/manifest.json',
 };

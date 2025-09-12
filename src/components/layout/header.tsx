@@ -4,7 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, Wallet, LayoutDashboard, ArrowLeftRight, Target, PieChart, Users, User, Check } from "lucide-react";
+import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTr
 import { Menu } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useUser } from "@/context/user-context";
+import Image from "next/image";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -92,8 +93,8 @@ export function Header() {
                     </SheetHeader>
                     <nav className="grid gap-2 text-lg font-medium mt-8">
                         <div className="flex items-center gap-2 font-bold mb-4 px-2.5">
-                            <Wallet className="h-7 w-7 text-primary" />
-                            <h1 className="text-xl font-bold font-headline">MedidiWallet</h1>
+                            <Image src="/Fintrack(logo).png" alt="ExpenseWise Logo" width={28} height={28} />
+                            <h1 className="text-xl font-bold font-headline">ExpenseWise</h1>
                         </div>
                         {navLinks}
                     </nav>
@@ -101,8 +102,8 @@ export function Header() {
             </Sheet>
             ) : (
             <div className="flex items-center gap-2 font-bold">
-                <Wallet className="h-7 w-7 text-primary" />
-                <h1 className="text-xl font-bold font-headline">MedidiWallet</h1>
+                <Image src="/Fintrack(logo).png" alt="ExpenseWise Logo" width={28} height={28} />
+                <h1 className="text-xl font-bold font-headline">ExpenseWise</h1>
             </div>
         )}
        </div>

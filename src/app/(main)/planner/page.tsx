@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -280,9 +280,11 @@ export default function PlannerPage() {
     if (projects.length > 0 && !selectedProjectId) {
       setSelectedProjectId(projects[0].id);
     }
-  }, [projects]);
+  }, [projects, selectedProjectId]);
 
-  const projectBudgets = budgets.filter(b => b.projectId === selectedProjectId);
+  const projectBudgets = useMemo(() => {
+    return budgets.filter(b => b.projectId === selectedProjectId);
+  }, [budgets, selectedProjectId]);
 
   useEffect(() => {
     if (!budgetsLoading) {

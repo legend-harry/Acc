@@ -15,9 +15,11 @@ import { Separator } from "@/components/ui/separator";
 import { Download, ChevronRight, FileSpreadsheet } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/data";
 import Link from "next/link";
-import { useTransactions } from '@/hooks/use-database';
+import { useTransactions, useProjects } from '@/hooks/use-database';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { getCategoryBadgeColorClass } from '@/lib/utils';
 
 function exportToCsv(filename: string, rows: any[][]) {
     const processRow = (row: any[]) => {
@@ -88,13 +90,31 @@ function ExportButton({ transactions }: { transactions: any[] }) {
     );
 }
 
+type ProjectSummary = {
+    total: number;
+    count: number;
+}
+type MonthSummary = {
+    total: number;
+    count: number;
+    date: Date;
+    projects: Record<string, ProjectSummary>;
+}
+
 
 export default function ReportsPage() {
-  const { transactions, loading } = useTransactions();
+  const { transactions, loading: transactionsLoading } = useTransactions();
+  const { projects, loading: projectsLoading } = useProjects();
   
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  
+  const loading = transactionsLoading || projectsLoading;
 
   const { availableYears, monthWiseSummary } = useMemo(() => {
+    if (loading) {
+        return { availableYears: [], monthWiseSummary: {} };
+    }
+
     const years = [...new Set(transactions.map(t => new Date(t.date).getFullYear().toString()))].sort((a,b) => Number(b) - Number(a));
     
     const summary = transactions
@@ -105,16 +125,26 @@ export default function ReportsPage() {
                 month: "long",
                 year: "numeric",
             });
+
             if (!acc[monthYear]) {
-                acc[monthYear] = { total: 0, count: 0, date: date };
+                acc[monthYear] = { total: 0, count: 0, date: date, projects: {} };
             }
+
             acc[monthYear].total += t.amount;
             acc[monthYear].count += 1;
+
+            const projectName = projects.find(p => p.id === t.projectId)?.name || 'Unassigned';
+            if (!acc[monthYear].projects[projectName]) {
+                acc[monthYear].projects[projectName] = { total: 0, count: 0 };
+            }
+            acc[monthYear].projects[projectName].total += t.amount;
+            acc[monthYear].projects[projectName].count += 1;
+
             return acc;
-        }, {} as Record<string, { total: number; count: number, date: Date }>);
+        }, {} as Record<string, MonthSummary>);
 
     return { availableYears: years, monthWiseSummary: summary };
-  }, [transactions, selectedYear]);
+  }, [transactions, projects, selectedYear, loading]);
 
   const sortedMonths = useMemo(() => {
       return Object.entries(monthWiseSummary)
@@ -194,14 +224,27 @@ export default function ReportsPage() {
                 {sortedMonths.map(([month, summary]) => {
                     const monthSlug = `${summary.date.getFullYear()}-${(summary.date.getMonth() + 1).toString().padStart(2, '0')}`;
                     return(
-                    <Link href={`/reports/${monthSlug}`} key={month} className="flex justify-between items-center rounded-lg border p-4 hover:bg-muted/50 transition-colors">
-                        <div>
-                            <p className="font-medium">{month}</p>
-                            <p className="text-sm text-muted-foreground">{summary.count} transactions</p>
+                    <Link href={`/reports/${monthSlug}`} key={month} className="block rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-medium text-lg">{month}</p>
+                                <p className="text-sm text-muted-foreground">{summary.count} transactions</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <p className="font-semibold text-xl">{formatCurrency(summary.total)}</p>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <p className="font-semibold text-lg">{formatCurrency(summary.total)}</p>
-                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                         <Separator className="my-3" />
+                        <div className="space-y-2">
+                            <p className="text-xs font-semibold text-muted-foreground">PROJECT BREAKDOWN</p>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(summary.projects).map(([projectName, projectSummary]) => (
+                                    <Badge key={projectName} variant="outline" className={getCategoryBadgeColorClass(projectName)}>
+                                        {projectName}: {formatCurrency(projectSummary.total)}
+                                    </Badge>
+                                ))}
+                            </div>
                         </div>
                     </Link>
                 )})}

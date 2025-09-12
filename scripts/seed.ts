@@ -681,7 +681,8 @@ const transactions = [
         "type": "expense",
         "status": "completed",
         "projectId": defaultProjectId
-    }
+    },
+
 ];
 
 const budgets = [

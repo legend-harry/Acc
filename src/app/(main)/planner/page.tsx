@@ -280,7 +280,7 @@ export default function PlannerPage() {
     if (projects.length > 0 && !selectedProjectId) {
       setSelectedProjectId(projects[0].id);
     }
-  }, [projects, selectedProjectId]);
+  }, [projects]);
 
   const projectBudgets = budgets.filter(b => b.projectId === selectedProjectId);
 

@@ -114,45 +114,22 @@ const getStatusBadge = (status: 'completed' | 'credit' | 'expected') => {
     }
 }
 
-const FloatingSum = ({ transactions, filters }: { transactions: Transaction[], filters: { types: string[] } }) => {
+const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const { sum, label } = useMemo(() => {
-        const hasIncome = filters.types.includes('income');
-        const hasExpense = filters.types.includes('expense');
+    const { totalIncome, totalExpense } = useMemo(() => {
+        const income = transactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => sum + t.amount, 0);
         
-        let calculatedSum = 0;
-        let sumLabel = "Net Sum";
-
-        if (filters.types.length === 0 || (hasIncome && hasExpense)) { // No filter or both selected
-            calculatedSum = transactions.reduce((s, t) => t.type === 'income' ? s + t.amount : s - t.amount, 0);
-            sumLabel = "Net Sum";
-        } else if (hasIncome) {
-            calculatedSum = transactions.reduce((s, t) => s + t.amount, 0);
-            sumLabel = "Total Income";
-        } else if (hasExpense) {
-            calculatedSum = transactions.reduce((s, t) => s + t.amount, 0);
-            sumLabel = "Total Expense";
-        } else { // credit or expected, which are expenses
-            calculatedSum = -transactions.reduce((s, t) => s + t.amount, 0);
-            sumLabel = "Net Expense"
-        }
-        
-        return { sum: calculatedSum, label: sumLabel };
-    }, [transactions, filters.types]);
+        const expense = transactions
+            .filter(t => t.type === 'expense')
+            .reduce((sum, t) => sum + t.amount, 0);
+            
+        return { totalIncome: income, totalExpense: expense };
+    }, [transactions]);
 
     if (transactions.length === 0) return null;
-
-    const NetSumDisplay = () => {
-      const isNegative = sum < 0;
-      const formattedSum = formatCurrency(Math.abs(sum));
-      
-      return (
-        <span className="font-bold text-lg text-white">
-          {isNegative ? '-' : ''}{formattedSum}
-        </span>
-      )
-    };
 
     return (
         <div className="fixed bottom-6 right-6 z-50">
@@ -164,9 +141,15 @@ const FloatingSum = ({ transactions, filters }: { transactions: Transaction[], f
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 {isExpanded ? (
-                     <div className="flex flex-col text-center leading-tight">
-                        <span className="text-xs">{label}</span>
-                        <NetSumDisplay />
+                    <div className="flex items-center gap-6">
+                        <div className="flex flex-col text-center leading-tight">
+                            <span className="text-xs text-green-200">Income</span>
+                            <span className="font-bold text-lg text-white">{formatCurrency(totalIncome)}</span>
+                        </div>
+                        <div className="flex flex-col text-center leading-tight">
+                            <span className="text-xs text-red-200">Expense</span>
+                            <span className="font-bold text-lg text-white">{formatCurrency(totalExpense)}</span>
+                        </div>
                     </div>
                 ) : (
                     <span className="font-semibold">Total</span>
@@ -662,7 +645,7 @@ function TransactionsPageContent() {
         </Card>
       )}
 
-      {!loading && <FloatingSum transactions={filteredTransactions} filters={{ types: selectedStatuses }} />}
+      {!loading && <FloatingSum transactions={filteredTransactions} />}
 
       {editingTransaction && (
         <EditTransactionDialog 
@@ -694,5 +677,6 @@ export default function TransactionsPage() {
         </React.Suspense>
     )
 }
+
 
     

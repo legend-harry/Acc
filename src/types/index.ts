@@ -4,7 +4,6 @@ export type Transaction = {
   date: Date;
   createdAt: Date;
   invoiceNo: string;
-  glCode: string;
   title:string;
   amount: number;
   quantity: number;
@@ -28,7 +27,6 @@ export type Budget = {
 
 export type BudgetSummary = {
   id: string;
-  glCode: string;
   category: string;
   budget: number;
   projectId: string;
@@ -38,4 +36,3 @@ export type Project = {
     id: string;
     name: string;
 };
-

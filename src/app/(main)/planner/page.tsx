@@ -184,7 +184,6 @@ function AddCategoryDialog({ onSave, projectId }: { onSave: () => void, projectI
         await set(newBudgetRef, {
             category: categoryName.trim(),
             budget: Number(budget) || 0,
-            glCode: "", 
             projectId: projectId
         });
         toast({

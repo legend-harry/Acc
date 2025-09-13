@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { useState, useMemo, useEffect, ReactNode } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
 import {
   Card,
@@ -20,9 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Receipt, User, ArrowUp, ArrowDown, AlertTriangle, Info, MoreVertical, Trash2, Edit, Calendar as CalendarIcon, SlidersHorizontal, X } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import Image from 'next/image';
+import { Receipt, User, ArrowUp, ArrowDown, AlertTriangle, Info, MoreVertical, Trash2, Edit, SlidersHorizontal, X } from 'lucide-react';
 import { Transaction, Project } from '@/types';
 import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
 import { useTransactions, useCategories, useProjects } from '@/hooks/use-database';
@@ -48,7 +46,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -57,44 +54,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 
 const TRANSACTIONS_PER_PAGE = 20;
-
-const ReceiptPreviewDialog = ({ transaction }: { transaction: Transaction }) => {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Receipt for {transaction.title}</DialogTitle>
-           <DialogDescription>
-            Viewing the receipt image for the transaction: {transaction.title} dated {formatDate(transaction.date)}.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-4 overflow-auto">
-          <div className="w-full min-w-[600px] relative group">
-            {transaction.receiptUrl ? (
-                <Image
-                    src={transaction.receiptUrl}
-                    alt={`Receipt for ${transaction.title}`}
-                    width={1200}
-                    height={1600}
-                    className="w-full h-auto object-contain transition-transform duration-300 ease-in-out group-hover:scale-125"
-                />
-            ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-                    <Receipt className="h-12 w-12 mb-4" />
-                    <p>No receipt image available.</p>
-                </div>
-            )}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 const DeleteConfirmationDialog = ({
   transaction,
@@ -212,6 +171,7 @@ function TransactionsPageContent() {
     const isMobile = useIsMobile();
     const { toast } = useToast();
     const searchParams = useSearchParams();
+    const router = useRouter();
 
     // Filter States
     const [searchTerm, setSearchTerm] = useState("");
@@ -344,29 +304,6 @@ function TransactionsPageContent() {
       </DropdownMenu>
     );
 
-    const renderTransactionItem = (t: Transaction) => (
-        <div key={t.id} className="flex justify-between items-center py-3">
-            <div className="flex-1">
-                <div className="font-medium flex items-center gap-2">{t.title} {t.type === 'expense' && getStatusBadge(t.status)}</div>
-                <div className="text-sm text-muted-foreground">{t.vendor}</div>
-                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                    <div className="flex items-center gap-2">
-                         {isToday(t.createdAt) && (
-                            <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>
-                        )}
-                    </div>
-                    <span className='flex items-center gap-1'><User className='h-3 w-3' />{t.createdBy}</span>
-                </div>
-            </div>
-            <div className="flex flex-col items-end ml-4">
-                <div className={`font-medium text-lg ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(t.amount)}</div>
-                <Badge variant="outline" className={`mt-1 text-xs ${getCategoryBadgeColorClass(t.category)}`}>{t.category}</Badge>
-            </div>
-            {renderTransactionActions(t)}
-            {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
-        </div>
-    );
-
     const renderGroupedTransactions = (transactionsToRender: Transaction[]) => {
         const groupedByDate: Record<string, Transaction[]> = transactionsToRender.reduce((acc, t) => {
             const dateKey = formatDate(t.date);
@@ -427,17 +364,36 @@ function TransactionsPageContent() {
             );
 
             const transactionElements = dailyTransactions.map(t => {
+                const handleRowClick = () => router.push(`/transactions/${t.id}`);
                 if (isMobile) {
                     return (
-                        <Card key={t.id}>
+                        <Card key={t.id} onClick={handleRowClick} className="cursor-pointer">
                             <CardContent className={`p-4 ${getCategoryColorClass(t.category)}`}>
-                                {renderTransactionItem(t)}
+                               <div className="flex justify-between items-center py-3">
+                                  <div className="flex-1">
+                                      <div className="font-medium flex items-center gap-2">{t.title} {t.type === 'expense' && getStatusBadge(t.status)}</div>
+                                      <div className="text-sm text-muted-foreground">{t.vendor}</div>
+                                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                          <div className="flex items-center gap-2">
+                                              {isToday(t.createdAt) && (
+                                                  <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>
+                                              )}
+                                          </div>
+                                          <span className='flex items-center gap-1'><User className='h-3 w-3' />{t.createdBy}</span>
+                                      </div>
+                                  </div>
+                                  <div className="flex flex-col items-end ml-4">
+                                      <div className={`font-medium text-lg ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(t.amount)}</div>
+                                      <Badge variant="outline" className={`mt-1 text-xs ${getCategoryBadgeColorClass(t.category)}`}>{t.category}</Badge>
+                                  </div>
+                                   <div onClick={(e) => e.stopPropagation()}>{renderTransactionActions(t)}</div>
+                              </div>
                             </CardContent>
                         </Card>
                     );
                 } else {
                     return (
-                        <TableRow key={t.id} className={getCategoryColorClass(t.category)}>
+                        <TableRow key={t.id} onClick={handleRowClick} className={cn("cursor-pointer", getCategoryColorClass(t.category))}>
                             <TableCell>
                                 <div className="font-medium flex items-center gap-2">
                                     {t.title} 
@@ -457,10 +413,12 @@ function TransactionsPageContent() {
                              <TableCell className="text-center">
                                 {isToday(t.createdAt) && <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>}
                             </TableCell>
-                            <TableCell className="text-center">
-                                {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
+                             <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex justify-center">
+                                    {t.receiptUrl ? <Receipt className="h-4 w-4 text-muted-foreground" /> : <div className="w-4 h-4" />}
+                                </div>
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                                 {renderTransactionActions(t)}
                             </TableCell>
                         </TableRow>
@@ -530,7 +488,7 @@ function TransactionsPageContent() {
                                     mode="single"
                                     selected={selectedDate}
                                     onSelect={(date) => {
-                                        setSelectedDate(date);
+                                        setSelectedDate(date || undefined);
                                     }}
                                     className="p-0"
                                 />
@@ -574,7 +532,7 @@ function TransactionsPageContent() {
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="date" id="sort-date" />
-                                        <Label htmlFor="sort-date" className="font-normal">Expense Date</Label>
+                                        <Label htmlFor="sort-date">Expense Date</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="project" id="sort-project" />
@@ -641,7 +599,7 @@ function TransactionsPageContent() {
                         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                         <TableCell className="text-right"><Skeleton className="h-5 w-16 float-right" /></TableCell>
-                        <TableCell />
+                         <TableCell />
                         <TableCell />
                         <TableCell />
                     </TableRow>

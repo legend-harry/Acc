@@ -328,17 +328,6 @@ export function EditTransactionDialog({
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="glCode" className="text-right">
-                    G/L Code
-                  </Label>
-                  <Input
-                    id="glCode"
-                    name="glCode"
-                    defaultValue={transaction.glCode}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="qty" className="text-right">
                     Quantity
                   </Label>

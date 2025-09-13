@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Check, Moon, Sun, Palette } from "lucide-react";
+import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Check, Moon, Sun, Palette, Sparkles, Crown } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { Menu } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { useUser } from "@/context/user-context";
 import Image from "next/image";
+import { useSubscription } from "@/context/subscription-context";
+
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -51,6 +53,7 @@ function ProfileSwitcher() {
 function ThemeSwitcher() {
     const [mode, setMode] = useState('light');
     const [theme, setTheme] = useState('default');
+    const { isPremium, openUpgradeDialog } = useSubscription();
 
     useEffect(() => {
         const storedMode = localStorage.getItem('theme-mode') || 'light';
@@ -63,15 +66,23 @@ function ThemeSwitcher() {
         document.documentElement.classList.remove('light', 'dark', 'theme-special');
         
         document.documentElement.classList.add(mode);
-        if (theme === 'special') {
+        if (theme === 'special' && isPremium) {
             document.documentElement.classList.add('theme-special');
         }
 
         localStorage.setItem('theme-mode', mode);
         localStorage.setItem('theme-base', theme);
-    }, [mode, theme]);
+    }, [mode, theme, isPremium]);
 
     const toggleMode = () => setMode(mode === 'light' ? 'dark' : 'light');
+
+    const handleThemeChange = (selectedTheme: string) => {
+        if (selectedTheme === 'special' && !isPremium) {
+            openUpgradeDialog('special-theme');
+        } else {
+            setTheme(selectedTheme);
+        }
+    }
 
     return (
         <DropdownMenu>
@@ -88,9 +99,14 @@ function ThemeSwitcher() {
                     <span className="ml-2">Toggle Dark Mode</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
                     <DropdownMenuRadioItem value="default">Default Theme</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="special">Special Theme</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="special" disabled={!isPremium}>
+                        <span className="flex items-center">
+                             {!isPremium && <Sparkles className="mr-2 h-4 w-4 text-yellow-400" />}
+                            Special Theme
+                        </span>
+                    </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -101,6 +117,7 @@ export function Header() {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isPremium } = useSubscription();
 
   const handleLinkClick = () => {
     setMobileMenuOpen(false);
@@ -126,7 +143,7 @@ export function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
        <div className="flex items-center gap-4">
         {isMobile ? (
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -147,6 +164,16 @@ export function Header() {
                         </div>
                         {navLinks}
                     </nav>
+                     {!isPremium && (
+                        <div className="mt-auto p-4">
+                           <Button asChild className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+                                <Link href="/upgrade">
+                                    <Sparkles className="mr-2 h-4 w-4" />
+                                    Upgrade to Premium
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
                 </SheetContent>
             </Sheet>
             ) : (
@@ -167,6 +194,14 @@ export function Header() {
       <div className="flex items-center gap-2">
         <ThemeSwitcher />
         <ProfileSwitcher />
+        {!isPremium && !isMobile && (
+            <Button asChild size="sm" className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+                <Link href="/upgrade">
+                    <Crown className="mr-2 h-4 w-4" />
+                    Upgrade
+                </Link>
+            </Button>
+        )}
         <AddExpenseDialog>
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />

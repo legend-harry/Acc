@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Download, ChevronRight, FileSpreadsheet } from "lucide-react";
+import { ChevronRight, FileSpreadsheet, Sparkles } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/data";
 import Link from "next/link";
 import { useTransactions, useProjects } from '@/hooks/use-database';
@@ -21,6 +21,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { getCategoryBadgeColorClass } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { useSubscription } from '@/context/subscription-context';
+
 
 function exportToCsv(filename: string, rows: any[][]) {
     const processRow = (row: any[]) => {
@@ -59,10 +61,17 @@ function exportToCsv(filename: string, rows: any[][]) {
 }
 
 function ExportButton({ transactions }: { transactions: any[] }) {
+    const { isPremium, openUpgradeDialog } = useSubscription();
+    
     const handleExport = () => {
+        if (!isPremium) {
+            openUpgradeDialog("export-all");
+            return;
+        }
+
         const headers = [
             "ID", "Date", "Created At", "Title", "Description", "Category", "Amount", 
-            "Type", "Status", "Vendor", "Created By", "Invoice No", "Notes"
+            "Type", "Status", "Vendor", "Created By", "Invoice No", "Notes", "Project ID"
         ];
         const rows = transactions.map(t => [
             t.id,
@@ -77,13 +86,15 @@ function ExportButton({ transactions }: { transactions: any[] }) {
             t.vendor,
             t.createdBy,
             t.invoiceNo,
-            t.notes
+            t.notes,
+            t.projectId
         ]);
         exportToCsv('transactions.csv', [headers, ...rows]);
     };
 
     return (
         <Button onClick={handleExport} variant="outline">
+            {!isPremium && <Sparkles className="mr-2 h-4 w-4 text-yellow-400" />}
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Export All
         </Button>
@@ -295,5 +306,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-
-    

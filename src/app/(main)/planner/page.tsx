@@ -19,7 +19,7 @@ import { useBudgets, useProjects } from "@/hooks/use-database";
 import { db } from "@/lib/firebase";
 import { ref, set, update, push, remove } from "firebase/database";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +42,8 @@ import {
 import type { BudgetSummary, Project } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProjectFilter } from "@/context/project-filter-context";
+import { useSubscription } from "@/context/subscription-context";
+
 
 function DeleteCategoryDialog({
   category,
@@ -81,8 +83,14 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [projectName, setProjectName] = useState("");
   const { toast } = useToast();
+  const { isPremium, openUpgradeDialog } = useSubscription();
+
 
   const handleSave = async () => {
+    if (!isPremium) {
+      openUpgradeDialog("add-new-project");
+      return;
+    }
     if (!projectName.trim()) {
         toast({
             variant: "destructive",
@@ -118,9 +126,18 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
     }
   };
   
+  const handleTriggerClick = () => {
+     if (!isPremium) {
+      openUpgradeDialog("add-new-project");
+    } else {
+      setOpen(true);
+    }
+  }
+
   return (
       <Dialog open={open} onOpenChange={setOpen}>
-          <Button onClick={() => setOpen(true)}>
+          <Button onClick={handleTriggerClick}>
+              {!isPremium && <Sparkles className="mr-2 h-4 w-4 text-yellow-400" />}
               <PlusCircle className="mr-2 h-4 w-4" />
               Add New Project
           </Button>
@@ -277,7 +294,11 @@ export default function PlannerPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    if (!selectedProjectId && projects.length > 0) {
+    // If the globally selected project is "all", default to the first project if available.
+    if (selectedProjectId === 'all' && projects.length > 0) {
+      setSelectedProjectId(projects[0].id);
+    } else if (!selectedProjectId && projects.length > 0) {
+      // If nothing is selected, default to the first project
       setSelectedProjectId(projects[0].id);
     }
   }, [projects, selectedProjectId, setSelectedProjectId]);
@@ -418,7 +439,6 @@ export default function PlannerPage() {
                       <SelectValue placeholder="Select a project" />
                   </SelectTrigger>
                   <SelectContent>
-                      <SelectItem value="all">All Projects</SelectItem>
                       {projects.map((project: Project) => (
                           <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
                       ))}

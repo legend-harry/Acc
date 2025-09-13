@@ -3,10 +3,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Sparkles } from "lucide-react";
 import { formatCurrency } from "@/lib/data";
 import { generateSpendingInsights } from "@/ai/flows/generate-spending-insights";
 import type { Transaction } from "@/types";
+import { useSubscription } from "@/context/subscription-context";
+
 
 declare global {
     interface Window {
@@ -17,7 +19,7 @@ declare global {
 function formatDataForAI(data: Transaction[]): string {
     const headers = "Date,Category,Amount,Description";
     const rows = data.map(t => 
-      `${t.date.toISOString().split('T')[0]},"${t.category}","${t.amount}","${t.description.replace(/"/g, '""')}"`
+      `${t.date.toISOString().split('T')[0]},"${t.category}","${t.amount}","${(t.description || "").replace(/"/g, '""')}"`
     );
     return [headers, ...rows].join('\n');
 }
@@ -67,8 +69,14 @@ async function generatePdf(monthSlug: string, monthName: string, transactions: T
 
 export function ReportDownloadButton({ monthSlug, monthName, transactions }: { monthSlug: string, monthName: string, transactions: Transaction[] }) {
     const [isLoading, setIsLoading] = useState(false);
+    const { isPremium, openUpgradeDialog } = useSubscription();
 
     const handleDownload = async () => {
+        if (!isPremium) {
+            openUpgradeDialog("download-pdf");
+            return;
+        }
+
         setIsLoading(true);
         try {
             const spendingData = formatDataForAI(transactions);
@@ -85,9 +93,9 @@ export function ReportDownloadButton({ monthSlug, monthName, transactions }: { m
 
     return (
         <Button variant="outline" size="sm" onClick={handleDownload} disabled={isLoading}>
+            {!isPremium && <Sparkles className="mr-2 h-4 w-4 text-yellow-400" />}
             <Download className="mr-2 h-4 w-4" />
             {isLoading ? "Generating..." : "Download PDF"}
         </Button>
     );
 }
-

@@ -5,9 +5,10 @@ import { useState } from "react";
 import { generateSpendingInsights } from "@/ai/flows/generate-spending-insights";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Sparkles } from "lucide-react";
 import type { Transaction } from "@/types";
 import { Skeleton } from "../ui/skeleton";
+import { useSubscription } from "@/context/subscription-context";
 
 function formatDataForAI(data: Transaction[]): string {
   const headers = "Date,Category,Amount,Description";
@@ -27,8 +28,15 @@ export function AIInsights({transactions}: {transactions?: Transaction[]}) {
   const [insights, setInsights] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isPremium, openUpgradeDialog } = useSubscription();
+
 
   const handleGenerateInsights = async () => {
+    if (!isPremium) {
+      openUpgradeDialog("ai-insights");
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     try {
@@ -75,6 +83,7 @@ export function AIInsights({transactions}: {transactions?: Transaction[]}) {
                     Click the button to generate AI-powered suggestions and find patterns in your spending.
                 </p>
                 <Button onClick={handleGenerateInsights} disabled={isLoading || !transactions || transactions.length === 0}>
+                    {!isPremium && <Sparkles className="mr-2 h-4 w-4 text-yellow-400" />}
                     <Lightbulb className="mr-2 h-4 w-4" />
                     {isLoading ? "Generating..." : "Generate Insights"}
                 </Button>

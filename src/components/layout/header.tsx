@@ -10,7 +10,7 @@ import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { useUser } from "@/context/user-context";
 import Image from "next/image";
 
@@ -49,28 +49,29 @@ function ProfileSwitcher() {
 }
 
 function ThemeSwitcher() {
-    const [theme, setTheme] = useState('light');
-    const [specialTheme, setSpecialTheme] = useState(false);
+    const [mode, setMode] = useState('light');
+    const [theme, setTheme] = useState('default');
 
     useEffect(() => {
-        const storedTheme = localStorage.getItem('theme') || 'light';
-        const storedSpecial = localStorage.getItem('specialTheme') === 'true';
+        const storedMode = localStorage.getItem('theme-mode') || 'light';
+        const storedTheme = localStorage.getItem('theme-base') || 'default';
+        setMode(storedMode);
         setTheme(storedTheme);
-        setSpecialTheme(storedSpecial);
     }, []);
 
     useEffect(() => {
         document.documentElement.classList.remove('light', 'dark', 'theme-special');
-        if (specialTheme) {
+        
+        document.documentElement.classList.add(mode);
+        if (theme === 'special') {
             document.documentElement.classList.add('theme-special');
         }
-        document.documentElement.classList.add(theme);
-        localStorage.setItem('theme', theme);
-        localStorage.setItem('specialTheme', String(specialTheme));
-    }, [theme, specialTheme]);
 
-    const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
-    const toggleSpecialTheme = () => setSpecialTheme(!specialTheme);
+        localStorage.setItem('theme-mode', mode);
+        localStorage.setItem('theme-base', theme);
+    }, [mode, theme]);
+
+    const toggleMode = () => setMode(mode === 'light' ? 'dark' : 'light');
 
     return (
         <DropdownMenu>
@@ -81,15 +82,16 @@ function ThemeSwitcher() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                 <DropdownMenuItem onClick={toggleTheme}>
+                 <DropdownMenuItem onClick={toggleMode}>
                     <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                     <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                     <span className="ml-2">Toggle Dark Mode</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={toggleSpecialTheme}>
-                    {specialTheme ? <Check className="mr-2 h-4 w-4" /> : <div className="mr-2 h-4 w-4"/>}
-                    <span>Special Theme</span>
-                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                    <DropdownMenuRadioItem value="default">Default Theme</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="special">Special Theme</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
             </DropdownMenuContent>
         </DropdownMenu>
     )

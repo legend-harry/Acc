@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import type { BudgetSummary, Project } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useProjectFilter } from "@/context/project-filter-context";
 
 function DeleteCategoryDialog({
   category,
@@ -208,7 +209,7 @@ function AddCategoryDialog({ onSave, projectId }: { onSave: () => void, projectI
   
   return (
       <Dialog open={open} onOpenChange={setOpen}>
-          <Button variant="outline" onClick={() => setOpen(true)} disabled={!projectId}>
+          <Button variant="outline" onClick={() => setOpen(true)} disabled={!projectId || projectId === 'all'}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add New Category
           </Button>
@@ -265,7 +266,7 @@ function AddCategoryDialog({ onSave, projectId }: { onSave: () => void, projectI
 export default function PlannerPage() {
   const { budgets, loading: budgetsLoading } = useBudgets();
   const { projects, loading: projectsLoading } = useProjects();
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
 
   const [localBudgets, setLocalBudgets] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -276,12 +277,13 @@ export default function PlannerPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    if (projects.length > 0 && !selectedProjectId) {
+    if (!selectedProjectId && projects.length > 0) {
       setSelectedProjectId(projects[0].id);
     }
-  }, [projects, selectedProjectId]);
+  }, [projects, selectedProjectId, setSelectedProjectId]);
 
   const projectBudgets = useMemo(() => {
+    if (selectedProjectId === 'all') return [];
     return budgets.filter(b => b.projectId === selectedProjectId);
   }, [budgets, selectedProjectId]);
 
@@ -416,6 +418,7 @@ export default function PlannerPage() {
                       <SelectValue placeholder="Select a project" />
                   </SelectTrigger>
                   <SelectContent>
+                      <SelectItem value="all">All Projects</SelectItem>
                       {projects.map((project: Project) => (
                           <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
                       ))}
@@ -426,7 +429,7 @@ export default function PlannerPage() {
           </div>
         </CardHeader>
         <CardContent className="grid gap-6">
-          {projectBudgets.map((budget) => (
+          {selectedProjectId !== 'all' && projectBudgets.map((budget) => (
             <div key={budget.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-4">
               <Label htmlFor={`budget-${budget.category}`}>{budget.category}</Label>
               <div className="flex items-center gap-2">
@@ -448,10 +451,10 @@ export default function PlannerPage() {
            {projects.length === 0 && (
               <p className="text-muted-foreground text-center col-span-3 py-10">No projects found. Add one to get started.</p>
            )}
-           {projects.length > 0 && !selectedProjectId && (
-              <p className="text-muted-foreground text-center col-span-3 py-10">Please select a project.</p>
+           {projects.length > 0 && selectedProjectId === 'all' && (
+              <p className="text-muted-foreground text-center col-span-3 py-10">Please select a project to view or edit its budgets.</p>
            )}
-           {selectedProjectId && projectBudgets.length === 0 && (
+           {selectedProjectId && selectedProjectId !== 'all' && projectBudgets.length === 0 && (
               <p className="text-muted-foreground text-center col-span-3 py-10">This project has no categories. Add one to start tracking your new project!</p>
            )}
         </CardContent>

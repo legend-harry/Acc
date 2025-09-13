@@ -64,8 +64,8 @@ export function DashboardClientContent({
       )
       .reduce((sum, t) => sum + t.amount, 0);
     
-    const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const expense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    const income = transactions.filter(t => t.type === 'income' && t.status === 'completed').reduce((sum, t) => sum + t.amount, 0);
+    const expense = transactions.filter(t => t.type === 'expense' && t.status === 'completed').reduce((sum, t) => sum + t.amount, 0);
 
 
     const creditSum = credit.reduce((sum, t) => sum + t.amount, 0);

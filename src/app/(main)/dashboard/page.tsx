@@ -6,16 +6,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { DashboardClientContent } from "@/components/dashboard/dashboard-client-content";
 import { useTransactions, useBudgets, useProjects } from "@/hooks/use-database";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Project } from "@/types";
+import { useProjectFilter } from "@/context/project-filter-context";
 
 export default function DashboardPage() {
   const { transactions, loading: transactionsLoading } = useTransactions();
   const { budgets, loading: budgetsLoading } = useBudgets();
   const { projects, loading: projectsLoading } = useProjects();
   
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
+  const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
 
   const loading = transactionsLoading || budgetsLoading || projectsLoading;
 
@@ -66,7 +67,9 @@ export default function DashboardPage() {
 
       {loading ? (
          <div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <Skeleton className="h-28 w-full" />
+              <Skeleton className="h-28 w-full" />
               <Skeleton className="h-28 w-full" />
               <Skeleton className="h-28 w-full" />
               <Skeleton className="h-28 w-full" />

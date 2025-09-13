@@ -51,6 +51,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useProjectFilter } from '@/context/project-filter-context';
 
 
 const TRANSACTIONS_PER_PAGE = 20;
@@ -172,12 +173,16 @@ function TransactionsPageContent() {
     const { toast } = useToast();
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
 
     // Filter States
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-    const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+    
+    // This state will now be used for the multi-select in the popover
+    const [popoverSelectedProjects, setPopoverSelectedProjects] = useState<string[]>([]);
+    
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
     const [sortBy, setSortBy] = useState("createdAt");
     
@@ -194,15 +199,30 @@ function TransactionsPageContent() {
         }
     }, [searchParams]);
 
+    useEffect(() => {
+        // Sync the popover multi-select with the global single select
+        if (selectedProjectId === 'all') {
+            setPopoverSelectedProjects([]);
+        } else {
+            setPopoverSelectedProjects([selectedProjectId]);
+        }
+    }, [selectedProjectId]);
+
+
     const isFilterActive = useMemo(() => 
         selectedCategories.length > 0 || 
         selectedStatuses.length > 0 || 
-        selectedProjects.length > 0 || 
+        popoverSelectedProjects.length > 0 || 
         !!selectedDate,
-    [selectedCategories, selectedStatuses, selectedProjects, selectedDate]);
+    [selectedCategories, selectedStatuses, popoverSelectedProjects, selectedDate]);
 
-    const filteredTransactions = useMemo(() => 
-        [...transactions]
+    const filteredTransactions = useMemo(() => {
+        let currentProjects = selectedProjectId === 'all' ? popoverSelectedProjects : [selectedProjectId];
+        if (popoverSelectedProjects.length > 0) {
+            currentProjects = popoverSelectedProjects;
+        }
+
+        return [...transactions]
         .filter(t => {
             const searchTermLower = searchTerm.toLowerCase();
             const matchesSearch = searchTerm.trim() === '' ||
@@ -212,7 +232,7 @@ function TransactionsPageContent() {
 
             const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(t.category);
             const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(t.status) || (selectedStatuses.includes('income') && t.type === 'income') || (selectedStatuses.includes('expense') && t.type === 'expense');
-            const matchesProject = selectedProjects.length === 0 || selectedProjects.includes(t.projectId);
+            const matchesProject = currentProjects.length === 0 || currentProjects.includes(t.projectId);
             
             const tDate = new Date(t.date);
             const matchesDate = !selectedDate || (
@@ -233,8 +253,9 @@ function TransactionsPageContent() {
                 return projectA.localeCompare(projectB);
             }
             return new Date(b.date).getTime() - new Date(a.date).getTime();
-        }),
-        [transactions, searchTerm, selectedCategories, selectedStatuses, selectedProjects, sortBy, selectedDate, projects]
+        })
+    },
+        [transactions, searchTerm, selectedCategories, selectedStatuses, selectedProjectId, popoverSelectedProjects, sortBy, selectedDate, projects]
     );
 
     const visibleTransactions = filteredTransactions.slice(0, visibleCount);
@@ -267,7 +288,7 @@ function TransactionsPageContent() {
     const resetFilters = () => {
         setSelectedCategories([]);
         setSelectedStatuses([]);
-        setSelectedProjects([]);
+        setPopoverSelectedProjects([]);
         setSelectedDate(undefined);
         setSortBy("createdAt");
     }
@@ -277,10 +298,11 @@ function TransactionsPageContent() {
     };
 
     const handleSingleProjectSelect = (projectId: string) => {
+        setSelectedProjectId(projectId);
         if (projectId === 'all') {
-            setSelectedProjects([]);
+            setPopoverSelectedProjects([]);
         } else {
-            setSelectedProjects([projectId]);
+            setPopoverSelectedProjects([projectId]);
         }
     }
 
@@ -336,8 +358,8 @@ function TransactionsPageContent() {
                 <div className="flex justify-between items-center gap-4 py-3 my-2 bg-muted/80 rounded-md px-4 w-full">
                     <span className="text-sm font-bold text-foreground">{date}</span>
                     <div className="flex items-center gap-4 text-sm">
-                        {completedIncome > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/>{formatCurrency(completedIncome)}</span>}
-                        {completedExpense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/>{formatCurrency(completedExpense)}</span>}
+                        {completedIncome > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/>+{formatCurrency(completedIncome)}</span>}
+                        {completedExpense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/>-{formatCurrency(completedExpense)}</span>}
                         
                         {(completedIncome > 0 || completedExpense > 0) && <Separator orientation="vertical" className="h-5 bg-border" />}
                         
@@ -446,7 +468,7 @@ function TransactionsPageContent() {
                 className="flex-1 w-full"
             />
             <div className="flex gap-2 w-full md:w-auto">
-             <Select value={selectedProjects.length === 1 ? selectedProjects[0] : "all"} onValueChange={handleSingleProjectSelect}>
+             <Select value={selectedProjectId} onValueChange={handleSingleProjectSelect}>
                 <SelectTrigger className="w-full md:w-[180px] bg-card">
                     <SelectValue placeholder="Select a project" />
                 </SelectTrigger>
@@ -502,7 +524,7 @@ function TransactionsPageContent() {
                                 <div className="flex flex-col gap-2">
                                 {projects.map((project: Project) => (
                                     <div key={project.id} className="flex items-center space-x-2">
-                                        <Checkbox id={`project-${project.id}`} checked={selectedProjects.includes(project.id)} onCheckedChange={() => handleMultiSelect(setSelectedProjects)(project.id)} />
+                                        <Checkbox id={`project-${project.id}`} checked={popoverSelectedProjects.includes(project.id)} onCheckedChange={() => handleMultiSelect(setPopoverSelectedProjects)(project.id)} />
                                         <Label htmlFor={`project-${project.id}`} className="font-normal">{project.name}</Label>
                                     </div>
                                 ))}

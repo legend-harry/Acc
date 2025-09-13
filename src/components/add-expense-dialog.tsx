@@ -48,7 +48,7 @@ export function AddExpenseDialog({
   const { categories, loading: categoriesLoading } = useCategories(selectedProjectId);
 
   const { user } = useUser();
-  const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
+  const [transactionType, setTransactionType] = useState<'expense' | 'income' | undefined>();
 
   const handleReceiptChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -120,6 +120,7 @@ export function AddExpenseDialog({
         setIsLoading(false);
         setOpen(false);
         setReceiptPreview(null);
+        setTransactionType(undefined);
         (event.target as HTMLFormElement).reset();
         
         toast({
@@ -141,7 +142,13 @@ export function AddExpenseDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) {
+            setTransactionType(undefined);
+            setReceiptPreview(null);
+        }
+    }}>
       <div onClick={() => setOpen(true)}>{children}</div>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -174,33 +181,12 @@ export function AddExpenseDialog({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right">
-                    Category
-                  </Label>
-                  <Select name="category" required disabled={!selectedProjectId}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoriesLoading ? (
-                        <SelectItem value="loading" disabled>Loading...</SelectItem>
-                      ) : (
-                        categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+                
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">Type</Label>
                     <RadioGroup
                       name="type"
-                      defaultValue="expense"
+                      required
                       className="col-span-3 flex gap-4"
                       onValueChange={(value) => setTransactionType(value as 'expense' | 'income')}
                     >
@@ -214,158 +200,188 @@ export function AddExpenseDialog({
                         </div>
                     </RadioGroup>
                 </div>
-
-                {transactionType === 'expense' && (
-                  <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">Status</Label>
-                      <RadioGroup name="status" defaultValue="completed" className="col-span-3 flex gap-4">
-                          <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="completed" id="r-completed" />
-                              <Label htmlFor="r-completed">Completed</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="credit" id="r-credit" />
-                              <Label htmlFor="r-credit">Credit</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="expected" id="r-expected" />
-                              <Label htmlFor="r-expected">Expected</Label>
-                          </div>
-                      </RadioGroup>
-                  </div>
-                )}
-                 {transactionType === 'income' && (
-                    <Input type="hidden" name="status" value="completed" />
-                 )}
-
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="date" className="text-right">
-                    Date
-                  </Label>
-                  <Input
-                    id="date"
-                    name="date"
-                    type="date"
-                    defaultValue={new Date().toISOString().split("T")[0]}
-                    required
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="title" className="text-right">
-                    Title
-                  </Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    required
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="amount" className="text-right">
-                    Amount (₹)
-                  </Label>
-                  <Input
-                    id="amount"
-                    name="amount"
-                    type="number"
-                    step="0.01"
-                    required
-                    className="col-span-3"
-                  />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="vendor" className="text-right">
-                    Vendor
-                  </Label>
-                  <Input
-                    id="vendor"
-                    name="vendor"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="invoiceNo" className="text-right">
-                    Invoice No
-                  </Label>
-                  <Input
-                    id="invoiceNo"
-                    name="invoiceNo"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="qty" className="text-right">
-                    Quantity
-                  </Label>
-                  <Input
-                    id="qty"
-                    name="qty"
-                    type="number"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="unit" className="text-right">
-                    Unit
-                  </Label>
-                  <Input
-                    id="unit"
-                    name="unit"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="notes" className="text-right">
-                    Notes
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="receipt" className="text-right">
-                    Receipt
-                  </Label>
-                  <Input
-                    id="receipt"
-                    name="receipt"
-                    type="file"
-                    accept="image/*"
-                    className="col-span-3"
-                    onChange={handleReceiptChange}
-                  />
-                </div>
-                {receiptPreview && (
-                    <div className="grid grid-cols-4 items-start gap-4">
-                        <div className="col-start-2 col-span-3">
-                            <img src={receiptPreview} alt="Receipt preview" className="rounded-md max-h-40 object-contain" />
+                
+                {transactionType && (
+                    <>
+                        {transactionType === 'expense' && (
+                        <>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Status</Label>
+                            <RadioGroup name="status" defaultValue="completed" className="col-span-3 flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="completed" id="r-completed" />
+                                    <Label htmlFor="r-completed">Completed</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="credit" id="r-credit" />
+                                    <Label htmlFor="r-credit">Credit</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="expected" id="r-expected" />
+                                    <Label htmlFor="r-expected">Expected</Label>
+                                </div>
+                            </RadioGroup>
                         </div>
-                    </div>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="category" className="text-right">
+                            Category
+                        </Label>
+                        <Select name="category" required disabled={!selectedProjectId}>
+                            <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                            {categoriesLoading ? (
+                                <SelectItem value="loading" disabled>Loading...</SelectItem>
+                            ) : (
+                                categories.map((category) => (
+                                <SelectItem key={category} value={category}>
+                                    {category}
+                                </SelectItem>
+                                ))
+                            )}
+                            </SelectContent>
+                        </Select>
+                        </div>
+                        </>
+                        )}
+                        {transactionType === 'income' && (
+                            <Input type="hidden" name="status" value="completed" />
+                        )}
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="date" className="text-right">
+                            Date
+                        </Label>
+                        <Input
+                            id="date"
+                            name="date"
+                            type="date"
+                            defaultValue={new Date().toISOString().split("T")[0]}
+                            required
+                            className="col-span-3"
+                        />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="title" className="text-right">
+                            Title
+                        </Label>
+                        <Input
+                            id="title"
+                            name="title"
+                            required
+                            className="col-span-3"
+                        />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="amount" className="text-right">
+                            Amount (₹)
+                        </Label>
+                        <Input
+                            id="amount"
+                            name="amount"
+                            type="number"
+                            step="0.01"
+                            required
+                            className="col-span-3"
+                        />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="description" className="text-right">
+                            Description
+                        </Label>
+                        <Textarea
+                            id="description"
+                            name="description"
+                            className="col-span-3"
+                        />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="vendor" className="text-right">
+                            Vendor
+                        </Label>
+                        <Input
+                            id="vendor"
+                            name="vendor"
+                            className="col-span-3"
+                        />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="invoiceNo" className="text-right">
+                            Invoice No
+                        </Label>
+                        <Input
+                            id="invoiceNo"
+                            name="invoiceNo"
+                            className="col-span-3"
+                        />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="qty" className="text-right">
+                            Quantity
+                        </Label>
+                        <Input
+                            id="qty"
+                            name="qty"
+                            type="number"
+                            className="col-span-3"
+                        />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="unit" className="text-right">
+                            Unit
+                        </Label>
+                        <Input
+                            id="unit"
+                            name="unit"
+                            className="col-span-3"
+                        />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="notes" className="text-right">
+                            Notes
+                        </Label>
+                        <Textarea
+                            id="notes"
+                            name="notes"
+                            className="col-span-3"
+                        />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="receipt" className="text-right">
+                            Receipt
+                        </Label>
+                        <Input
+                            id="receipt"
+                            name="receipt"
+                            type="file"
+                            accept="image/*"
+                            className="col-span-3"
+                            onChange={handleReceiptChange}
+                        />
+                        </div>
+                        {receiptPreview && (
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <div className="col-start-2 col-span-3">
+                                    <img src={receiptPreview} alt="Receipt preview" className="rounded-md max-h-40 object-contain" />
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
               </div>
           </ScrollArea>
           <DialogFooter className="pt-4 border-t">
             <DialogClose asChild>
-              <Button type="button" variant="secondary" onClick={() => setReceiptPreview(null)}>
+              <Button type="button" variant="secondary" onClick={() => {
+                  setReceiptPreview(null);
+                  setTransactionType(undefined);
+              }}>
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={isLoading || categoriesLoading || projectsLoading}>
+            <Button type="submit" disabled={isLoading || categoriesLoading || projectsLoading || !transactionType}>
               {isLoading ? "Saving..." : "Save Transaction"}
             </Button>
           </DialogFooter>

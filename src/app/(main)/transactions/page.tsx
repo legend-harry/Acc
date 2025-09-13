@@ -438,15 +438,16 @@ function TransactionsPageContent() {
       />
 
     <Card className="mb-6">
-        <CardContent className="p-4 flex items-center gap-4">
+        <CardContent className="p-4 flex flex-col md:flex-row items-center gap-4">
              <Input 
                 placeholder="Search by title, vendor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
+                className="flex-1 w-full"
             />
+            <div className="flex gap-2 w-full md:w-auto">
              <Select value={selectedProjects.length === 1 ? selectedProjects[0] : "all"} onValueChange={handleSingleProjectSelect}>
-                <SelectTrigger className="w-[180px] bg-card">
+                <SelectTrigger className="w-full md:w-[180px] bg-card">
                     <SelectValue placeholder="Select a project" />
                 </SelectTrigger>
                 <SelectContent>
@@ -553,6 +554,7 @@ function TransactionsPageContent() {
                     </div>
                 </PopoverContent>
             </Popover>
+            </div>
         </CardContent>
     </Card>
 
@@ -567,7 +569,7 @@ function TransactionsPageContent() {
             )}
              {visibleCount < filteredTransactions.length && (
                 <div className="text-center mt-4">
-                <Button onClick={loadMore} variant="outline">Load More</Button>
+                <Button onClick={loadMore} variant="secondary" className="w-full bg-card">Load More</Button>
                 </div>
             )}
             {!loading && filteredTransactions.length === 0 && (
@@ -618,7 +620,7 @@ function TransactionsPageContent() {
             </Table>
             {visibleCount < filteredTransactions.length && !loading && (
                 <div className="text-center mt-4 pt-4 border-t">
-                <Button onClick={loadMore} variant="outline">Load More</Button>
+                <Button onClick={loadMore} variant="outline" className="w-full bg-card">Load More</Button>
                 </div>
             )}
             </CardContent>
@@ -657,3 +659,5 @@ export default function TransactionsPage() {
         </React.Suspense>
     )
 }
+
+    

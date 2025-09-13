@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { getCategoryBadgeColorClass } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 function exportToCsv(filename: string, rows: any[][]) {
     const processRow = (row: any[]) => {
@@ -61,7 +62,7 @@ function ExportButton({ transactions }: { transactions: any[] }) {
     const handleExport = () => {
         const headers = [
             "ID", "Date", "Created At", "Title", "Description", "Category", "Amount", 
-            "Type", "Status", "Vendor", "Created By", "Invoice No", "GL Code", "Notes"
+            "Type", "Status", "Vendor", "Created By", "Invoice No", "Notes"
         ];
         const rows = transactions.map(t => [
             t.id,
@@ -76,7 +77,6 @@ function ExportButton({ transactions }: { transactions: any[] }) {
             t.vendor,
             t.createdBy,
             t.invoiceNo,
-            t.glCode,
             t.notes
         ]);
         exportToCsv('transactions.csv', [headers, ...rows]);
@@ -197,14 +197,14 @@ export default function ReportsPage() {
       <div className="space-y-8">
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
               <div>
                 <CardTitle>Monthly Summaries</CardTitle>
                 <CardDescription>
                   A breakdown of your spending by month. Select a month to view details.
                 </CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full md:w-auto">
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
                     <SelectTrigger className="w-[120px]">
                         <SelectValue placeholder="Year" />
@@ -295,3 +295,5 @@ export default function ReportsPage() {
     </div>
   );
 }
+
+    

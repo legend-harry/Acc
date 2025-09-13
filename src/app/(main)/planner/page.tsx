@@ -403,16 +403,16 @@ export default function PlannerPage() {
       </div>
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <div>
                 <CardTitle>Category Budgets</CardTitle>
                 <CardDescription>
                   Select a project to manage its categories and budgets.
                 </CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Select value={selectedProjectId} onValueChange={setSelectedProjectId} disabled={projects.length === 0}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue placeholder="Select a project" />
                   </SelectTrigger>
                   <SelectContent>

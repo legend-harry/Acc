@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Check } from "lucide-react";
+import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Check, Moon, Sun, Palette } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,53 @@ function ProfileSwitcher() {
                         {user === profile && <Check className="ml-auto h-4 w-4" />}
                     </DropdownMenuItem>
                 ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
+
+function ThemeSwitcher() {
+    const [theme, setTheme] = useState('light');
+    const [specialTheme, setSpecialTheme] = useState(false);
+
+    useEffect(() => {
+        const storedTheme = localStorage.getItem('theme') || 'light';
+        const storedSpecial = localStorage.getItem('specialTheme') === 'true';
+        setTheme(storedTheme);
+        setSpecialTheme(storedSpecial);
+    }, []);
+
+    useEffect(() => {
+        document.documentElement.classList.remove('light', 'dark', 'theme-special');
+        if (specialTheme) {
+            document.documentElement.classList.add('theme-special');
+        }
+        document.documentElement.classList.add(theme);
+        localStorage.setItem('theme', theme);
+        localStorage.setItem('specialTheme', String(specialTheme));
+    }, [theme, specialTheme]);
+
+    const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
+    const toggleSpecialTheme = () => setSpecialTheme(!specialTheme);
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                    <Palette className="h-[1.2rem] w-[1.2rem]" />
+                    <span className="sr-only">Toggle theme</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                 <DropdownMenuItem onClick={toggleTheme}>
+                    <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <span className="ml-2">Toggle Dark Mode</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={toggleSpecialTheme}>
+                    {specialTheme ? <Check className="mr-2 h-4 w-4" /> : <div className="mr-2 h-4 w-4"/>}
+                    <span>Special Theme</span>
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     )
@@ -116,6 +163,7 @@ export function Header() {
       )}
 
       <div className="flex items-center gap-2">
+        <ThemeSwitcher />
         <ProfileSwitcher />
         <AddExpenseDialog>
             <Button>

@@ -341,7 +341,7 @@ function TransactionsPageContent() {
                         
                         {(completedIncome > 0 || completedExpense > 0) && <Separator orientation="vertical" className="h-5 bg-border" />}
                         
-                        <span className={`font-bold ${completedNet >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(completedNet)}</span>
+                        <span className={cn('font-mono font-bold', completedNet >= 0 ? 'text-green-700' : 'text-red-700')}>{completedNet >= 0 ? '+' : ''}{formatCurrency(completedNet)}</span>
 
                         {(creditTotal > 0 || expectedTotal > 0) && (
                             <div className="flex items-center gap-2 pl-2 border-l">
@@ -383,7 +383,7 @@ function TransactionsPageContent() {
                                       </div>
                                   </div>
                                   <div className="flex flex-col items-end ml-4">
-                                      <div className={`font-medium text-lg ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(t.amount)}</div>
+                                      <div className={cn('font-mono font-medium text-lg', t.type === 'income' ? 'text-green-600' : 'text-red-600')}>{t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}</div>
                                       <Badge variant="outline" className={`mt-1 text-xs ${getCategoryBadgeColorClass(t.category)}`}>{t.category}</Badge>
                                   </div>
                                    <div onClick={(e) => e.stopPropagation()}>{renderTransactionActions(t)}</div>
@@ -407,7 +407,7 @@ function TransactionsPageContent() {
                             <TableCell>
                                 <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
                             </TableCell>
-                            <TableCell className={`text-right font-medium ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                            <TableCell className={cn('text-right font-mono font-medium', t.type === 'income' ? 'text-green-600' : 'text-red-600')}>
                                  {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
                             </TableCell>
                              <TableCell className="text-center">
@@ -490,6 +490,7 @@ function TransactionsPageContent() {
                                     selected={selectedDate}
                                     onSelect={(date) => {
                                         setSelectedDate(date || undefined);
+                                        // setIsFilterMenuOpen(false);
                                     }}
                                     className="p-0"
                                 />
@@ -659,5 +660,3 @@ export default function TransactionsPage() {
         </React.Suspense>
     )
 }
-
-    

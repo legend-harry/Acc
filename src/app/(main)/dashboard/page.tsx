@@ -85,7 +85,11 @@ export default function DashboardPage() {
           </div>
       ) : (
         <>
-            <DashboardClientContent transactions={filteredData.transactions} budgets={filteredData.budgets} />
+            <DashboardClientContent 
+                transactions={filteredData.transactions} 
+                budgets={filteredData.budgets}
+                isProjectView={selectedProjectId !== 'all'}
+            />
             <div className="mt-6">
                 <AIInsights transactions={filteredData.transactions}/>
             </div>

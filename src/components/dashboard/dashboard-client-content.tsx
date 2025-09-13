@@ -14,6 +14,9 @@ import {
   CreditCard,
   AlertTriangle,
   Info,
+  TrendingUp,
+  TrendingDown,
+  Scale,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/data";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
@@ -29,9 +32,11 @@ type TransactionStatus = "completed" | "credit" | "expected";
 export function DashboardClientContent({
   transactions,
   budgets,
+  isProjectView = false,
 }: {
   transactions: Transaction[];
   budgets: BudgetSummary[];
+  isProjectView?: boolean;
 }) {
   // ✅ Pre-compute values efficiently with useMemo
   const {
@@ -43,6 +48,9 @@ export function DashboardClientContent({
     totalExpected,
     transactionCount,
     mostRecentTransaction,
+    totalIncome,
+    totalExpense,
+    projectProfitability,
   } = useMemo(() => {
     const completed = transactions.filter((t) => t.status === "completed");
     const credit = transactions.filter((t) => t.status === "credit");
@@ -55,6 +63,10 @@ export function DashboardClientContent({
           (t.status === "completed" || t.status === "credit")
       )
       .reduce((sum, t) => sum + t.amount, 0);
+    
+    const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const expense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+
 
     const creditSum = credit.reduce((sum, t) => sum + t.amount, 0);
     const expectedSum = expected.reduce((sum, t) => sum + t.amount, 0);
@@ -75,6 +87,9 @@ export function DashboardClientContent({
       totalExpected: expectedSum,
       transactionCount: completed.length,
       mostRecentTransaction: mostRecent,
+      totalIncome: income,
+      totalExpense: expense,
+      projectProfitability: income - expense,
     };
   }, [transactions]);
 
@@ -84,25 +99,76 @@ export function DashboardClientContent({
     <>
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {/* Total Spending */}
-        <Link href="/transactions">
-          <Card className={cn(tileLinkClasses, "h-full")}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Spending
-              </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(totalSpending)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Includes completed and credit transactions
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+        
+        {isProjectView ? (
+           <>
+            {/* Project: Total Income */}
+            <Card className="h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-green-600">Total Income</CardTitle>
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+                <p className="text-xs text-muted-foreground">From all sources</p>
+              </CardContent>
+            </Card>
+
+            {/* Project: Total Expense */}
+            <Card className="h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-red-600">Total Expense</CardTitle>
+                <TrendingDown className="h-4 w-4 text-red-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpense)}</div>
+                 <p className="text-xs text-muted-foreground">Across all categories</p>
+              </CardContent>
+            </Card>
+
+             {/* Project: Profitability */}
+            <Card className={cn(
+                "h-full",
+                projectProfitability >= 0 ? "bg-green-500/10 border-green-500/20" : "bg-red-500/10 border-red-500/20"
+            )}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className={cn("text-sm font-medium", projectProfitability >= 0 ? "text-green-700" : "text-red-700")}>
+                    Project Profitability
+                </CardTitle>
+                <Scale className={cn("h-4 w-4", projectProfitability >= 0 ? "text-green-600" : "text-red-600")} />
+              </CardHeader>
+              <CardContent>
+                <div className={cn("text-2xl font-bold", projectProfitability >= 0 ? "text-green-700" : "text-red-700")}>
+                    {formatCurrency(projectProfitability)}
+                </div>
+                 <p className={cn("text-xs", projectProfitability >= 0 ? "text-green-700/80" : "text-red-700/80")}>Net income vs expense</p>
+              </CardContent>
+            </Card>
+
+           </>
+        ) : (
+            <>
+                {/* Global: Total Spending */}
+                <Link href="/transactions">
+                    <Card className={cn(tileLinkClasses, "h-full")}>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">
+                            Total Spending
+                        </CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                        <div className="text-2xl font-bold">
+                            {formatCurrency(totalSpending)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Includes completed and credit transactions
+                        </p>
+                        </CardContent>
+                    </Card>
+                </Link>
+            </>
+        )}
 
         {/* Credit Due */}
         <Link href="/transactions?status=credit">
@@ -153,45 +219,49 @@ export function DashboardClientContent({
             </CardContent>
           </Card>
         </Link>
+        
+        {!isProjectView && (
+             <>
+                 {/* Global: Last Expense */}
+                <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Last Expense</CardTitle>
+                    <Activity className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    {mostRecentTransaction ? (
+                    <>
+                        <div className="text-2xl font-bold">
+                        {formatCurrency(mostRecentTransaction.amount)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                        On {formatDate(mostRecentTransaction.date)} for{" "}
+                        {mostRecentTransaction.category ?? "Uncategorized"}
+                        </p>
+                    </>
+                    ) : (
+                    <div className="text-2xl font-bold">-</div>
+                    )}
+                </CardContent>
+                </Card>
 
-        {/* Last Expense */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Last Expense</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {mostRecentTransaction ? (
-              <>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(mostRecentTransaction.amount)}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  On {formatDate(mostRecentTransaction.date)} for{" "}
-                  {mostRecentTransaction.category ?? "Uncategorized"}
-                </p>
-              </>
-            ) : (
-              <div className="text-2xl font-bold">-</div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Completed Transactions Count */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Completed Txns
-            </CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{transactionCount}</div>
-            <p className="text-xs text-muted-foreground">
-              Number of completed expenses
-            </p>
-          </CardContent>
-        </Card>
+                {/* Global: Completed Transactions Count */}
+                <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">
+                    Completed Txns
+                    </CardTitle>
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{transactionCount}</div>
+                    <p className="text-xs text-muted-foreground">
+                    Number of completed expenses
+                    </p>
+                </CardContent>
+                </Card>
+            </>
+        )}
       </div>
 
       {/* Credit Reminders */}

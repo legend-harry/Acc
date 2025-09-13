@@ -160,6 +160,48 @@ export function EditTransactionDialog({
           <ScrollArea className="max-h-[70vh] p-1">
             <div className="grid gap-4 py-4 pr-4">
                 <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="project" className="text-right">
+                    Project
+                  </Label>
+                  <Select name="projectId" defaultValue={transaction.projectId} required onValueChange={setSelectedProjectId}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select a project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projectsLoading ? (
+                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                      ) : (
+                        projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="category" className="text-right">
+                    Category
+                  </Label>
+                  <Select name="category" defaultValue={transaction.category} required disabled={!selectedProjectId}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoriesLoading ? (
+                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                      ) : (
+                        categories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">Type</Label>
                     <RadioGroup
                       name="type"
@@ -242,48 +284,6 @@ export function EditTransactionDialog({
                   />
                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="project" className="text-right">
-                    Project
-                  </Label>
-                  <Select name="projectId" defaultValue={transaction.projectId} required onValueChange={setSelectedProjectId}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select a project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projectsLoading ? (
-                        <SelectItem value="loading" disabled>Loading...</SelectItem>
-                      ) : (
-                        projects.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            {project.name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right">
-                    Category
-                  </Label>
-                  <Select name="category" defaultValue={transaction.category} required disabled={!selectedProjectId}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoriesLoading ? (
-                        <SelectItem value="loading" disabled>Loading...</SelectItem>
-                      ) : (
-                        categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="description" className="text-right">
                     Description
                   </Label>
@@ -291,17 +291,6 @@ export function EditTransactionDialog({
                     id="description"
                     name="description"
                     defaultValue={transaction.description}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="notes" className="text-right">
-                    Notes
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    defaultValue={transaction.notes}
                     className="col-span-3"
                   />
                 </div>
@@ -351,6 +340,17 @@ export function EditTransactionDialog({
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="notes" className="text-right">
+                    Notes
+                  </Label>
+                  <Textarea
+                    id="notes"
+                    name="notes"
+                    defaultValue={transaction.notes}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="receipt" className="text-right">
                     Receipt
                   </Label>
@@ -387,3 +387,5 @@ export function EditTransactionDialog({
     </Dialog>
   );
 }
+
+    

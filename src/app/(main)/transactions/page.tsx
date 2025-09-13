@@ -52,6 +52,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProjectFilter } from '@/context/project-filter-context';
+import { useCurrency } from '@/context/currency-context';
 
 
 const TRANSACTIONS_PER_PAGE = 20;
@@ -67,6 +68,7 @@ const DeleteConfirmationDialog = ({
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) => {
+  const { currency } = useCurrency();
   const [isLocked, setIsLocked] = useState(true);
 
   React.useEffect(() => {
@@ -84,7 +86,7 @@ const DeleteConfirmationDialog = ({
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the transaction
-            for <span className="font-bold">{transaction.title}</span> amounting to <span className="font-bold">{formatCurrency(transaction.amount)}</span>.
+            for <span className="font-bold">{transaction.title}</span> amounting to <span className="font-bold">{formatCurrency(transaction.amount, currency)}</span>.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -116,6 +118,7 @@ const getStatusBadge = (status: 'completed' | 'credit' | 'expected') => {
 
 const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const { currency } = useCurrency();
 
     const { totalIncome, totalExpense } = useMemo(() => {
         const income = transactions
@@ -144,11 +147,11 @@ const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
                     <div className="flex items-center gap-6">
                         <div className="flex flex-col text-center leading-tight">
                             <span className="text-xs text-green-200">Income</span>
-                            <span className="font-bold text-lg text-white">{formatCurrency(totalIncome)}</span>
+                            <span className="font-bold text-lg text-white">{formatCurrency(totalIncome, currency)}</span>
                         </div>
                         <div className="flex flex-col text-center leading-tight">
                             <span className="text-xs text-red-200">Expense</span>
-                            <span className="font-bold text-lg text-white">{formatCurrency(totalExpense)}</span>
+                            <span className="font-bold text-lg text-white">{formatCurrency(totalExpense, currency)}</span>
                         </div>
                     </div>
                 ) : (
@@ -169,6 +172,7 @@ function TransactionsPageContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
+    const { currency } = useCurrency();
 
     // Filter States
     const [searchTerm, setSearchTerm] = useState("");
@@ -353,17 +357,17 @@ function TransactionsPageContent() {
                 <div className="flex justify-between items-center gap-4 py-3 my-2 bg-muted/80 rounded-md px-4 w-full">
                     <span className="text-sm font-bold text-foreground">{date}</span>
                     <div className="flex items-center gap-4 text-sm">
-                        {completedIncome > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/>+{formatCurrency(completedIncome)}</span>}
-                        {completedExpense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/>-{formatCurrency(completedExpense)}</span>}
+                        {completedIncome > 0 && <span className="flex items-center font-medium text-green-600"><ArrowUp className="h-4 w-4 mr-1"/>+{formatCurrency(completedIncome, currency)}</span>}
+                        {completedExpense > 0 && <span className="flex items-center font-medium text-red-600"><ArrowDown className="h-4 w-4 mr-1"/>-{formatCurrency(completedExpense, currency)}</span>}
                         
                         {(completedIncome > 0 || completedExpense > 0) && <Separator orientation="vertical" className="h-5 bg-border" />}
                         
-                        <span className={cn('font-mono font-bold', completedNet >= 0 ? 'text-green-700' : 'text-red-700')}>{completedNet >= 0 ? '+' : ''}{formatCurrency(completedNet)}</span>
+                        <span className={cn('font-mono font-bold', completedNet >= 0 ? 'text-green-700' : 'text-red-700')}>{completedNet >= 0 ? '+' : ''}{formatCurrency(completedNet, currency)}</span>
 
                         {(creditTotal > 0 || expectedTotal > 0) && (
                             <div className="flex items-center gap-2 pl-2 border-l">
-                                {creditTotal > 0 && <span className="flex items-center text-xs font-medium text-red-600"><AlertTriangle className="h-3 w-3 mr-1" />({formatCurrency(creditTotal)})</span>}
-                                {expectedTotal > 0 && <span className="flex items-center text-xs font-medium text-blue-600"><Info className="h-3 w-3 mr-1" />({formatCurrency(expectedTotal)})</span>}
+                                {creditTotal > 0 && <span className="flex items-center text-xs font-medium text-red-600"><AlertTriangle className="h-3 w-3 mr-1" />({formatCurrency(creditTotal, currency)})</span>}
+                                {expectedTotal > 0 && <span className="flex items-center text-xs font-medium text-blue-600"><Info className="h-3 w-3 mr-1" />({formatCurrency(expectedTotal, currency)})</span>}
                             </div>
                         )}
                     </div>
@@ -400,7 +404,7 @@ function TransactionsPageContent() {
                                       </div>
                                   </div>
                                   <div className="flex flex-col items-end ml-4">
-                                      <div className={cn('font-mono font-medium text-lg', t.type === 'income' ? 'text-green-600' : 'text-red-600')}>{t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}</div>
+                                      <div className={cn('font-mono font-medium text-lg', t.type === 'income' ? 'text-green-600' : 'text-red-600')}>{t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount, currency)}</div>
                                       <Badge variant="outline" className={`mt-1 text-xs ${getCategoryBadgeColorClass(t.category)}`}>{t.category}</Badge>
                                   </div>
                                    <div onClick={(e) => e.stopPropagation()}>{renderTransactionActions(t)}</div>
@@ -425,7 +429,7 @@ function TransactionsPageContent() {
                                 <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
                             </TableCell>
                             <TableCell className={cn('text-right font-mono font-medium', t.type === 'income' ? 'text-green-600' : 'text-red-600')}>
-                                 {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
+                                 {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount, currency)}
                             </TableCell>
                              <TableCell className="text-center">
                                 {isToday(t.createdAt) && <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>}
@@ -677,6 +681,3 @@ export default function TransactionsPage() {
         </React.Suspense>
     )
 }
-
-
-    

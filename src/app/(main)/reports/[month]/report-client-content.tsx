@@ -23,6 +23,7 @@ import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { BudgetComparisonChart } from '@/components/dashboard/budget-comparison-chart';
 import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
 import type { BudgetSummary, Transaction } from '@/types';
+import { useCurrency } from '@/context/currency-context';
 
 export function ReportClientContent({
     budgets,
@@ -35,6 +36,7 @@ export function ReportClientContent({
     sortedTransactions: Transaction[];
     monthName: string;
 }) {
+  const { currency } = useCurrency();
   return (
     <>
         <div className="mt-6">
@@ -78,7 +80,7 @@ export function ReportClientContent({
                         <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                        {formatCurrency(t.amount)}
+                        {formatCurrency(t.amount, currency)}
                     </TableCell>
                     </TableRow>
                 ))}

@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { getCategoryBadgeColorClass } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useSubscription } from '@/context/subscription-context';
+import { useCurrency } from '@/context/currency-context';
 
 
 function exportToCsv(filename: string, rows: any[][]) {
@@ -116,6 +117,7 @@ type MonthSummary = {
 export default function ReportsPage() {
   const { transactions, loading: transactionsLoading } = useTransactions();
   const { projects, loading: projectsLoading } = useProjects();
+  const { currency } = useCurrency();
   
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   
@@ -242,7 +244,7 @@ export default function ReportsPage() {
                                 <p className="text-sm text-muted-foreground">{summary.count} transactions</p>
                             </div>
                             <div className="flex items-center gap-4">
-                                <p className="font-semibold text-xl">{formatCurrency(summary.total)}</p>
+                                <p className="font-semibold text-xl">{formatCurrency(summary.total, currency)}</p>
                                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
                             </div>
                         </div>
@@ -252,7 +254,7 @@ export default function ReportsPage() {
                             <div className="flex flex-wrap gap-2">
                                 {Object.entries(summary.projects).map(([projectName, projectSummary]) => (
                                     <Badge key={projectName} variant="outline" className={getCategoryBadgeColorClass(projectName)}>
-                                        {projectName}: {formatCurrency(projectSummary.total)}
+                                        {projectName}: {formatCurrency(projectSummary.total, currency)}
                                     </Badge>
                                 ))}
                             </div>
@@ -287,7 +289,7 @@ export default function ReportsPage() {
                             <p className="font-medium">{t.title}</p>
                             <p className="text-sm text-muted-foreground">{new Date(t.date).toLocaleDateString()}</p>
                         </div>
-                        <p className="font-mono text-sm">{formatCurrency(t.amount)}</p>
+                        <p className="font-mono text-sm">{formatCurrency(t.amount, currency)}</p>
                     </li>
                 ))}
                 {sortedTransactions.length > 10 && (

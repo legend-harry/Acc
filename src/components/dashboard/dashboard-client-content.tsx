@@ -26,6 +26,7 @@ import type { Transaction, BudgetSummary } from "@/types";
 import { useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/context/currency-context";
 
 type TransactionStatus = "completed" | "credit" | "expected";
 
@@ -38,6 +39,7 @@ export function DashboardClientContent({
   budgets: BudgetSummary[];
   isProjectView?: boolean;
 }) {
+  const { currency } = useCurrency();
   // ✅ Pre-compute values efficiently with useMemo
   const {
     completedTransactions,
@@ -109,7 +111,7 @@ export function DashboardClientContent({
                 <TrendingUp className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome, currency)}</div>
                 <p className="text-xs text-muted-foreground">From all sources</p>
               </CardContent>
             </Card>
@@ -121,7 +123,7 @@ export function DashboardClientContent({
                 <TrendingDown className="h-4 w-4 text-red-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpense)}</div>
+                <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpense, currency)}</div>
                  <p className="text-xs text-muted-foreground">Across all categories</p>
               </CardContent>
             </Card>
@@ -139,7 +141,7 @@ export function DashboardClientContent({
               </CardHeader>
               <CardContent>
                 <div className={cn("text-2xl font-bold", projectProfitability >= 0 ? "text-green-700" : "text-red-700")}>
-                    {formatCurrency(projectProfitability)}
+                    {formatCurrency(projectProfitability, currency)}
                 </div>
                  <p className={cn("text-xs", projectProfitability >= 0 ? "text-green-700/80" : "text-red-700/80")}>Net income vs expense</p>
               </CardContent>
@@ -159,7 +161,7 @@ export function DashboardClientContent({
                         </CardHeader>
                         <CardContent>
                         <div className="text-2xl font-bold">
-                            {formatCurrency(totalSpending)}
+                            {formatCurrency(totalSpending, currency)}
                         </div>
                         <p className="text-xs text-muted-foreground">
                             Includes completed and credit transactions
@@ -186,7 +188,7 @@ export function DashboardClientContent({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-700">
-                {formatCurrency(totalCredit)}
+                {formatCurrency(totalCredit, currency)}
               </div>
               <p className="text-xs text-red-700/80">
                 Across {creditTransactions.length} transactions
@@ -211,7 +213,7 @@ export function DashboardClientContent({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-700">
-                {formatCurrency(totalExpected)}
+                {formatCurrency(totalExpected, currency)}
               </div>
               <p className="text-xs text-blue-700/80">
                 Across {expectedTransactions.length} transactions
@@ -232,7 +234,7 @@ export function DashboardClientContent({
                     {mostRecentTransaction ? (
                     <>
                         <div className="text-2xl font-bold">
-                        {formatCurrency(mostRecentTransaction.amount)}
+                        {formatCurrency(mostRecentTransaction.amount, currency)}
                         </div>
                         <p className="text-xs text-muted-foreground">
                         On {formatDate(mostRecentTransaction.date)} for{" "}
@@ -294,7 +296,7 @@ export function DashboardClientContent({
                           {t.title} ({t.vendor})
                         </span>
                         <span className="font-bold">
-                          {formatCurrency(t.amount)}
+                          {formatCurrency(t.amount, currency)}
                         </span>
                       </div>
                     </Link>
@@ -335,7 +337,7 @@ export function DashboardClientContent({
                           {t.title} (due {formatDate(t.date)})
                         </span>
                         <span className="font-bold">
-                          {formatCurrency(t.amount)}
+                          {formatCurrency(t.amount, currency)}
                         </span>
                       </div>
                     </Link>

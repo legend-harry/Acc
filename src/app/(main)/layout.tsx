@@ -9,6 +9,7 @@ import { SubscriptionProvider } from "@/context/subscription-context";
 import { useState, useEffect } from "react";
 import { ProfileSelectorDialog } from "@/components/profile-selector-dialog";
 import { UpgradeDialog } from "@/components/upgrade-dialog";
+import { CurrencyProvider } from "@/context/currency-context";
 
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -37,28 +38,30 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <UserProvider>
       <SubscriptionProvider>
-        <ProjectFilterProvider>
-          <div className="flex flex-col min-h-screen">
-              <Header />
-              <main className="flex-1 p-4 md:p-6 lg:p-8">
-                  {children}
-              </main>
-          </div>
-          <ProfileSelectorDialog 
-              isOpen={showProfileDialog} 
-              onOpenChange={(isOpen) => {
-                   if (!isOpen) {
-                      // If the user closes the dialog without selecting,
-                      // we still mark it as handled for the session.
-                      handleProfileSelect(false);
-                  } else {
-                      setShowProfileDialog(true);
-                  }
-              }}
-              onProfileSelect={handleProfileSelect}
-          />
-          <UpgradeDialog />
-        </ProjectFilterProvider>
+        <CurrencyProvider>
+          <ProjectFilterProvider>
+            <div className="flex flex-col min-h-screen">
+                <Header />
+                <main className="flex-1 p-4 md:p-6 lg:p-8">
+                    {children}
+                </main>
+            </div>
+            <ProfileSelectorDialog 
+                isOpen={showProfileDialog} 
+                onOpenChange={(isOpen) => {
+                     if (!isOpen) {
+                        // If the user closes the dialog without selecting,
+                        // we still mark it as handled for the session.
+                        handleProfileSelect(false);
+                    } else {
+                        setShowProfileDialog(true);
+                    }
+                }}
+                onProfileSelect={handleProfileSelect}
+            />
+            <UpgradeDialog />
+          </ProjectFilterProvider>
+        </CurrencyProvider>
       </SubscriptionProvider>
     </UserProvider>
   );

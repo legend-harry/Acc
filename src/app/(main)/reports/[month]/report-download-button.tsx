@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/data";
 import { generateSpendingInsights } from "@/ai/flows/generate-spending-insights";
 import type { Transaction } from "@/types";
 import { useSubscription } from "@/context/subscription-context";
+import { useCurrency } from "@/context/currency-context";
 
 
 declare global {
@@ -24,7 +25,7 @@ function formatDataForAI(data: Transaction[]): string {
     return [headers, ...rows].join('\n');
 }
 
-async function generatePdf(monthSlug: string, monthName: string, transactions: Transaction[], insights: string) {
+async function generatePdf(monthSlug: string, monthName: string, transactions: Transaction[], insights: string, currency: string) {
     const { jsPDF } = await import("jspdf");
     await import("jspdf-autotable");
     const doc = new jsPDF();
@@ -43,7 +44,7 @@ async function generatePdf(monthSlug: string, monthName: string, transactions: T
             ticket.date.toLocaleDateString(),
             ticket.title,
             ticket.category,
-            formatCurrency(ticket.amount)
+            formatCurrency(ticket.amount, currency)
         ];
         tableRows.push(ticketData);
     });
@@ -70,6 +71,7 @@ async function generatePdf(monthSlug: string, monthName: string, transactions: T
 export function ReportDownloadButton({ monthSlug, monthName, transactions }: { monthSlug: string, monthName: string, transactions: Transaction[] }) {
     const [isLoading, setIsLoading] = useState(false);
     const { isPremium, openUpgradeDialog } = useSubscription();
+    const { currency } = useCurrency();
 
     const handleDownload = async () => {
         if (!isPremium) {
@@ -82,7 +84,7 @@ export function ReportDownloadButton({ monthSlug, monthName, transactions }: { m
             const spendingData = formatDataForAI(transactions);
             const result = await generateSpendingInsights({ spendingData });
             const insights = result.insights || "No insights could be generated for this period.";
-            await generatePdf(monthSlug, monthName, transactions, insights);
+            await generatePdf(monthSlug, monthName, transactions, insights, currency);
         } catch (error) {
             console.error("Failed to generate PDF:", error);
             // You might want to show a toast message to the user here

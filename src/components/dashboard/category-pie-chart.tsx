@@ -13,6 +13,7 @@ import {
 import type { Transaction } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/data";
+import { useCurrency } from "@/context/currency-context";
 
 const chartColors = [
     "hsl(var(--chart-1))",
@@ -28,7 +29,7 @@ interface CategoryPieChartProps {
 }
 
 export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
-
+  const { currency } = useCurrency();
   const { data, config, total } = React.useMemo(() => {
     const categorySpending = transactions.reduce((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + t.amount;
@@ -83,7 +84,7 @@ export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
           <PieChart>
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} hideLabel />}
+              content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number, currency)} hideLabel />}
             />
             <Pie
               data={data}

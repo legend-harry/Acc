@@ -1,10 +1,10 @@
 
 import type { BudgetSummary, Transaction } from '@/types';
 
-export const formatCurrency = (amount: number) => {
+export const formatCurrency = (amount: number, currency = 'INR') => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'INR',
+      currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

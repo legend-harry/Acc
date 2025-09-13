@@ -31,6 +31,7 @@ import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "fir
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUser } from "@/context/user-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { useCurrency } from "@/context/currency-context";
 
 
 export function AddExpenseDialog({
@@ -41,6 +42,7 @@ export function AddExpenseDialog({
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { currency } = useCurrency();
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   
   const { projects, loading: projectsLoading } = useProjects();
@@ -127,7 +129,7 @@ export function AddExpenseDialog({
         toast({
             title: "Transaction Added",
             description: `Successfully added ${formatCurrency(
-            Number(data.amount)
+            Number(data.amount), currency
             )} for ${data.title}.`,
         });
 
@@ -190,6 +192,7 @@ export function AddExpenseDialog({
                       required
                       className="col-span-3 flex gap-4"
                       onValueChange={(value) => setTransactionType(value as 'expense' | 'income')}
+                      value={transactionType}
                     >
                         <div className="flex items-center space-x-2">
                         <RadioGroupItem value="expense" id="r-expense" />
@@ -206,44 +209,44 @@ export function AddExpenseDialog({
                     <>
                         {transactionType === 'expense' && (
                         <>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="category" className="text-right">
-                            Category
-                        </Label>
-                        <Select name="category" required disabled={!selectedProjectId}>
-                            <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                            {categoriesLoading ? (
-                                <SelectItem value="loading" disabled>Loading...</SelectItem>
-                            ) : (
-                                categories.map((category) => (
-                                <SelectItem key={category} value={category}>
-                                    {category}
-                                </SelectItem>
-                                ))
-                            )}
-                            </SelectContent>
-                        </Select>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Status</Label>
-                            <RadioGroup name="status" defaultValue="completed" className="col-span-3 flex gap-4">
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="completed" id="r-completed" />
-                                    <Label htmlFor="r-completed">Completed</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="credit" id="r-credit" />
-                                    <Label htmlFor="r-credit">Credit</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="expected" id="r-expected" />
-                                    <Label htmlFor="r-expected">Expected</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="category" className="text-right">
+                                Category
+                            </Label>
+                            <Select name="category" required disabled={!selectedProjectId}>
+                                <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                {categoriesLoading ? (
+                                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                ) : (
+                                    categories.map((category) => (
+                                    <SelectItem key={category} value={category}>
+                                        {category}
+                                    </SelectItem>
+                                    ))
+                                )}
+                                </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                              <Label className="text-right">Status</Label>
+                              <RadioGroup name="status" defaultValue="completed" className="col-span-3 flex gap-4">
+                                  <div className="flex items-center space-x-2">
+                                      <RadioGroupItem value="completed" id="r-completed" />
+                                      <Label htmlFor="r-completed">Completed</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                      <RadioGroupItem value="credit" id="r-credit" />
+                                      <Label htmlFor="r-credit">Credit</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                      <RadioGroupItem value="expected" id="r-expected" />
+                                      <Label htmlFor="r-expected">Expected</Label>
+                                  </div>
+                              </RadioGroup>
+                          </div>
                         </>
                         )}
 
@@ -273,7 +276,7 @@ export function AddExpenseDialog({
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="amount" className="text-right">
-                            Amount (₹)
+                            Amount
                         </Label>
                         <Input
                             id="amount"
@@ -387,5 +390,3 @@ export function AddExpenseDialog({
     </Dialog>
   );
 }
-
-    

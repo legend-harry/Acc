@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getCategoryBadgeColorClass } from "@/lib/utils";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { useCurrency } from "@/context/currency-context";
 
 function TransactionDetailSkeleton() {
   return (
@@ -104,6 +105,7 @@ export default function TransactionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
+  const { currency } = useCurrency();
   const { transactions, loading: transactionsLoading } = useTransactions();
   const { projects, loading: projectsLoading } = useProjects();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -274,7 +276,7 @@ export default function TransactionDetailPage() {
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-4 text-sm">
                 <div className="font-semibold">Amount</div>
-                <div className="sm:text-right text-2xl font-bold text-primary">{formatCurrency(transaction.amount)}</div>
+                <div className="sm:text-right text-2xl font-bold text-primary">{formatCurrency(transaction.amount, currency)}</div>
 
                 {transaction.type === 'expense' && (
                     <>
@@ -356,11 +358,11 @@ export default function TransactionDetailPage() {
                                     <YAxis
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
+                                        tickFormatter={(value) => formatCurrency(value as number, currency).slice(0, -3)}
                                     />
                                     <ChartTooltip
                                         cursor={false}
-                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} name="Amount" />}
+                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number, currency)} name="Amount" />}
                                     />
                                     <Line
                                         dataKey="amount"
@@ -391,11 +393,11 @@ export default function TransactionDetailPage() {
                                     <YAxis
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
+                                        tickFormatter={(value) => formatCurrency(value as number, currency).slice(0, -3)}
                                     />
                                     <ChartTooltip
                                         cursor={false}
-                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} hideLabel />}
+                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number, currency)} hideLabel />}
                                     />
                                     <Bar
                                         dataKey="amount"
@@ -428,11 +430,11 @@ export default function TransactionDetailPage() {
                                     <YAxis
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
+                                        tickFormatter={(value) => formatCurrency(value as number, currency).slice(0, -3)}
                                     />
                                     <ChartTooltip
                                         cursor={false}
-                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} name="Income" />}
+                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number, currency)} name="Income" />}
                                     />
                                     <Line
                                         dataKey="amount"
@@ -464,11 +466,11 @@ export default function TransactionDetailPage() {
                                     <YAxis
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
+                                        tickFormatter={(value) => formatCurrency(value as number, currency).slice(0, -3)}
                                     />
                                     <ChartTooltip
                                         cursor={false}
-                                        content={<ChartTooltipContent formatter={(value, name) => `${formatCurrency(value as number)}`} />}
+                                        content={<ChartTooltipContent formatter={(value, name) => `${formatCurrency(value as number, currency)}`} />}
                                     />
                                     <Legend />
                                     <Bar

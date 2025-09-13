@@ -32,6 +32,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import { useUser } from "@/context/user-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import type { Transaction } from "@/types";
+import { useCurrency } from "@/context/currency-context";
 
 export function EditTransactionDialog({
   transaction,
@@ -44,6 +45,7 @@ export function EditTransactionDialog({
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { currency } = useCurrency();
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   
   const { projects, loading: projectsLoading } = useProjects();
@@ -135,7 +137,7 @@ export function EditTransactionDialog({
         toast({
             title: "Transaction Updated",
             description: `Successfully updated ${formatCurrency(
-            Number(data.amount)
+            Number(data.amount), currency
             )} for ${data.title}.`,
         });
 
@@ -188,7 +190,7 @@ export function EditTransactionDialog({
                     <Label className="text-right">Type</Label>
                     <RadioGroup
                       name="type"
-                      defaultValue={transaction.type}
+                      value={transactionType}
                       className="col-span-3 flex gap-4"
                       onValueChange={(value) => setTransactionType(value as 'expense' | 'income')}
                       required
@@ -208,44 +210,44 @@ export function EditTransactionDialog({
                     <>
                         {transactionType === 'expense' && (
                         <>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="category" className="text-right">
-                                Category
-                            </Label>
-                            <Select name="category" defaultValue={transaction.category} required disabled={!selectedProjectId}>
-                                <SelectTrigger className="col-span-3">
-                                <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                {categoriesLoading ? (
-                                    <SelectItem value="loading" disabled>Loading...</SelectItem>
-                                ) : (
-                                    categories.map((category) => (
-                                    <SelectItem key={category} value={category}>
-                                        {category}
-                                    </SelectItem>
-                                    ))
-                                )}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Status</Label>
-                            <RadioGroup name="status" defaultValue={transaction.status} className="col-span-3 flex gap-4">
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="completed" id="r-edit-completed" />
-                                    <Label htmlFor="r-edit-completed">Completed</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="credit" id="r-edit-credit" />
-                                    <Label htmlFor="r-edit-credit">Credit</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="expected" id="r-edit-expected" />
-                                    <Label htmlFor="r-edit-expected">Expected</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="category" className="text-right">
+                                  Category
+                              </Label>
+                              <Select name="category" defaultValue={transaction.category} required disabled={!selectedProjectId}>
+                                  <SelectTrigger className="col-span-3">
+                                  <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                  {categoriesLoading ? (
+                                      <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                  ) : (
+                                      categories.map((category) => (
+                                      <SelectItem key={category} value={category}>
+                                          {category}
+                                      </SelectItem>
+                                      ))
+                                  )}
+                                  </SelectContent>
+                              </Select>
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                              <Label className="text-right">Status</Label>
+                              <RadioGroup name="status" defaultValue={transaction.status} className="col-span-3 flex gap-4">
+                                  <div className="flex items-center space-x-2">
+                                      <RadioGroupItem value="completed" id="r-edit-completed" />
+                                      <Label htmlFor="r-edit-completed">Completed</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                      <RadioGroupItem value="credit" id="r-edit-credit" />
+                                      <Label htmlFor="r-edit-credit">Credit</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                      <RadioGroupItem value="expected" id="r-edit-expected" />
+                                      <Label htmlFor="r-edit-expected">Expected</Label>
+                                  </div>
+                              </RadioGroup>
+                          </div>
                         </>
                         )}
 
@@ -276,7 +278,7 @@ export function EditTransactionDialog({
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="amount" className="text-right">
-                            Amount (₹)
+                            Amount
                         </Label>
                         <Input
                             id="amount"
@@ -394,5 +396,3 @@ export function EditTransactionDialog({
     </Dialog>
   );
 }
-
-    

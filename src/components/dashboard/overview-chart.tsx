@@ -18,6 +18,7 @@ import {
 import type { Transaction } from "@/types";
 import { useMemo } from "react";
 import { formatCurrency } from "@/lib/data";
+import { useCurrency } from "@/context/currency-context"
 
 const chartConfig = {
   amount: {
@@ -31,6 +32,7 @@ interface OverviewChartProps {
 }
 
 export function OverviewChart({ transactions }: OverviewChartProps) {
+    const { currency } = useCurrency();
     const data = useMemo(() => {
         const monthlySpending: Record<string, number> = {};
         
@@ -78,11 +80,11 @@ export function OverviewChart({ transactions }: OverviewChartProps) {
              <YAxis
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
+              tickFormatter={(value) => formatCurrency(value as number, currency).slice(0, -3)}
             />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} hideLabel />}
+              content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number, currency)} hideLabel />}
             />
             <Bar
               dataKey="amount"

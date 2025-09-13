@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/chart";
 import type { BudgetSummary, Transaction } from "@/types";
 import { formatCurrency } from "@/lib/data";
+import { useCurrency } from "@/context/currency-context";
 
 const chartConfig = {
   budget: {
@@ -38,6 +39,7 @@ export function BudgetComparisonChart({
   budgets,
   transactions,
 }: BudgetComparisonChartProps) {
+  const { currency } = useCurrency();
   const data = useMemo(() => {
     // 1. Aggregate actual spending by category
     const actuals = transactions.reduce((acc, t) => {
@@ -95,7 +97,7 @@ export function BudgetComparisonChart({
                   formatter={(value, name) => (
                     <div className="flex flex-col">
                       <span className="capitalize">{name}</span>
-                      <span className="font-bold">{formatCurrency(value as number)}</span>
+                      <span className="font-bold">{formatCurrency(value as number, currency)}</span>
                     </div>
                   )}
                   indicator="dot"

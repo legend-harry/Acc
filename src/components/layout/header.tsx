@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Check, Moon, Sun, Palette, Sparkles, Crown } from "lucide-react";
+import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Check, Moon, Sun, Palette, Sparkles, Crown, Settings } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -37,14 +37,21 @@ function ProfileSwitcher() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Switch Profile</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={user} onValueChange={setUser}>
+                    {profiles.map(profile => (
+                        <DropdownMenuRadioItem key={profile} value={profile}>
+                            <User className="mr-2 h-4 w-4" />
+                            <span>{profile}</span>
+                        </DropdownMenuRadioItem>
+                    ))}
+                </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
-                {profiles.map(profile => (
-                    <DropdownMenuItem key={profile} onSelect={() => setUser(profile)}>
-                        <User className="mr-2 h-4 w-4" />
-                        <span>{profile}</span>
-                        {user === profile && <Check className="ml-auto h-4 w-4" />}
-                    </DropdownMenuItem>
-                ))}
+                 <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Profile & Settings</span>
+                    </Link>
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     )

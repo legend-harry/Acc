@@ -67,7 +67,11 @@ export function DashboardClientContent({
       .reduce((sum, t) => sum + t.amount, 0);
     
     const income = transactions.filter(t => t.type === 'income' && t.status === 'completed').reduce((sum, t) => sum + t.amount, 0);
-    const expense = transactions.filter(t => t.type === 'expense' && t.status === 'completed').reduce((sum, t) => sum + t.amount, 0);
+    
+    // Updated expense calculation to include 'completed' and 'credit'
+    const expense = transactions
+      .filter(t => t.type === 'expense' && (t.status === 'completed' || t.status === 'credit'))
+      .reduce((sum, t) => sum + t.amount, 0);
 
 
     const creditSum = credit.reduce((sum, t) => sum + t.amount, 0);
@@ -91,7 +95,7 @@ export function DashboardClientContent({
       mostRecentTransaction: mostRecent,
       totalIncome: income,
       totalExpense: expense,
-      projectProfitability: income - expense,
+      projectProfitability: income - expense, // Profitability is now based on the updated expense
     };
   }, [transactions]);
 
@@ -124,7 +128,7 @@ export function DashboardClientContent({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpense, currency)}</div>
-                 <p className="text-xs text-muted-foreground">Across all categories</p>
+                 <p className="text-xs text-muted-foreground">Includes completed & credit</p>
               </CardContent>
             </Card>
 
@@ -386,3 +390,5 @@ export function DashboardClientContent({
     </>
   );
 }
+
+    

@@ -108,7 +108,8 @@ export function AddExpenseDialog({
         receiptUrl: receiptUrl,
         createdBy: user,
         type: data.type,
-        status: data.status,
+        status: data.type === 'income' ? 'completed' : data.status,
+        category: data.type === 'income' ? 'Income' : data.category,
         projectId: data.projectId,
     };
     
@@ -158,7 +159,7 @@ export function AddExpenseDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <ScrollArea className="h-96 w-full p-1">
+          <ScrollArea className="h-[70vh] p-1">
             <div className="grid gap-4 py-4 pr-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="project" className="text-right">
@@ -206,24 +207,6 @@ export function AddExpenseDialog({
                         {transactionType === 'expense' && (
                         <>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Status</Label>
-                            <RadioGroup name="status" defaultValue="completed" className="col-span-3 flex gap-4">
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="completed" id="r-completed" />
-                                    <Label htmlFor="r-completed">Completed</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="credit" id="r-credit" />
-                                    <Label htmlFor="r-credit">Credit</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="expected" id="r-expected" />
-                                    <Label htmlFor="r-expected">Expected</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-
-                        <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="category" className="text-right">
                             Category
                         </Label>
@@ -244,10 +227,24 @@ export function AddExpenseDialog({
                             </SelectContent>
                         </Select>
                         </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Status</Label>
+                            <RadioGroup name="status" defaultValue="completed" className="col-span-3 flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="completed" id="r-completed" />
+                                    <Label htmlFor="r-completed">Completed</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="credit" id="r-credit" />
+                                    <Label htmlFor="r-credit">Credit</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="expected" id="r-expected" />
+                                    <Label htmlFor="r-expected">Expected</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
                         </>
-                        )}
-                        {transactionType === 'income' && (
-                            <Input type="hidden" name="status" value="completed" />
                         )}
 
                         <div className="grid grid-cols-4 items-center gap-4">
@@ -390,5 +387,3 @@ export function AddExpenseDialog({
     </Dialog>
   );
 }
-
-    

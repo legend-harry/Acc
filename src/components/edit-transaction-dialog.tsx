@@ -120,7 +120,8 @@ export function EditTransactionDialog({
         receiptUrl: receiptUrl,
         createdBy: user, // Or keep original creator? For now, update it
         type: data.type,
-        status: transactionType === 'income' ? 'completed' : data.status,
+        status: data.type === 'income' ? 'completed' : data.status,
+        category: data.type === 'income' ? 'Income' : data.category,
         projectId: data.projectId
     };
     
@@ -208,23 +209,6 @@ export function EditTransactionDialog({
                         {transactionType === 'expense' && (
                         <>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Status</Label>
-                            <RadioGroup name="status" defaultValue={transaction.status} className="col-span-3 flex gap-4">
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="completed" id="r-edit-completed" />
-                                    <Label htmlFor="r-edit-completed">Completed</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="credit" id="r-edit-credit" />
-                                    <Label htmlFor="r-edit-credit">Credit</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="expected" id="r-edit-expected" />
-                                    <Label htmlFor="r-edit-expected">Expected</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="category" className="text-right">
                                 Category
                             </Label>
@@ -244,6 +228,23 @@ export function EditTransactionDialog({
                                 )}
                                 </SelectContent>
                             </Select>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Status</Label>
+                            <RadioGroup name="status" defaultValue={transaction.status} className="col-span-3 flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="completed" id="r-edit-completed" />
+                                    <Label htmlFor="r-edit-completed">Completed</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="credit" id="r-edit-credit" />
+                                    <Label htmlFor="r-edit-credit">Credit</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="expected" id="r-edit-expected" />
+                                    <Label htmlFor="r-edit-expected">Expected</Label>
+                                </div>
+                            </RadioGroup>
                         </div>
                         </>
                         )}
@@ -393,5 +394,3 @@ export function EditTransactionDialog({
     </Dialog>
   );
 }
-
-    

@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/data";
-import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import {
   AlertDialog,
@@ -34,7 +33,7 @@ import { db } from "@/lib/firebase";
 import { ref, update } from "firebase/database";
 import { useToast } from "@/hooks/use-toast";
 import { getCategoryBadgeColorClass } from "@/lib/utils";
-import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 function TransactionDetailSkeleton() {
@@ -83,9 +82,20 @@ function TransactionDetailSkeleton() {
   );
 }
 
-const chartConfig = {
+const expenseChartConfig = {
   amount: {
     label: "Amount",
+    color: "hsl(var(--chart-1))",
+  },
+};
+
+const incomeChartConfig = {
+  income: {
+    label: "Income",
+    color: "hsl(var(--chart-2))",
+  },
+  expense: {
+    label: "Expense",
     color: "hsl(var(--chart-1))",
   },
 };
@@ -101,19 +111,57 @@ export default function TransactionDetailPage() {
 
   const transactionId = params.id as string;
 
-  const { transaction, categoryHistory } = useMemo(() => {
+  const { transaction, categoryHistory, allIncome, monthlyNet } = useMemo(() => {
     const t = transactions.find((trans) => trans.id === transactionId);
-    if (!t) return { transaction: null, categoryHistory: [] };
+    if (!t) return { transaction: null, categoryHistory: [], allIncome: [], monthlyNet: [] };
 
-    const history = transactions
-      .filter((hist) => hist.category === t.category && hist.status === 'completed' && hist.type === 'expense')
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      
-    return { transaction: t, categoryHistory: history };
+    if (t.type === 'income') {
+        const incomeTxns = transactions
+            .filter((hist) => hist.type === 'income')
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        const monthlyData: Record<string, { income: number; expense: number }> = {};
+        transactions.forEach(txn => {
+            const date = new Date(txn.date);
+            if (!isNaN(date.getTime())) {
+                const month = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+                if (!monthlyData[month]) {
+                    monthlyData[month] = { income: 0, expense: 0 };
+                }
+                if (txn.type === 'income') {
+                    monthlyData[month].income += txn.amount;
+                } else {
+                    monthlyData[month].expense += txn.amount;
+                }
+            }
+        });
+        
+        const sortedMonths = Object.keys(monthlyData).sort((a, b) => {
+            const [monthA, yearA] = a.split(' ');
+            const [monthB, yearB] = b.split(' ');
+            const dateA = new Date(`1 ${monthA} 20${yearA}`);
+            const dateB = new Date(`1 ${monthB} 20${yearB}`);
+            return dateA.getTime() - dateB.getTime();
+        });
+
+        const net = sortedMonths.map(month => ({
+            month,
+            income: monthlyData[month].income,
+            expense: monthlyData[month].expense,
+        }));
+        
+        return { transaction: t, categoryHistory: [], allIncome: incomeTxns, monthlyNet: net };
+    } else { // It's an expense
+        const history = transactions
+          .filter((hist) => hist.category === t.category && hist.status === 'completed' && hist.type === 'expense')
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          
+        return { transaction: t, categoryHistory: history, allIncome: [], monthlyNet: [] };
+    }
   }, [transactions, transactionId]);
 
   const monthlyCategoryHistory = useMemo(() => {
-      if (!categoryHistory) return [];
+      if (!categoryHistory || transaction?.type === 'income') return [];
       
       const monthlySpending: Record<string, number> = {};
       
@@ -138,7 +186,7 @@ export default function TransactionDetailPage() {
           amount: monthlySpending[month],
       }));
 
-  }, [categoryHistory]);
+  }, [categoryHistory, transaction]);
 
   const handleMarkAsCompleted = async () => {
     if (!transaction) return;
@@ -228,8 +276,12 @@ export default function TransactionDetailPage() {
                 <div className="font-semibold">Amount</div>
                 <div className="sm:text-right text-2xl font-bold text-primary">{formatCurrency(transaction.amount)}</div>
 
-                <div className="font-semibold">Category</div>
-                <div className="sm:text-right"><Badge variant="outline" className={getCategoryBadgeColorClass(transaction.category)}>{transaction.category}</Badge></div>
+                {transaction.type === 'expense' && (
+                    <>
+                        <div className="font-semibold">Category</div>
+                        <div className="sm:text-right"><Badge variant="outline" className={getCategoryBadgeColorClass(transaction.category)}>{transaction.category}</Badge></div>
+                    </>
+                )}
                 
                 <div className="font-semibold">Project</div>
                 <div className="sm:text-right">{projectName}</div>
@@ -283,75 +335,158 @@ export default function TransactionDetailPage() {
           )}
         </div>
         <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Spending Over Time</CardTitle>
-                    <CardDescription>For category: {transaction.category}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <ChartContainer config={chartConfig} className="w-full h-64">
-                        <LineChart accessibilityLayer data={categoryHistory} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
-                            <CartesianGrid vertical={false} />
-                            <XAxis
-                                dataKey="date"
-                                tickLine={false}
-                                axisLine={false}
-                                tickMargin={8}
-                                tickFormatter={(value) => formatDate(value)}
-                            />
-                            <YAxis
-                                tickLine={false}
-                                axisLine={false}
-                                tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
-                            />
-                            <ChartTooltip
-                                cursor={false}
-                                content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} name="Amount" />}
-                            />
-                            <Line
-                                dataKey="amount"
-                                type="monotone"
-                                stroke="var(--color-amount)"
-                                strokeWidth={2}
-                                dot={false}
-                            />
-                        </LineChart>
-                    </ChartContainer>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Monthly Breakdown</CardTitle>
-                    <CardDescription>For category: {transaction.category}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <ChartContainer config={chartConfig} className="w-full h-64">
-                        <BarChart accessibilityLayer data={monthlyCategoryHistory} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
-                            <CartesianGrid vertical={false} />
-                            <XAxis
-                                dataKey="month"
-                                tickLine={false}
-                                tickMargin={10}
-                                axisLine={false}
-                            />
-                            <YAxis
-                                tickLine={false}
-                                axisLine={false}
-                                tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
-                            />
-                            <ChartTooltip
-                                cursor={false}
-                                content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} hideLabel />}
-                            />
-                            <Bar
-                                dataKey="amount"
-                                fill="var(--color-amount)"
-                                radius={8}
-                            />
-                        </BarChart>
-                    </ChartContainer>
-                </CardContent>
-            </Card>
+            {transaction.type === 'expense' ? (
+                <>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Spending Over Time</CardTitle>
+                            <CardDescription>For category: {transaction.category}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={expenseChartConfig} className="w-full h-64">
+                                <LineChart accessibilityLayer data={categoryHistory} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={8}
+                                        tickFormatter={(value) => formatDate(value)}
+                                    />
+                                    <YAxis
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
+                                    />
+                                    <ChartTooltip
+                                        cursor={false}
+                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} name="Amount" />}
+                                    />
+                                    <Line
+                                        dataKey="amount"
+                                        type="monotone"
+                                        stroke="var(--color-amount)"
+                                        strokeWidth={2}
+                                        dot={false}
+                                    />
+                                </LineChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Monthly Breakdown</CardTitle>
+                            <CardDescription>For category: {transaction.category}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={expenseChartConfig} className="w-full h-64">
+                                <BarChart accessibilityLayer data={monthlyCategoryHistory} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                        dataKey="month"
+                                        tickLine={false}
+                                        tickMargin={10}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
+                                    />
+                                    <ChartTooltip
+                                        cursor={false}
+                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} hideLabel />}
+                                    />
+                                    <Bar
+                                        dataKey="amount"
+                                        fill="var(--color-amount)"
+                                        radius={8}
+                                    />
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </>
+            ) : (
+                <>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Income Over Time</CardTitle>
+                            <CardDescription>All recorded income transactions.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={incomeChartConfig} className="w-full h-64">
+                                <LineChart accessibilityLayer data={allIncome} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={8}
+                                        tickFormatter={(value) => formatDate(value)}
+                                    />
+                                    <YAxis
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
+                                    />
+                                    <ChartTooltip
+                                        cursor={false}
+                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} name="Income" />}
+                                    />
+                                    <Line
+                                        dataKey="amount"
+                                        type="monotone"
+                                        stroke="var(--color-income)"
+                                        strokeWidth={2}
+                                        dot={false}
+                                        name="Income"
+                                    />
+                                </LineChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Monthly Income vs. Expense</CardTitle>
+                            <CardDescription>Comparison of total income and expenses per month.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <ChartContainer config={incomeChartConfig} className="w-full h-64">
+                                <BarChart accessibilityLayer data={monthlyNet} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                        dataKey="month"
+                                        tickLine={false}
+                                        tickMargin={10}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => formatCurrency(value as number).slice(0, -3)}
+                                    />
+                                    <ChartTooltip
+                                        cursor={false}
+                                        content={<ChartTooltipContent formatter={(value, name) => `${formatCurrency(value as number)}`} />}
+                                    />
+                                    <Legend />
+                                    <Bar
+                                        dataKey="income"
+                                        fill="var(--color-income)"
+                                        radius={4}
+                                    />
+                                    <Bar
+                                        dataKey="expense"
+                                        fill="var(--color-expense)"
+                                        radius={4}
+                                    />
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
         </div>
       </div>
 

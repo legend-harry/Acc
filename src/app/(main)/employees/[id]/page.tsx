@@ -5,15 +5,16 @@ import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParams } from 'next/navigation';
-import { useEmployees, useEmployeeAttendance, useEmployeeMonthlyAttendance } from "@/hooks/use-database";
+import { useEmployees, useEmployeeMonthlyAttendance } from "@/hooks/use-database";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, CalendarCheck, CalendarX, ChevronsRight } from "lucide-react";
+import { User, CalendarCheck, CalendarX, ChevronsRight, ArrowLeft } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getYear, getMonth, format } from "date-fns";
+import Link from "next/link";
 
 const availableYears = [new Date().getFullYear(), new Date().getFullYear() - 1];
 const availableMonths = Array.from({ length: 12 }, (_, i) => ({
@@ -98,6 +99,13 @@ export default function EmployeeDetailPage() {
 
   return (
     <div>
+        <Button asChild variant="ghost" className="mb-4">
+            <Link href="/employees">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Employees
+            </Link>
+        </Button>
+
       <PageHeader
         title={employee.name}
         description={`Attendance history and details for ${employee.name}.`}

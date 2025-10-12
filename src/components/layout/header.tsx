@@ -211,11 +211,6 @@ export function Header() {
                 </Link>
             </Button>
         )}
-        <AddEmployeeDialog>
-            <Button size="sm" variant="outline">
-                <User className="mr-2 h-4 w-4" /> Add Employee
-            </Button>
-        </AddEmployeeDialog>
         <AddExpenseDialog>
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />

@@ -34,6 +34,7 @@ import { BulkLogTimeDialog } from "@/components/bulk-log-time-dialog";
 import { useAttendance } from "@/hooks/use-attendance";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { User } from "lucide-react";
 
 
 export default function EmployeesPage() {
@@ -182,9 +183,16 @@ export default function EmployeesPage() {
           description="Track attendance and manage your team."
           className="mb-0"
         />
-        <LogTimeDialog>
-          <Button>Log Time</Button>
-        </LogTimeDialog>
+        <div className="flex gap-2">
+            <AddEmployeeDialog>
+                <Button variant="outline">
+                    <User className="mr-2 h-4 w-4" /> Add Employee
+                </Button>
+            </AddEmployeeDialog>
+            <LogTimeDialog>
+              <Button>Log Time</Button>
+            </LogTimeDialog>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
@@ -413,5 +421,3 @@ export default function EmployeesPage() {
     </div>
   );
 }
-
-    

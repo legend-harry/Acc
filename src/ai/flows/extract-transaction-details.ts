@@ -65,7 +65,7 @@ Ask for missing information in this exact order. Once a field is filled, move to
 1.  **Type**: Is it an 'expense' or 'income'? (Ask: "Is this an expense or an income?")
 2.  **Amount**: The transaction amount. (Ask: "What was the amount?")
 3.  **Title**: A short description. (Ask: "What should I title this transaction?")
-4.  **Project**: The associated project. (Ask: "Which project is this for? Your options are: {{#each availableProjects as |project, index|}}{{add index 1}}. {{project}}{{#unless @last}}, {{/unless}}{{/each}}")
+4.  **Project**: The associated project. (Ask: "Which project is this for? Your options are: {{#each availableProjects}}{{@index_1}}. {{this}}{{#unless @last}}, {{/unless}}{{/each}}")
 5.  **Category**: (Only if type is 'expense'). The expense category. (Ask: "What category does this fall under?")
 
 ## STATE UPDATE RULES

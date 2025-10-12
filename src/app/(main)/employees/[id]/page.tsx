@@ -4,15 +4,15 @@
 import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function EmployeeDetailPage({ params }: { params: { id: string } }) {
+export default function EmployeeDetailPage({ params: { id } }: { params: { id: string } }) {
   // This is a placeholder page. In the future, you would fetch employee details
-  // using the `params.id` and display their profile, attendance history, etc.
+  // using the `id` and display their profile, attendance history, etc.
 
   return (
     <div>
       <PageHeader
         title="Employee Profile"
-        description={`Details for employee ID: ${params.id}`}
+        description={`Details for employee ID: ${id}`}
       />
       <div className="space-y-4">
         <Skeleton className="h-32 w-full" />
@@ -24,5 +24,3 @@ export default function EmployeeDetailPage({ params }: { params: { id: string } 
     </div>
   );
 }
-
-    

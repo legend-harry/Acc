@@ -31,7 +31,7 @@ export type ExtractTransactionDetailsInput = z.infer<typeof ExtractTransactionDe
 
 const ExtractTransactionDetailsOutputSchema = z.object({
   updatedState: TransactionStateSchema.describe("Updated transaction state after processing user response."),
-  nextQuestion: z.string().describe("Next question to gather missing info. If complete: 'I have all details. Please review.'"),
+  nextQuestion: z.string().describe("Next question to gather missing info. If complete: 'I have all the details. Please review.'"),
 });
 export type ExtractTransactionDetailsOutput = z.infer<typeof ExtractTransactionDetailsOutputSchema>;
 
@@ -45,65 +45,42 @@ const prompt = ai.definePrompt({
   name: 'extractTransactionDetailsPrompt',
   input: {schema: ExtractTransactionDetailsInputSchema},
   output: {schema: ExtractTransactionDetailsOutputSchema},
-  prompt: `You are a financial assistant helping users log transactions conversationally.
+  prompt: `You are a financial assistant helping a user log a transaction via voice. Your goal is to fill in the transaction details by asking a series of questions, one at a time, until all required information is gathered.
+
+## CORE INSTRUCTIONS
+1.  **Analyze the User's Utterance**: First, examine the user's latest response ("{{utterance}}") to extract any relevant details.
+2.  **Update the State**: Update the \`currentState\` with any new information you've gathered.
+3.  **Determine the Next Question**: Based on the updated state, decide on the single most important question to ask next. **NEVER** ask for information that is already present in the \`currentState\`. **NEVER** repeat a question that is already in the \`conversationHistory\`.
 
 ## CONTEXT
-**Current Transaction State:**
-{{json currentState}}
+-   **Current Transaction State:** \`{{json currentState}}\`
+-   **Available Projects:** \`{{json availableProjects}}\`
+-   **Available Categories:** \`{{json availableCategories}}\`
+-   **Conversation History (Questions you have already asked):** \`{{json conversationHistory}}\`
+-   **User's Latest Utterance:** "{{utterance}}"
+-   **Today's Date:** ${new Date().toISOString().split('T')[0]}
 
-**Available Projects:** {{json availableProjects}}
-**Available Categories:** {{json availableCategories}}
-**Previous Questions:** {{json conversationHistory}}
-**User's Latest Utterance:** "{{utterance}}"
-**Today's Date:** ${new Date().toISOString().split('T')[0]}
+## REQUIRED FIELDS & QUESTION PRIORITY
+Ask for missing information in this exact order. Once a field is filled, move to the next one.
+1.  **Type**: Is it an 'expense' or 'income'? (Ask: "Is this an expense or an income?")
+2.  **Amount**: The transaction amount. (Ask: "What was the amount?")
+3.  **Title**: A short description. (Ask: "What should I title this transaction?")
+4.  **Project**: The associated project. (Ask: "Which project is this for? Your options are: {{#each availableProjects as |project, index|}}{{add index 1}}. {{project}}{{#unless @last}}, {{/unless}}{{/each}}")
+5.  **Category**: (Only if type is 'expense'). The expense category. (Ask: "What category does this fall under?")
 
-## PROCESSING RULES
+## STATE UPDATE RULES
+-   **Amount**: Extract numerical values. "fifty dollars" -> 50.
+-   **Date**: Convert relative dates like "yesterday" or "last Friday" to YYYY-MM-DD format. Default to today if not specified.
+-   **Type**: Infer from words like "paid", "spent" (expense) or "received", "earned" (income). Default to 'expense' if ambiguous.
+-   **Status**: Default to 'completed' unless words like "credit", "due", "pending", "future", "expected" are used.
+-   **Project**: If the user says "the second one" or "number 3", select the project from \`availableProjects\` by its 1-based index. If the user names a project not in the list, ask them if they want to create it or choose from the existing list.
+-   **Category**: Map the user's response to the closest available category. If it's unclear, you can ask for clarification.
 
-### 1. STATE UPDATE INSTRUCTIONS
-**Field Extraction:**
-- **Amount**: Extract numerical values. If user says "fifty dollars" → 50
-- **Date**: Convert relative dates ("yesterday", "last Friday") to YYYY-MM-DD
-- **Type**: Infer from context: "I paid" → expense, "I received" → income
-- **Category**: Map to closest available category. If unclear, keep original and validate later
-- **Project**: If user says "the second one" or "number 3", select from availableProjects by index
-- **Status**: Default to 'completed' unless user specifies "credit", "due", "expected", or "pending"
+## COMPLETION
+-   When all required fields (Type, Amount, Title, Project, and Category if expense) are filled, your **ONLY** response for \`nextQuestion\` must be: "I have all the details. Please review."
 
-**Validation Rules:**
-- If project not in availableProjects → keep user's input but flag for confirmation
-- If category not in availableCategories → suggest closest match in next question
-- Amount must be positive number
-
-### 2. NEXT QUESTION STRATEGY
-
-**Priority Order (ask for missing fields in this sequence):**
-1. **Type** (if missing) → "Is this an expense or income?"
-2. **Amount** (if missing) → "What was the amount?"
-3. **Title** (if missing) → "What should I title this transaction?"
-4. **Project** (if missing) → Present as numbered list: "Which project? Options: 1. ProjectA, 2. ProjectB, 3. ProjectC"
-5. **Category** (for expenses only, if missing) → "What category? Options: [categories]"
-6. **Date** (if missing or invalid) → "When did this occur? (YYYY-MM-DD)"
-7. **Vendor/Description** (lower priority)
-
-**Special Cases:**
-- If user provides invalid project: "Project '{{project}}' isn't in your list. Create it or choose from: [availableProjects]"
-- If user provides invalid category: "Category '{{category}}' not found. Did you mean [closest match]?"
-- If all required fields filled: "I have all the details. Please review."
-- For greetings/commands: Acknowledge then ask highest priority missing field
-
-**Required Fields Completion Check:**
-A transaction is complete when it has:
-- type + amount + title + project + (category if expense)
-
-### 3. CONVERSATION GUIDELINES
-- Ask ONE clear, specific question at a time
-- Never repeat questions from conversationHistory
-- Acknowledge user input before asking next question
-- Keep questions concise and natural
-- Confirm ambiguous or invalid inputs immediately
-
-## PROCESS USER'S UTTERANCE: "{{utterance}}"
-
-Update the transaction state and determine the single most important next question.`
+## YOUR TASK
+Given the user's utterance "{{utterance}}", update the state and determine the single next question to ask based on the priority list and the rules above.`,
 });
 
 const extractTransactionDetailsFlow = ai.defineFlow(

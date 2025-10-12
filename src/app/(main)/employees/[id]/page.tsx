@@ -3,9 +3,11 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useParams } from 'next/navigation';
 
-export default function EmployeeDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function EmployeeDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
   // This is a placeholder page. In the future, you would fetch employee details
   // using the `id` and display their profile, attendance history, etc.
 

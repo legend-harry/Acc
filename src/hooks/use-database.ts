@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ref, onValue, off } from 'firebase/database';
+import { ref, onValue, off, get } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import type { Transaction, BudgetSummary, Project, Employee } from '@/types';
 
@@ -144,4 +144,34 @@ export function useEmployees() {
     }, []);
 
     return { employees, loading };
+}
+
+
+export function useAttendanceForDates() {
+    const [attendanceDates, setAttendanceDates] = useState<Date[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const attendanceRef = ref(db, `attendance`);
+        const listener = onValue(attendanceRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const dates = Object.keys(data).map(dateString => new Date(dateString));
+                setAttendanceDates(dates);
+            } else {
+                setAttendanceDates([]);
+            }
+            setLoading(false);
+        }, (error) => {
+            console.error("Firebase read failed for attendance dates: " + error.message);
+            setAttendanceDates([]);
+            setLoading(false);
+        });
+
+        return () => {
+            off(attendanceRef, 'value', listener);
+        };
+    }, []);
+
+    return { attendanceDates, loading };
 }

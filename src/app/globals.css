@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -133,6 +134,12 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  .day-present:not(.day-selected) {
+    @apply rounded-full border-2 border-primary/50;
+  }
+  .day-selected {
+    @apply bg-transparent border-2 border-primary rounded-md;
   }
 }
 

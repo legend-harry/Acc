@@ -12,8 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { useProjects, useEmployees } from "@/hooks/use-database";
-import { useAttendance } from "@/hooks/use-attendance";
+import { useProjects, useEmployees, useAttendanceForDates } from "@/hooks/use-database";
 import type { Employee, AttendanceRecord } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -28,6 +27,11 @@ import { AddEmployeeDialog } from "@/components/add-employee-dialog";
 import { OvertimeDialog } from "@/components/overtime-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LogTimeDialog } from "@/components/log-time-dialog";
+import { Label } from "@/components/ui/label";
+import { formatCurrency } from "@/lib/data";
+import { useCurrency } from "@/context/currency-context";
+import { BulkLogTimeDialog } from "@/components/bulk-log-time-dialog";
+
 
 export default function EmployeesPage() {
   const { employees, loading: employeesLoading } = useEmployees();
@@ -41,9 +45,15 @@ export default function EmployeesPage() {
     attendance,
     loading: attendanceLoading,
     updateAttendance,
+    bulkUpdateAttendance,
   } = useAttendance(selectedDate);
+  const { attendanceDates, loading: datesLoading } = useAttendanceForDates();
+
   const [bulkEditMode, setBulkEditMode] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const { currency } = useCurrency();
+  const [isBulkLogTimeOpen, setIsBulkLogTimeOpen] = useState(false);
+
 
   const filteredEmployees = useMemo(() => {
     if (selectedProjectId === "all") {
@@ -75,9 +85,11 @@ export default function EmployeesPage() {
   const handleBulkStatusChange = (
     status: "full-day" | "half-day" | "absent"
   ) => {
-    selectedEmployees.forEach((employeeId) => {
-      handleAttendanceChange(employeeId, status);
+    const updates = selectedEmployees.map(employeeId => {
+      const record = attendance[employeeId] || {};
+      return { employeeId, record: { ...record, status } };
     });
+    bulkUpdateAttendance(updates);
     setBulkEditMode(false);
     setSelectedEmployees([]);
   };
@@ -90,9 +102,9 @@ export default function EmployeesPage() {
     }
   };
 
-  const loading = employeesLoading || projectsLoading || attendanceLoading;
+  const loading = employeesLoading || projectsLoading || attendanceLoading || datesLoading;
 
-  if (loading) {
+  if (loading && employees.length === 0) {
     return (
       <div>
         <PageHeader
@@ -169,6 +181,9 @@ export default function EmployeesPage() {
               <div>
                 {bulkEditMode ? (
                   <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setIsBulkLogTimeOpen(true)}>
+                      Log Time
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -214,6 +229,7 @@ export default function EmployeesPage() {
                         {bulkEditMode && (
                           <Checkbox
                             checked={
+                              selectedEmployees.length > 0 &&
                               selectedEmployees.length ===
                               filteredEmployees.length
                             }
@@ -289,6 +305,15 @@ export default function EmployeesPage() {
                                   }
                                 }}
                               />
+                              <Label htmlFor={`ot-${emp.id}`} className="cursor-pointer">
+                                                     {record?.overtimeHours ? (
+                                                        <button className="text-xs text-muted-foreground underline" onClick={() => setOvertimeEmployee(emp)}>
+                                                            {record.overtimeHours}hr @ {formatCurrency(record.overtimeRate || 0, currency)}
+                                                        </button>
+                                                     ) : (
+                                                        'Log OT'
+                                                     )}
+                                                    </Label>
                             </div>
                           </td>
                         </tr>
@@ -312,6 +337,10 @@ export default function EmployeesPage() {
                 selected={selectedDate}
                 onSelect={handleDateChange}
                 className="rounded-md border"
+                modifiers={{ present: attendanceDates }}
+                modifiersClassNames={{
+                  present: 'day-present',
+                }}
               />
             </CardContent>
           </Card>
@@ -324,19 +353,33 @@ export default function EmployeesPage() {
           isOpen={!!overtimeEmployee}
           onOpenChange={() => setOvertimeEmployee(null)}
           onSave={(hours, rate) => {
-            const record = attendance[overtimeEmployee.id] || {};
-            updateAttendance(overtimeEmployee.id, {
-              ...record,
-              overtimeHours: hours,
-              overtimeRate: rate,
-            });
+            if (overtimeEmployee) {
+              const record = attendance[overtimeEmployee.id] || {};
+              updateAttendance(overtimeEmployee.id, {
+                ...record,
+                overtimeHours: hours,
+                overtimeRate: rate,
+              });
+            }
             setOvertimeEmployee(null);
           }}
         />
       )}
+       <BulkLogTimeDialog
+        isOpen={isBulkLogTimeOpen}
+        onOpenChange={setIsBulkLogTimeOpen}
+        employeeIds={selectedEmployees}
+        onSave={(logData) => {
+          const updates = selectedEmployees.map(employeeId => ({
+            employeeId,
+            record: logData
+          }));
+          bulkUpdateAttendance(updates, new Date(logData.date));
+          setIsBulkLogTimeOpen(false);
+          setBulkEditMode(false);
+          setSelectedEmployees([]);
+        }}
+      />
     </div>
   );
 }
-
-
-    

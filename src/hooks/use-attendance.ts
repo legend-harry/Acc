@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { ref, onValue, off, set, get } from 'firebase/database';
+import { ref, onValue, off, set, get, update } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import type { AttendanceRecord } from '@/types';
 import { format } from 'date-fns';
@@ -51,7 +51,31 @@ export function useAttendance(date: Date) {
     }
   }, [dateString]);
 
-  return { attendance, loading, updateAttendance };
-}
+  const bulkUpdateAttendance = useCallback(async (updates: { employeeId: string; record: Partial<AttendanceRecord> }[], logDate?: Date) => {
+    const rootRef = ref(db);
+    const dateToUpdate = logDate ? format(logDate, 'yyyy-MM-dd') : dateString;
 
-    
+    const promises = updates.map(async ({ employeeId, record }) => {
+      const path = `attendance/${dateToUpdate}/${employeeId}`;
+      const attendanceRef = ref(db, path);
+      const snapshot = await get(attendanceRef);
+      const existingRecord = snapshot.val() || {};
+      const newRecord = {
+        ...existingRecord,
+        ...record,
+        employeeId,
+        date: dateToUpdate,
+      };
+      return update(rootRef, { [path]: newRecord });
+    });
+
+    try {
+      await Promise.all(promises);
+    } catch (error) {
+      console.error("Failed to bulk update attendance:", error);
+    }
+  }, [dateString]);
+
+
+  return { attendance, loading, updateAttendance, bulkUpdateAttendance };
+}

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ref, onValue, off, get } from 'firebase/database';
+import { ref, onValue, off, get, query, orderByChild, equalTo } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import type { Transaction, BudgetSummary, Project, Employee, AttendanceRecord, AttendanceStatus } from '@/types';
 
@@ -191,4 +191,36 @@ export function useAttendanceForDates() {
     return { dailySummaries, loading };
 }
 
-    
+export function useEmployeeAttendance(employeeId: string) {
+    const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!employeeId) {
+            setLoading(false);
+            return;
+        }
+
+        const attendanceRef = ref(db, 'attendance');
+        const listener = onValue(attendanceRef, (snapshot) => {
+            const allAttendance = snapshot.val();
+            const employeeAttendance: Record<string, AttendanceRecord> = {};
+            if (allAttendance) {
+                Object.keys(allAttendance).forEach(dateString => {
+                    if (allAttendance[dateString][employeeId]) {
+                        employeeAttendance[dateString] = allAttendance[dateString][employeeId];
+                    }
+                });
+            }
+            setAttendanceRecords(employeeAttendance);
+            setLoading(false);
+        }, (error) => {
+            console.error("Firebase read failed for employee attendance: " + error.message);
+            setLoading(false);
+        });
+
+        return () => off(attendanceRef, 'value', listener);
+    }, [employeeId]);
+
+    return { attendanceRecords, loading };
+}

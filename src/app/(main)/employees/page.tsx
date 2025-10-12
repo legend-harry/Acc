@@ -32,11 +32,12 @@ import { formatCurrency } from "@/lib/data";
 import { useCurrency } from "@/context/currency-context";
 import { BulkLogTimeDialog } from "@/components/bulk-log-time-dialog";
 import { useAttendance } from "@/hooks/use-attendance";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 
 export default function EmployeesPage() {
+  const router = useRouter();
   const { employees, loading: employeesLoading } = useEmployees();
   const { projects, loading: projectsLoading } = useProjects();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -270,8 +271,8 @@ export default function EmployeesPage() {
                     {filteredEmployees.map((emp) => {
                       const record = attendance[emp.id];
                       return (
-                        <tr key={emp.id} className={cn("border-b", "hover:bg-muted/50")}>
-                          <td className="p-3">
+                        <tr key={emp.id} onClick={() => router.push(`/employees/${emp.id}`)} className={cn("border-b", "hover:bg-muted/50 cursor-pointer")}>
+                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
                             {bulkEditMode && (
                               <Checkbox
                                 checked={selectedEmployees.includes(emp.id)}
@@ -286,11 +287,9 @@ export default function EmployeesPage() {
                             )}
                           </td>
                           <td className="p-3 font-medium">
-                            <Link href={`/employees/${emp.id}`} className="hover:underline">
-                              {emp.name}
-                            </Link>
+                            {emp.name}
                           </td>
-                          <td className="p-3">
+                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
                             <Select
                               value={record?.status || "absent"}
                               onValueChange={(value) =>
@@ -314,7 +313,7 @@ export default function EmployeesPage() {
                               </SelectContent>
                             </Select>
                           </td>
-                          <td className="p-3">
+                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-2">
                               <Checkbox
                                 id={`ot-${emp.id}`}
@@ -414,5 +413,3 @@ export default function EmployeesPage() {
     </div>
   );
 }
-
-    

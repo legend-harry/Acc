@@ -15,6 +15,7 @@ import { useUser } from "@/context/user-context";
 import Image from "next/image";
 import { useSubscription } from "@/context/subscription-context";
 import { AddEmployeeDialog } from "@/components/add-employee-dialog";
+import { InstallPwaButton } from "@/components/install-pwa-button";
 
 
 const navItems = [
@@ -201,6 +202,7 @@ export function Header() {
       )}
 
       <div className="flex items-center gap-2">
+        <InstallPwaButton />
         <ThemeSwitcher />
         <ProfileSwitcher />
         {!isPremium && !isMobile && (

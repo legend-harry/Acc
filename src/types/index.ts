@@ -36,3 +36,29 @@ export type Project = {
     id: string;
     name: string;
 };
+
+export type Employee = {
+  id: string;
+  name: string;
+  wage: number;
+  wageType: 'hourly' | 'daily' | 'monthly';
+  projectIds: string[];
+  overtimeRateMultiplier: number;
+  notes?: string;
+};
+
+export type AttendanceStatus = 'full-day' | 'half-day' | 'absent' | 'scheduled';
+
+export type AttendanceRecord = {
+  employeeId: string;
+  date: string; // YYYY-MM-DD
+  status: AttendanceStatus;
+  overtimeHours?: number;
+  overtimeRate?: number;
+  notes?: string;
+  clockIn?: string; // ISO string
+  clockOut?: string; // ISO string
+  breakDuration?: number; // in minutes
+};
+
+    

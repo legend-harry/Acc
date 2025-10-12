@@ -97,7 +97,7 @@ export function VoiceTransactionDialog({
 
 
   useEffect(() => {
-    const initialGreeting = `Hello ${user}! How can I help you today?`;
+    const initialGreeting = `Hello ${user}!`;
     if (isOpen) {
       // Reset state when dialog opens
       setIsListening(false);

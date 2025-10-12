@@ -4,7 +4,8 @@
 import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function EmployeeDetailPage({ params: { id } }: { params: { id: string } }) {
+export default function EmployeeDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   // This is a placeholder page. In the future, you would fetch employee details
   // using the `id` and display their profile, attendance history, etc.
 

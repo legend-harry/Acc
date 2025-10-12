@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { ref, onValue, off, get } from 'firebase/database';
 import { db } from '@/lib/firebase';
-import type { Transaction, BudgetSummary, Project, Employee } from '@/types';
+import type { Transaction, BudgetSummary, Project, Employee, AttendanceRecord, AttendanceStatus } from '@/types';
 
 export function useProjects() {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -146,25 +146,40 @@ export function useEmployees() {
     return { employees, loading };
 }
 
+type DailySummary = {
+  status: 'present' | 'absent' | 'half-day';
+};
 
 export function useAttendanceForDates() {
-    const [attendanceDates, setAttendanceDates] = useState<Date[]>([]);
+    const [dailySummaries, setDailySummaries] = useState<Record<string, DailySummary>>({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const attendanceRef = ref(db, `attendance`);
         const listener = onValue(attendanceRef, (snapshot) => {
             const data = snapshot.val();
+            const summaries: Record<string, DailySummary> = {};
+
             if (data) {
-                const dates = Object.keys(data).map(dateString => new Date(dateString));
-                setAttendanceDates(dates);
-            } else {
-                setAttendanceDates([]);
+                Object.keys(data).forEach(dateString => {
+                    const dailyRecords: Record<string, AttendanceRecord> = data[dateString];
+                    const statuses = Object.values(dailyRecords).map(rec => rec.status);
+                    
+                    if (statuses.includes('absent')) {
+                        summaries[dateString] = { status: 'absent' };
+                    } else if (statuses.includes('half-day')) {
+                        summaries[dateString] = { status: 'half-day' };
+                    } else if (statuses.every(s => s === 'full-day')) {
+                        summaries[dateString] = { status: 'present' };
+                    }
+                });
             }
+            
+            setDailySummaries(summaries);
             setLoading(false);
         }, (error) => {
             console.error("Firebase read failed for attendance dates: " + error.message);
-            setAttendanceDates([]);
+            setDailySummaries({});
             setLoading(false);
         });
 
@@ -173,5 +188,7 @@ export function useAttendanceForDates() {
         };
     }, []);
 
-    return { attendanceDates, loading };
+    return { dailySummaries, loading };
 }
+
+    

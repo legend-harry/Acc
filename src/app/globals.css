@@ -135,11 +135,23 @@
   body {
     @apply bg-background text-foreground;
   }
-  .day-present:not(.day-selected) {
-    @apply rounded-full border-2 border-primary/50;
+  .day-today {
+    @apply bg-accent text-accent-foreground;
+  }
+  .day-today-outline {
+    @apply bg-background text-foreground border-2 border-primary rounded-md;
+  }
+  .day-present {
+    @apply rounded-full border-2 border-green-500/50;
+  }
+  .day-absent {
+    @apply rounded-full border-2 border-red-500/50;
+  }
+  .day-half-day {
+    @apply rounded-full border-2 border-yellow-500/50;
   }
   .day-selected {
-    @apply bg-transparent border-2 border-primary rounded-md;
+    @apply bg-primary text-primary-foreground;
   }
 }
 
@@ -151,3 +163,5 @@ ul {
 ul ul {
   list-style: circle;
 }
+
+    

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { useProjects, useEmployees, useAttendanceForDates } from "@/hooks/use-database";
-import type { Employee, AttendanceRecord } from "@/types";
+import type { Employee, AttendanceRecord, AttendanceStatus } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -32,6 +32,8 @@ import { formatCurrency } from "@/lib/data";
 import { useCurrency } from "@/context/currency-context";
 import { BulkLogTimeDialog } from "@/components/bulk-log-time-dialog";
 import { useAttendance } from "@/hooks/use-attendance";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 
 export default function EmployeesPage() {
@@ -48,13 +50,12 @@ export default function EmployeesPage() {
     updateAttendance,
     bulkUpdateAttendance,
   } = useAttendance(selectedDate);
-  const { attendanceDates, loading: datesLoading } = useAttendanceForDates();
+  const { dailySummaries, loading: datesLoading } = useAttendanceForDates();
 
   const [bulkEditMode, setBulkEditMode] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const { currency } = useCurrency();
   const [isBulkLogTimeOpen, setIsBulkLogTimeOpen] = useState(false);
-
 
   const filteredEmployees = useMemo(() => {
     if (selectedProjectId === "all") {
@@ -102,6 +103,28 @@ export default function EmployeesPage() {
       setSelectedEmployees([]);
     }
   };
+
+  const calendarModifiers = useMemo(() => {
+    const present: Date[] = [];
+    const absent: Date[] = [];
+    const halfDay: Date[] = [];
+
+    Object.keys(dailySummaries).forEach(dateStr => {
+      const summary = dailySummaries[dateStr];
+      const date = new Date(dateStr);
+      date.setUTCHours(0, 0, 0, 0); // Normalize date
+
+      if (summary.status === 'absent') {
+        absent.push(date);
+      } else if (summary.status === 'half-day') {
+        halfDay.push(date);
+      } else if (summary.status === 'present') {
+        present.push(date);
+      }
+    });
+
+    return { present, absent, halfDay };
+  }, [dailySummaries]);
 
   const loading = employeesLoading || projectsLoading || attendanceLoading || datesLoading;
 
@@ -247,7 +270,7 @@ export default function EmployeesPage() {
                     {filteredEmployees.map((emp) => {
                       const record = attendance[emp.id];
                       return (
-                        <tr key={emp.id} className="border-b">
+                        <tr key={emp.id} className={cn("border-b", "hover:bg-muted/50")}>
                           <td className="p-3">
                             {bulkEditMode && (
                               <Checkbox
@@ -262,7 +285,11 @@ export default function EmployeesPage() {
                               />
                             )}
                           </td>
-                          <td className="p-3 font-medium">{emp.name}</td>
+                          <td className="p-3 font-medium">
+                            <Link href={`/employees/${emp.id}`} className="hover:underline">
+                              {emp.name}
+                            </Link>
+                          </td>
                           <td className="p-3">
                             <Select
                               value={record?.status || "absent"}
@@ -338,9 +365,12 @@ export default function EmployeesPage() {
                 selected={selectedDate}
                 onSelect={handleDateChange}
                 className="rounded-md border"
-                modifiers={{ present: attendanceDates }}
+                modifiers={calendarModifiers}
                 modifiersClassNames={{
                   present: 'day-present',
+                  absent: 'day-absent',
+                  halfDay: 'day-half-day',
+                  today: 'day-today-outline',
                 }}
               />
             </CardContent>
@@ -384,3 +414,5 @@ export default function EmployeesPage() {
     </div>
   );
 }
+
+    

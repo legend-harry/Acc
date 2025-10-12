@@ -31,6 +31,7 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/data";
 import { useCurrency } from "@/context/currency-context";
 import { BulkLogTimeDialog } from "@/components/bulk-log-time-dialog";
+import { useAttendance } from "@/hooks/use-attendance";
 
 
 export default function EmployeesPage() {

@@ -268,7 +268,7 @@ export default function TransactionDetailPage() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader>
@@ -294,7 +294,7 @@ export default function TransactionDetailPage() {
                 <div className="font-semibold">Date</div>
                 <div className="sm:text-right">{formatDate(transaction.date)}</div>
 
-                <div className="fontsemibold">Vendor</div>
+                <div className="font-semibold">Vendor</div>
                 <div className="sm:text-right">{transaction.vendor || "-"}</div>
                 
                 <div className="font-semibold">Created By</div>

@@ -46,7 +46,7 @@ export function VoiceTransactionDialog({
   const { categories, loading: categoriesLoading } = useCategories();
 
   const [isListening, setIsListening] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState("Let's start with the transaction details. What was it for?");
+  const [currentQuestion, setCurrentQuestion] = useState("Hello I am you Finance Assistant How may I help you?");
   const [transcript, setTranscript] = useState("");
   const [transactionState, setTransactionState] = useState<Record<string, any>>({});
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
@@ -98,13 +98,13 @@ export function VoiceTransactionDialog({
     if (isOpen) {
       // Reset state when dialog opens
       setIsListening(false);
-      setCurrentQuestion("Let's start with the transaction details. What was it for?");
+      setCurrentQuestion("Hello I am you Finance Assistant How may I help you?");
       setTranscript("");
       setTransactionState({});
       setConversationHistory([]);
       setIsProcessing(false);
       setIsComplete(false);
-      setTimeout(() => speak(currentQuestion), 300);
+      setTimeout(() => speak("Hello I am your Finance Assistant. How may I help you?"), 300);
     } else {
         if (recognitionRef.current) {
             recognitionRef.current.abort();
@@ -172,6 +172,15 @@ export function VoiceTransactionDialog({
 
   const processTranscript = async (text: string) => {
       if (!text.trim()) return;
+
+      if (conversationHistory.length === 0 && text.toLowerCase().includes("transaction")) {
+          const nextQuestion = "Great. Let's start with the transaction details. What was the amount?";
+           setCurrentQuestion(nextQuestion);
+           setConversationHistory(prev => [...prev, currentQuestion]);
+           speak(nextQuestion);
+           return;
+      }
+
       setIsProcessing(true);
       
       const availableProjectNames = projects.map(p => p.name);

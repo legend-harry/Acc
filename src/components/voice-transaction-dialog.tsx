@@ -54,12 +54,45 @@ export function VoiceTransactionDialog({
   const [isComplete, setIsComplete] = useState(false);
 
   const recognitionRef = useRef<any>(null);
+  const femaleVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
   const speak = useCallback((text: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
+    
+    // Cancel any previous speech
+    window.speechSynthesis.cancel();
+    
     const utterance = new SpeechSynthesisUtterance(text);
+
+    // Find and set a female voice
+    if (femaleVoiceRef.current) {
+        utterance.voice = femaleVoiceRef.current;
+    }
+
     window.speechSynthesis.speak(utterance);
   }, []);
+
+  useEffect(() => {
+    const loadVoices = () => {
+        if (typeof window === 'undefined' || !window.speechSynthesis) return;
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            const femaleVoice = voices.find(
+                voice => voice.name.includes('Female') && voice.lang.startsWith('en')
+            ) || voices.find(
+                voice => voice.lang.startsWith('en-US') || voice.lang.startsWith('en-GB')
+            ) || null;
+            femaleVoiceRef.current = femaleVoice;
+        }
+    };
+    
+    // Voices are loaded asynchronously
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices(); // Initial check
+    }
+  }, []);
+
 
   useEffect(() => {
     if (isOpen) {
@@ -74,7 +107,7 @@ export function VoiceTransactionDialog({
       setTimeout(() => speak(currentQuestion), 300);
     } else {
         if (recognitionRef.current) {
-            recognitionRef.current.stop();
+            recognitionRef.current.abort();
         }
         window.speechSynthesis.cancel();
     }
@@ -92,21 +125,23 @@ export function VoiceTransactionDialog({
     recognition.lang = 'en-US';
 
     recognition.onresult = (event: any) => {
-      let interimTranscript = "";
+      let finalTranscript = "";
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          const finalTranscript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+          }
+      }
+      if (finalTranscript) {
           setTranscript(finalTranscript);
           stopListening();
           processTranscript(finalTranscript);
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-        }
       }
     };
     
     recognition.onerror = (event: any) => {
-        console.error("Speech recognition error", event.error);
+        if (event.error !== 'aborted' && event.error !== 'no-speech') {
+            console.error("Speech recognition error", event.error);
+        }
         stopListening();
     };
 
@@ -116,7 +151,7 @@ export function VoiceTransactionDialog({
 
     return () => {
         if (recognition) {
-            recognition.stop();
+            recognition.abort();
         }
     }
   }, []);

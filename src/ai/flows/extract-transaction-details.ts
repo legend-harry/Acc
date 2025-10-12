@@ -31,7 +31,7 @@ const ExtractTransactionDetailsInputSchema = z.object({
   availableProjects: z.array(z.string()).describe("A list of available projects the user can assign this to."),
   availableCategories: z.array(z.string()).describe("A list of available expense categories."),
   utterance: z.string().describe("The latest user's spoken response."),
-  conversationHistory: z.array(z.string()).describe("The history of questions asked so far."),
+  conversationHistory: z.array(z.string()).describe("The history of questions asked so far. Do not repeat these questions."),
 });
 export type ExtractTransactionDetailsInput = z.infer<typeof ExtractTransactionDetailsInputSchema>;
 
@@ -63,20 +63,17 @@ And the following expense categories: {{json availableCategories}}
 You have already asked: {{json conversationHistory}}
 The user just said: "{{utterance}}"
 
-Analyze the user's response and update the transaction details.
-- If the user provides a category, make sure it's one of the available categories. If it's similar, map it to the closest one.
-- The default status for an expense is 'completed'. Only change it if the user specifies 'credit', 'unpaid', 'due', 'expected', or 'later'.
-- Today's date is ${new Date().toDateString()}.
+1.  **Analyze the user's response** ("{{utterance}}") and update the transaction details in 'updatedState'.
+    *   If the user provides a category, make sure it's one of the available categories. If it's similar, map it to the closest one.
+    *   The default status for an expense is 'completed'. Only change it if the user specifies 'credit', 'unpaid', 'due', 'expected', or 'later'.
+    *   Today's date is ${new Date().toDateString()}.
 
-Based on the updated details, determine the next logical question to ask to fill in the missing fields.
-- Ask for the project first if it's missing.
-- Then ask for the amount if it's missing.
-- Then title.
-- Then category (only for expenses).
-- Don't ask for fields that are already filled.
-- Ask only one question at a time.
-
-If all necessary fields (project, type, amount, title, and category for expenses) are filled, your next question should be "I have all the details. Please review."
+2.  **Determine the next question** based on what information is still missing in 'updatedState'.
+    *   Check the 'currentState' and 'conversationHistory'. Do NOT ask for information that is already filled or has been asked before.
+    *   Your priority for asking questions is: project, type, amount, title, then category (for expenses).
+    *   **If the project is missing, list the options for the user**: "Which project is this for? Your options are: {{json availableProjects}}."
+    *   Ask only one clear and simple question at a time. For example: "What was the amount?" or "What category does this fall under?"
+    *   If all necessary fields (project, type, amount, title, and category for expenses) are filled, your next question **must be**: "I have all the details. Please review."
 `,
 });
 

@@ -106,7 +106,7 @@ export function VoiceTransactionDialog({
     setConversationHistory([]); // Start with an empty history
     setIsProcessing(false);
     setIsComplete(false);
-    setTimeout(() => speak(initialGreeting), 300);
+    speak(initialGreeting);
   }, [speak, user]);
 
 
@@ -170,7 +170,7 @@ export function VoiceTransactionDialog({
           processTranscript(finalTranscript);
       }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finalTranscript]);
+  }, [finalTranscript, processTranscript]);
 
   useEffect(() => {
     if (!SpeechRecognition) {

@@ -103,7 +103,7 @@ export function VoiceTransactionDialog({
     setTranscript("");
     setFinalTranscript("");
     setTransactionState({});
-    setConversationHistory([]); // Start with an empty history
+    setConversationHistory([initialGreeting]); // Start with the greeting in history
     setIsProcessing(false);
     setIsComplete(false);
     speak(initialGreeting);
@@ -125,52 +125,56 @@ export function VoiceTransactionDialog({
     if (!text.trim()) return;
 
     setIsProcessing(true);
-    
-    const availableProjectNames = projects.map(p => p.name);
-    // Pass the full history, including the latest question that prompted the user's response
-    const historyForAI = [...conversationHistory, currentQuestion];
-    
-    try {
-      const result = await extractTransactionDetails({
-        currentState: transactionState,
-        availableProjects: availableProjectNames,
-        availableCategories: categories,
-        utterance: text,
-        conversationHistory: historyForAI
-      });
 
-      setTransactionState(result.updatedState);
-      const nextQuestion = result.nextQuestion;
-      
-      // Update history with the question asked and the AI's next question
-      setConversationHistory(prev => [...prev, currentQuestion, nextQuestion]);
-      setCurrentQuestion(nextQuestion);
-      
-      if (nextQuestion.includes("I have all the details")) {
-        setIsComplete(true);
-        speak("I have all the details. Please review the form and save.");
-      } else {
-        speak(nextQuestion);
-      }
-    } catch (e) {
-        console.error("AI processing error", e);
-        const errorQuestion = "Sorry, I had trouble understanding that. Could you please repeat?";
-        setCurrentQuestion(errorQuestion);
-        setConversationHistory(prev => [...prev, currentQuestion, errorQuestion]);
-        speak(errorQuestion);
-    } finally {
-        setIsProcessing(false);
-        setTranscript("");
-        setFinalTranscript("");
-    }
-  }, [projects, categories, conversationHistory, currentQuestion, transactionState, speak]);
+    const availableProjectNames = projects.map(p => p.name);
+    // Use a callback with setConversationHistory to ensure we have the latest state
+    setConversationHistory(prevHistory => {
+        const historyForAI = [...prevHistory]; // The history leading up to this point
+
+        extractTransactionDetails({
+            currentState: transactionState,
+            availableProjects: availableProjectNames,
+            availableCategories: categories,
+            utterance: text,
+            conversationHistory: historyForAI
+        }).then(result => {
+            setTransactionState(result.updatedState);
+            const nextQuestion = result.nextQuestion;
+            
+            // Add the AI's next question to the history
+            setConversationHistory(currentHistory => [...currentHistory, nextQuestion]);
+            setCurrentQuestion(nextQuestion);
+            
+            if (nextQuestion.includes("I have all the details")) {
+                setIsComplete(true);
+                speak("I have all the details. Please review the form and save.");
+            } else {
+                speak(nextQuestion);
+            }
+        }).catch(e => {
+            console.error("AI processing error", e);
+            const errorQuestion = "Sorry, I had trouble understanding that. Could you please repeat?";
+            setConversationHistory(currentHistory => [...currentHistory, errorQuestion]);
+            setCurrentQuestion(errorQuestion);
+            speak(errorQuestion);
+        }).finally(() => {
+            setIsProcessing(false);
+            setTranscript("");
+            setFinalTranscript("");
+        });
+        
+        // Return the current history, it will be updated by the async operation's state setters
+        return prevHistory;
+    });
+
+  }, [projects, categories, transactionState, speak]);
   
   useEffect(() => {
       if (finalTranscript) {
           processTranscript(finalTranscript);
       }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finalTranscript, processTranscript]);
+  }, [finalTranscript]);
 
   useEffect(() => {
     if (!SpeechRecognition) {

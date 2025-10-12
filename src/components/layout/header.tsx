@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Check, Moon, Sun, Palette, Sparkles, Crown, Settings } from "lucide-react";
+import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Users, Check, Moon, Sun, Palette, Sparkles, Crown, Settings } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -14,12 +14,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useUser } from "@/context/user-context";
 import Image from "next/image";
 import { useSubscription } from "@/context/subscription-context";
+import { AddEmployeeDialog } from "@/components/add-employee-dialog";
 
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
   { href: "/planner", icon: Target, label: "Planner" },
+  { href: "/employees", icon: Users, label: "Employees" },
   { href: "/reports", icon: PieChart, label: "Reports" },
 ];
 
@@ -209,6 +211,11 @@ export function Header() {
                 </Link>
             </Button>
         )}
+        <AddEmployeeDialog>
+            <Button size="sm" variant="outline">
+                <User className="mr-2 h-4 w-4" /> Add Employee
+            </Button>
+        </AddEmployeeDialog>
         <AddExpenseDialog>
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />

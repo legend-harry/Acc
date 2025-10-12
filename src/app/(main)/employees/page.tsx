@@ -190,7 +190,7 @@ export default function EmployeesPage() {
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Card>
-            <CardHeader className="flex flex-row justify-between items-center">
+            <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4">
               <div>
                 <CardTitle>
                   Attendance for {selectedDate.toLocaleDateString()}
@@ -205,7 +205,7 @@ export default function EmployeesPage() {
               </div>
               <div>
                 {bulkEditMode ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => setIsBulkLogTimeOpen(true)}>
                       Bulk Log Time
                     </Button>
@@ -413,3 +413,5 @@ export default function EmployeesPage() {
     </div>
   );
 }
+
+    

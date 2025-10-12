@@ -73,7 +73,7 @@ The user just said: "{{utterance}}"
 2.  **Determine the next question** based on what information is still missing in 'updatedState'.
     *   Check the 'currentState' and 'conversationHistory'. Do NOT ask for information that is already filled or has been asked before.
     *   Your priority for asking questions is: title, amount, project, then category (for expenses).
-    *   **If the project is missing and you haven't asked for it**, list the options for the user as a numbered list: "Which project is this for? Your options are: {{#each availableProjects as |project, index|}} {{add index 1}}. {{project}}{{#unless @last}},{{/unless}}{{/each}}."
+    *   **If the project is missing and you haven't asked for it**, list the options for the user as a numbered list: "Which project is this for? Your options are: {{#each availableProjects}} {{ @index }}. {{this}}{{#unless @last}},{{/unless}}{{/each}}."
     *   **If the user specified a project name that is NOT in the availableProjects list**, ask for confirmation: "I don't see '{{currentState.project}}' in your projects. Would you like to create it?"
     *   Ask only one clear and simple question at a time. For example: "What was the amount?" or "What should I title this transaction?"
     *   If the user's utterance is a general greeting or command like "create a transaction", your next question should be to ask for the title or amount. Example: "Great, what was the amount?" or "Okay, what's a title for this transaction?"

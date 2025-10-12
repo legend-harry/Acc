@@ -207,7 +207,7 @@ export default function EmployeesPage() {
                 {bulkEditMode ? (
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => setIsBulkLogTimeOpen(true)}>
-                      Log Time
+                      Bulk Log Time
                     </Button>
                     <Button
                       variant="outline"
@@ -404,7 +404,7 @@ export default function EmployeesPage() {
             employeeId,
             record: logData
           }));
-          bulkUpdateAttendance(updates, new Date(logData.date));
+          bulkUpdateAttendance(updates, logData.dates);
           setIsBulkLogTimeOpen(false);
           setBulkEditMode(false);
           setSelectedEmployees([]);

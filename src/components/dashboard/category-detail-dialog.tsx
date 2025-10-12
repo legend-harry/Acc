@@ -51,17 +51,20 @@ export function CategoryDetailDialog({
 }: CategoryDetailDialogProps) {
   const { currency } = useCurrency();
 
-  const monthlySpending = useMemo(() => {
+  const { monthlySpending, totalSpend, sortedTransactions } = useMemo(() => {
     const spending: Record<string, number> = {};
+    let total = 0;
+
     transactions.forEach((t) => {
       const month = new Date(t.date).toLocaleString("default", {
         month: "short",
         year: "2-digit",
       });
       spending[month] = (spending[month] || 0) + t.amount;
+      total += t.amount;
     });
 
-    return Object.entries(spending)
+    const monthlyData = Object.entries(spending)
       .map(([month, amount]) => ({ month, amount }))
       .sort((a, b) => {
           const [monthA, yearA] = a.month.split(' ');
@@ -70,10 +73,10 @@ export function CategoryDetailDialog({
           const dateB = new Date(`1 ${monthB} 20${yearB}`);
           return dateA.getTime() - dateB.getTime();
       });
-  }, [transactions]);
-  
-  const sortedTransactions = useMemo(() => {
-    return [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+    return { monthlySpending: monthlyData, totalSpend: total, sortedTransactions: sorted };
   }, [transactions]);
 
 
@@ -83,7 +86,7 @@ export function CategoryDetailDialog({
         <DialogHeader>
           <DialogTitle>Spending Details: {category}</DialogTitle>
           <DialogDescription>
-            A detailed look at your spending for the '{category}' category.
+            Total spend for this category is <span className="font-bold text-foreground">{formatCurrency(totalSpend, currency)}</span>.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-6">
@@ -152,4 +155,3 @@ export function CategoryDetailDialog({
     </Dialog>
   );
 }
-

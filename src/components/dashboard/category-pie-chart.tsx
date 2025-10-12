@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { formatCurrency } from "@/lib/data";
 import { useCurrency } from "@/context/currency-context";
 import { CategoryDetailDialog } from "./category-detail-dialog";
+import { cn } from "@/lib/utils";
 
 const chartColors = [
     "hsl(var(--chart-1))",
@@ -121,7 +122,10 @@ export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
                       const itemValue = entry.payload.value;
                       const percentage = total > 0 ? (itemValue / total) * 100 : 0;
                       return (
-                          <div className="flex w-full justify-between">
+                          <div 
+                              className="flex w-full justify-between cursor-pointer p-1 -m-1 rounded-md hover:bg-muted"
+                              onClick={() => setSelectedCategory(value)}
+                          >
                               <span>{value}</span>
                               <span>{formatCurrency(itemValue, currency)} ({percentage.toFixed(0)}%)</span>
                           </div>

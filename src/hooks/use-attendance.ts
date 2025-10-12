@@ -51,28 +51,35 @@ export function useAttendance(date: Date) {
     }
   }, [dateString]);
 
-  const bulkUpdateAttendance = useCallback(async (updates: { employeeId: string; record: Partial<AttendanceRecord> }[], logDate?: Date) => {
+  const bulkUpdateAttendance = useCallback(async (updates: { employeeId: string; record: Partial<AttendanceRecord> }[], logDates?: string[]) => {
     const rootRef = ref(db);
-    const dateToUpdate = logDate ? format(logDate, 'yyyy-MM-dd') : dateString;
+    const datesToUpdate = logDates && logDates.length > 0 ? logDates : [dateString];
 
-    const promises = updates.map(async ({ employeeId, record }) => {
-      const path = `attendance/${dateToUpdate}/${employeeId}`;
-      const attendanceRef = ref(db, path);
-      const snapshot = await get(attendanceRef);
-      const existingRecord = snapshot.val() || {};
-      const newRecord = {
-        ...existingRecord,
-        ...record,
-        employeeId,
-        date: dateToUpdate,
-      };
-      return update(rootRef, { [path]: newRecord });
-    });
+    const allUpdates: Record<string, any> = {};
+
+    for (const dateToUpdate of datesToUpdate) {
+        for (const { employeeId, record } of updates) {
+            const path = `attendance/${dateToUpdate}/${employeeId}`;
+            const attendanceRef = ref(db, path);
+            const snapshot = await get(attendanceRef);
+            const existingRecord = snapshot.val() || {};
+
+            const { date, ...restOfRecord } = record; // Exclude date from the log data if it exists
+
+            const newRecord = {
+                ...existingRecord,
+                ...restOfRecord,
+                employeeId,
+                date: dateToUpdate, // Always use the date from the loop
+            };
+            allUpdates[path] = newRecord;
+        }
+    }
 
     try {
-      await Promise.all(promises);
+        await update(rootRef, allUpdates);
     } catch (error) {
-      console.error("Failed to bulk update attendance:", error);
+        console.error("Failed to bulk update attendance:", error);
     }
   }, [dateString]);
 

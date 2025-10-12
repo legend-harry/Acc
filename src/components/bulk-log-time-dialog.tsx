@@ -16,10 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format, parse } from "date-fns";
+import { format, parse, eachDayOfInterval, set } from "date-fns";
 
 type BulkLogTimeData = {
-    date: string;
+    dates: string[];
     clockIn: string;
     clockOut: string;
     breakDuration: number;
@@ -37,7 +37,8 @@ export function BulkLogTimeDialog({ isOpen, onOpenChange, employeeIds, onSave }:
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const [date, setDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
   const [clockInTime, setClockInTime] = useState("09:00");
   const [clockOutTime, setClockOutTime] = useState("17:00");
   const [breakDuration, setBreakDuration] = useState("60");
@@ -52,15 +53,28 @@ export function BulkLogTimeDialog({ isOpen, onOpenChange, employeeIds, onSave }:
       });
       return;
     }
+
+    if (endDate < startDate) {
+        toast({
+            variant: "destructive",
+            title: "Invalid Date Range",
+            description: "The 'To' date cannot be before the 'From' date.",
+        });
+        return;
+    }
+
     setIsLoading(true);
     
-    const clockInDate = set(date, { hours: parseInt(clockInTime.split(':')[0]), minutes: parseInt(clockInTime.split(':')[1])});
-    const clockOutDate = set(date, { hours: parseInt(clockOutTime.split(':')[0]), minutes: parseInt(clockOutTime.split(':')[1])});
-    
+    const dateInterval = eachDayOfInterval({ start: startDate, end: endDate });
+    const datesAsStrings = dateInterval.map(d => format(d, 'yyyy-MM-dd'));
+
+    const clockInDateTime = set(new Date(), { hours: parseInt(clockInTime.split(':')[0]), minutes: parseInt(clockInTime.split(':')[1])});
+    const clockOutDateTime = set(new Date(), { hours: parseInt(clockOutTime.split(':')[0]), minutes: parseInt(clockOutTime.split(':')[1])});
+
     onSave({
-        date: format(date, 'yyyy-MM-dd'),
-        clockIn: clockInDate.toISOString(),
-        clockOut: clockOutDate.toISOString(),
+        dates: datesAsStrings,
+        clockIn: clockInDateTime.toISOString(),
+        clockOut: clockOutDateTime.toISOString(),
         breakDuration: Number(breakDuration) || 0,
         status: 'full-day'
     });
@@ -70,7 +84,7 @@ export function BulkLogTimeDialog({ isOpen, onOpenChange, employeeIds, onSave }:
 
     toast({
         title: "Bulk Time Logged",
-        description: `Successfully logged time for ${employeeIds.length} employees.`
+        description: `Successfully logged time for ${employeeIds.length} employees across ${datesAsStrings.length} days.`
     })
 
   };
@@ -81,22 +95,37 @@ export function BulkLogTimeDialog({ isOpen, onOpenChange, employeeIds, onSave }:
         <DialogHeader>
           <DialogTitle>Bulk Log Employee Time</DialogTitle>
           <DialogDescription>
-            Record clock-in, clock-out, and break times for all selected employees ({employeeIds.length}).
+            Log time for {employeeIds.length} employees over a selected date range.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <ScrollArea className="h-auto p-1">
             <div className="grid gap-4 py-4 pr-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="date" className="text-right">
-                        Date
+                    <Label htmlFor="start-date" className="text-right">
+                        From
                     </Label>
                     <Input
-                        id="date"
-                        name="date"
+                        id="start-date"
+                        name="start-date"
                         type="date"
-                        value={format(date, 'yyyy-MM-dd')}
-                        onChange={(e) => setDate(parse(e.target.value, 'yyyy-MM-dd', new Date()))}
+                        value={format(startDate, 'yyyy-MM-dd')}
+                        onChange={(e) => setStartDate(parse(e.target.value, 'yyyy-MM-dd', new Date()))}
+                        required
+                        className="col-span-3"
+                    />
+                </div>
+
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="end-date" className="text-right">
+                        To
+                    </Label>
+                    <Input
+                        id="end-date"
+                        name="end-date"
+                        type="date"
+                        value={format(endDate, 'yyyy-MM-dd')}
+                        onChange={(e) => setEndDate(parse(e.target.value, 'yyyy-MM-dd', new Date()))}
                         required
                         className="col-span-3"
                     />

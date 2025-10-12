@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { ref, onValue, off } from 'firebase/database';
 import { db } from '@/lib/firebase';
-import type { Transaction, BudgetSummary, Project } from '@/types';
+import type { Transaction, BudgetSummary, Project, Employee } from '@/types';
 
 export function useProjects() {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -115,3 +115,33 @@ export function useCategories(projectId?: string) {
     return { categories, loading };
 }
 
+export function useEmployees() {
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const employeesRef = ref(db, 'employees');
+        const listener = onValue(employeesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const employeeList: Employee[] = Object.keys(data).map(key => ({
+                    ...data[key],
+                    id: key,
+                }));
+                setEmployees(employeeList);
+            } else {
+                setEmployees([]);
+            }
+            setLoading(false);
+        }, (error) => {
+            console.error("Firebase read failed for employees: " + error.message);
+            setLoading(false);
+        });
+
+        return () => {
+            off(employeesRef, 'value', listener);
+        };
+    }, []);
+
+    return { employees, loading };
+}

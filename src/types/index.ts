@@ -60,5 +60,3 @@ export type AttendanceRecord = {
   clockOut?: string; // ISO string
   breakDuration?: number; // in minutes
 };
-
-    

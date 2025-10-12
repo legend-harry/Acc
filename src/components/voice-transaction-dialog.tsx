@@ -101,7 +101,7 @@ export function VoiceTransactionDialog({
     setCurrentQuestion(initialGreeting);
     setTranscript("");
     setTransactionState({});
-    setConversationHistory([initialGreeting]); // Start with initial greeting in history
+    setConversationHistory([]); // Start with an empty history
     setIsProcessing(false);
     setIsComplete(false);
     setTimeout(() => speak(initialGreeting), 300);
@@ -121,50 +121,46 @@ export function VoiceTransactionDialog({
   
   const processTranscript = useCallback(async (text: string) => {
     if (!text.trim()) return;
-  
+
     setIsProcessing(true);
     
     const availableProjectNames = projects.map(p => p.name);
+    // Pass the full history, including the latest question that prompted the user's response
+    const historyForAI = [...conversationHistory, currentQuestion];
     
-    // Use a function form of setState to ensure we have the latest history
-    setConversationHistory(prevHistory => {
-      const historyForAI = [...prevHistory, currentQuestion];
-  
-      extractTransactionDetails({
+    try {
+      const result = await extractTransactionDetails({
         currentState: transactionState,
         availableProjects: availableProjectNames,
         availableCategories: categories,
         utterance: text,
         conversationHistory: historyForAI
-      }).then(result => {
-        setTransactionState(result.updatedState);
-        const nextQuestion = result.nextQuestion;
-        
-        // Add the AI's next question to the history
-        setConversationHistory(currentHistory => [...currentHistory, nextQuestion]);
-        setCurrentQuestion(nextQuestion);
-        
-        if (nextQuestion.includes("I have all the details")) {
-          setIsComplete(true);
-          speak("I have all the details. Please review the form and save.");
-        } else {
-          speak(nextQuestion);
-        }
-      }).catch(e => {
+      });
+
+      setTransactionState(result.updatedState);
+      const nextQuestion = result.nextQuestion;
+      
+      // Update history with the question asked and the AI's next question
+      setConversationHistory(prev => [...prev, currentQuestion, nextQuestion]);
+      setCurrentQuestion(nextQuestion);
+      
+      if (nextQuestion.includes("I have all the details")) {
+        setIsComplete(true);
+        speak("I have all the details. Please review the form and save.");
+      } else {
+        speak(nextQuestion);
+      }
+    } catch (e) {
         console.error("AI processing error", e);
         const errorQuestion = "Sorry, I had trouble understanding that. Could you please repeat?";
         setCurrentQuestion(errorQuestion);
-        setConversationHistory(prev => [...prev, errorQuestion]);
+        setConversationHistory(prev => [...prev, currentQuestion, errorQuestion]);
         speak(errorQuestion);
-      }).finally(() => {
+    } finally {
         setIsProcessing(false);
         setTranscript("");
-      });
-  
-      return historyForAI; // Return the history that was sent to the AI
-    });
-  
-  }, [transactionState, projects, categories, currentQuestion, speak]);
+    }
+  }, [projects, categories, conversationHistory, currentQuestion, transactionState, speak]);
 
 
   useEffect(() => {
@@ -190,8 +186,9 @@ export function VoiceTransactionDialog({
       }
       setTranscript(interimTranscript || finalTranscript);
       if (finalTranscript) {
-          // Once we have a final result, stop listening and process it.
           recognition.stop();
+          // Directly process the final transcript here
+          processTranscript(finalTranscript);
       }
     };
     
@@ -204,7 +201,6 @@ export function VoiceTransactionDialog({
 
     recognition.onend = () => {
         setIsListening(false);
-        // processTranscript is called from onresult when isFinal is true
     };
 
     return () => {
@@ -212,15 +208,8 @@ export function VoiceTransactionDialog({
             recognitionRef.current.abort();
         }
     }
-  }, []);
-
-  useEffect(() => {
-    // This effect ensures transcript is processed only when listening stops
-    if (!isListening && transcript.trim()) {
-        processTranscript(transcript);
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isListening]);
+  }, [processTranscript]);
 
 
   const startListening = () => {

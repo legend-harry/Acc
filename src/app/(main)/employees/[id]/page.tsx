@@ -5,32 +5,42 @@ import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParams } from 'next/navigation';
-import { useEmployees, useEmployeeAttendance } from "@/hooks/use-database";
+import { useEmployees, useEmployeeAttendance, useEmployeeMonthlyAttendance } from "@/hooks/use-database";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, CalendarCheck, CalendarX, ChevronsRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/data";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getYear, getMonth, format } from "date-fns";
+
+const availableYears = [new Date().getFullYear(), new Date().getFullYear() - 1];
+const availableMonths = Array.from({ length: 12 }, (_, i) => ({
+  value: i,
+  label: format(new Date(0, i), 'MMMM'),
+}));
 
 export default function EmployeeDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const { employees, loading: employeesLoading } = useEmployees();
-  const { attendanceRecords, loading: attendanceLoading } = useEmployeeAttendance(id);
-
+  
   const [isAbsentListOpen, setIsAbsentListOpen] = useState(false);
+  const [displayDate, setDisplayDate] = useState(new Date());
+
+  const { attendanceForMonth, summary, loading: attendanceLoading } = useEmployeeMonthlyAttendance(id, displayDate);
 
   const employee = useMemo(() => {
     return employees.find(e => e.id === id);
   }, [employees, id]);
 
-  const { calendarModifiers, summary } = useMemo(() => {
+  const { calendarModifiers, absentDates } = useMemo(() => {
     const present: Date[] = [];
     const absent: Date[] = [];
     const halfDay: Date[] = [];
 
-    Object.values(attendanceRecords).forEach(record => {
+    attendanceForMonth.forEach(record => {
       const date = new Date(record.date);
       date.setUTCHours(0, 0, 0, 0); // Normalize date
 
@@ -43,20 +53,25 @@ export default function EmployeeDetailPage() {
       }
     });
 
-    const summaryData = {
-        present: present.length,
-        absent: absent.length,
-        halfDay: halfDay.length,
-        absentDates: absent.sort((a,b) => a.getTime() - b.getTime())
-    };
-
     return { 
         calendarModifiers: { present, absent, halfDay },
-        summary: summaryData
+        absentDates: absent.sort((a,b) => a.getTime() - b.getTime())
     };
-  }, [attendanceRecords]);
+  }, [attendanceForMonth]);
   
   const loading = employeesLoading || attendanceLoading;
+
+  const handleYearChange = (year: string) => {
+    const newDate = new Date(displayDate);
+    newDate.setFullYear(parseInt(year, 10));
+    setDisplayDate(newDate);
+  }
+
+  const handleMonthChange = (month: string) => {
+    const newDate = new Date(displayDate);
+    newDate.setMonth(parseInt(month, 10));
+    setDisplayDate(newDate);
+  }
 
   if (loading) {
       return (
@@ -91,12 +106,35 @@ export default function EmployeeDetailPage() {
         <div className="md:col-span-2">
              <Card>
                 <CardHeader>
-                    <CardTitle>Attendance Calendar</CardTitle>
-                    <CardDescription>Full year view of {employee.name}'s attendance.</CardDescription>
+                    <div className="flex justify-between items-center">
+                         <div>
+                            <CardTitle>Attendance Calendar</CardTitle>
+                            <CardDescription>View of {employee.name}'s attendance.</CardDescription>
+                         </div>
+                         <div className="flex gap-2">
+                            <Select value={getMonth(displayDate).toString()} onValueChange={handleMonthChange}>
+                                <SelectTrigger className="w-[120px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableMonths.map(m => <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                             <Select value={getYear(displayDate).toString()} onValueChange={handleYearChange}>
+                                <SelectTrigger className="w-[100px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableYears.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                         </div>
+                    </div>
                 </CardHeader>
                 <CardContent className="flex justify-center">
                     <Calendar
-                        numberOfMonths={new Date().getMonth() + 1}
+                        month={displayDate}
+                        onMonthChange={setDisplayDate}
                         mode="multiple"
                         selected={[]}
                         className="p-0"
@@ -118,6 +156,7 @@ export default function EmployeeDetailPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-2xl font-bold">{summary.present} Days</p>
+                    <p className="text-xs text-muted-foreground">in {format(displayDate, 'MMMM')}</p>
                 </CardContent>
             </Card>
              <Card>
@@ -127,6 +166,7 @@ export default function EmployeeDetailPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-2xl font-bold">{summary.halfDay} Days</p>
+                    <p className="text-xs text-muted-foreground">in {format(displayDate, 'MMMM')}</p>
                 </CardContent>
             </Card>
             <Collapsible open={isAbsentListOpen} onOpenChange={setIsAbsentListOpen}>
@@ -143,18 +183,19 @@ export default function EmployeeDetailPage() {
                                 </Button>
                             </div>
                             <p className="text-2xl font-bold mt-2">{summary.absent} Days</p>
+                            <p className="text-xs text-muted-foreground">in {format(displayDate, 'MMMM')}</p>
                         </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                         <CardContent className="pt-0">
                             <p className="text-xs text-muted-foreground mb-2">List of absent dates:</p>
                             <ul className="space-y-1 text-sm list-none p-0">
-                                {summary.absentDates.map(date => (
+                                {absentDates.map(date => (
                                     <li key={date.toISOString()} className="p-2 rounded-md bg-muted">
                                         {formatDate(date)}
                                     </li>
                                 ))}
-                                {summary.absentDates.length === 0 && <li className="text-sm text-muted-foreground">No absent days recorded.</li>}
+                                {absentDates.length === 0 && <li className="text-sm text-muted-foreground">No absent days recorded.</li>}
                             </ul>
                         </CardContent>
                     </CollapsibleContent>
@@ -165,3 +206,5 @@ export default function EmployeeDetailPage() {
     </div>
   );
 }
+
+    

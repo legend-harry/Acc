@@ -1,10 +1,11 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ref, onValue, off, get, query, orderByChild, equalTo } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import type { Transaction, BudgetSummary, Project, Employee, AttendanceRecord, AttendanceStatus } from '@/types';
+import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 export function useProjects() {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -224,3 +225,31 @@ export function useEmployeeAttendance(employeeId: string) {
 
     return { attendanceRecords, loading };
 }
+
+export function useEmployeeMonthlyAttendance(employeeId: string, monthDate: Date) {
+    const { attendanceRecords, loading } = useEmployeeAttendance(employeeId);
+
+    const { attendanceForMonth, summary } = useMemo(() => {
+        const start = startOfMonth(monthDate);
+        const end = endOfMonth(monthDate);
+        
+        const recordsInMonth = Object.values(attendanceRecords).filter(record => {
+            const recordDate = new Date(record.date);
+            // Adjust for timezone offset by comparing year, month, and day
+            const recordUTC = new Date(Date.UTC(recordDate.getFullYear(), recordDate.getMonth(), recordDate.getDate()));
+            return isWithinInterval(recordUTC, { start, end });
+        });
+
+        const monthSummary = {
+            present: recordsInMonth.filter(r => r.status === 'full-day').length,
+            absent: recordsInMonth.filter(r => r.status === 'absent').length,
+            halfDay: recordsInMonth.filter(r => r.status === 'half-day').length,
+        };
+
+        return { attendanceForMonth: recordsInMonth, summary: monthSummary };
+    }, [attendanceRecords, monthDate]);
+    
+    return { attendanceForMonth, summary, loading };
+}
+
+    

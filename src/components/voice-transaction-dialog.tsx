@@ -16,6 +16,7 @@ import { useProjects, useCategories } from "@/hooks/use-database";
 import { extractTransactionDetails, type ExtractTransactionDetailsInput, type ExtractTransactionDetailsOutput } from "@/ai/flows/extract-transaction-details";
 import { Skeleton } from "./ui/skeleton";
 import { z } from 'zod';
+import { useUser } from "@/context/user-context";
 
 
 interface VoiceTransactionDialogProps {
@@ -42,11 +43,12 @@ export function VoiceTransactionDialog({
   onOpenChange,
   onDataFilled,
 }: VoiceTransactionDialogProps) {
+  const { user } = useUser();
   const { projects, loading: projectsLoading } = useProjects();
   const { categories, loading: categoriesLoading } = useCategories();
 
   const [isListening, setIsListening] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState("Hello I am you Finance Assistant How may I help you?");
+  const [currentQuestion, setCurrentQuestion] = useState(`Hello ${user}!`);
   const [transcript, setTranscript] = useState("");
   const [transactionState, setTransactionState] = useState<Record<string, any>>({});
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
@@ -95,23 +97,24 @@ export function VoiceTransactionDialog({
 
 
   useEffect(() => {
+    const initialGreeting = `Hello ${user}! How can I help you today?`;
     if (isOpen) {
       // Reset state when dialog opens
       setIsListening(false);
-      setCurrentQuestion("Hello I am you Finance Assistant How may I help you?");
+      setCurrentQuestion(initialGreeting);
       setTranscript("");
       setTransactionState({});
       setConversationHistory([]);
       setIsProcessing(false);
       setIsComplete(false);
-      setTimeout(() => speak("Hello I am your Finance Assistant. How may I help you?"), 300);
+      setTimeout(() => speak(initialGreeting), 300);
     } else {
         if (recognitionRef.current) {
             recognitionRef.current.abort();
         }
         window.speechSynthesis.cancel();
     }
-  }, [isOpen, speak]);
+  }, [isOpen, speak, user]);
   
   useEffect(() => {
     if (!SpeechRecognition) {
@@ -124,29 +127,32 @@ export function VoiceTransactionDialog({
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
+    let finalTranscript = '';
     recognition.onresult = (event: any) => {
-      let finalTranscript = "";
+      let interimTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript;
-          }
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
       }
-      if (finalTranscript) {
-          setTranscript(finalTranscript);
-          stopListening();
-          processTranscript(finalTranscript);
-      }
+      setTranscript(interimTranscript || finalTranscript);
     };
     
     recognition.onerror = (event: any) => {
         if (event.error !== 'aborted' && event.error !== 'no-speech') {
             console.error("Speech recognition error", event.error);
         }
-        stopListening();
+        setIsListening(false);
     };
 
     recognition.onend = () => {
         setIsListening(false);
+        if (finalTranscript) {
+          processTranscript(finalTranscript);
+          finalTranscript = '';
+        }
     };
 
     return () => {
@@ -166,14 +172,13 @@ export function VoiceTransactionDialog({
 
   const stopListening = () => {
     if (!isListening || !recognitionRef.current) return;
-    setIsListening(false);
     recognitionRef.current.stop();
   };
 
   const processTranscript = async (text: string) => {
       if (!text.trim()) return;
 
-      if (conversationHistory.length === 0 && text.toLowerCase().includes("transaction")) {
+      if (conversationHistory.length === 0 && (text.toLowerCase().includes("transaction") || text.toLowerCase().includes("expense") || text.toLowerCase().includes("income"))) {
           const nextQuestion = "Great. Let's start with the transaction details. What was the amount?";
            setCurrentQuestion(nextQuestion);
            setConversationHistory(prev => [...prev, currentQuestion]);

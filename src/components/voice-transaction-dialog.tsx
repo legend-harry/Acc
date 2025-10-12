@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -172,29 +173,28 @@ export function VoiceTransactionDialog({
     recognitionRef.current.stop();
   };
 
-  const processTranscript = async (text: string) => {
+  const processTranscript = useCallback(async (text: string) => {
     if (!text.trim()) return;
 
     setIsProcessing(true);
     
     const availableProjectNames = projects.map(p => p.name);
     
+    // Create a new history array for this specific call
+    const currentHistory = [...conversationHistory, currentQuestion];
+
     try {
       const result = await extractTransactionDetails({
         currentState: transactionState,
         availableProjects: availableProjectNames,
         availableCategories: categories,
         utterance: text,
-        conversationHistory: conversationHistory
+        conversationHistory: currentHistory
       });
 
-      // Debug logging
-      console.log("AI Response - Next Question:", result.nextQuestion);
-      console.log("Updated State:", result.updatedState);
-      console.log("Conversation History Length:", conversationHistory.length);
-
       setTransactionState(result.updatedState);
-      setConversationHistory(prev => [...prev, result.nextQuestion]); // Fix: Use result.nextQuestion
+      // Append the question we just asked AND the new question to the history
+      setConversationHistory(prev => [...prev, currentQuestion, result.nextQuestion]);
       setCurrentQuestion(result.nextQuestion);
       
       if (result.nextQuestion.includes("I have all the details")) {
@@ -207,13 +207,13 @@ export function VoiceTransactionDialog({
       console.error("AI processing error", e);
       const errorQuestion = "Sorry, I had trouble understanding that. Could you please repeat?";
       setCurrentQuestion(errorQuestion);
-      setConversationHistory(prev => [...prev, errorQuestion]);
+      setConversationHistory(prev => [...prev, currentQuestion, errorQuestion]);
       speak(errorQuestion);
     } finally {
       setIsProcessing(false);
       setTranscript("");
     }
-  };
+  }, [transactionState, projects, categories, conversationHistory, currentQuestion, speak]);
   
   const handleFinalize = () => {
       const project = projects.find(p => p.name === transactionState.project);

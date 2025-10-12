@@ -50,6 +50,7 @@ export function VoiceTransactionDialog({
   const [isListening, setIsListening] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [transcript, setTranscript] = useState("");
+  const [finalTranscript, setFinalTranscript] = useState('');
   const [transactionState, setTransactionState] = useState<Record<string, any>>({});
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -100,6 +101,7 @@ export function VoiceTransactionDialog({
     setIsListening(false);
     setCurrentQuestion(initialGreeting);
     setTranscript("");
+    setFinalTranscript("");
     setTransactionState({});
     setConversationHistory([]); // Start with an empty history
     setIsProcessing(false);
@@ -159,9 +161,16 @@ export function VoiceTransactionDialog({
     } finally {
         setIsProcessing(false);
         setTranscript("");
+        setFinalTranscript("");
     }
   }, [projects, categories, conversationHistory, currentQuestion, transactionState, speak]);
-
+  
+  useEffect(() => {
+      if (finalTranscript) {
+          processTranscript(finalTranscript);
+      }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finalTranscript]);
 
   useEffect(() => {
     if (!SpeechRecognition) {
@@ -176,19 +185,17 @@ export function VoiceTransactionDialog({
 
     recognition.onresult = (event: any) => {
       let interimTranscript = '';
-      let finalTranscript = '';
+      let final = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
+          final += event.results[i][0].transcript;
         } else {
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      setTranscript(interimTranscript || finalTranscript);
-      if (finalTranscript) {
-          recognition.stop();
-          // Directly process the final transcript here
-          processTranscript(finalTranscript);
+      setTranscript(interimTranscript);
+      if (final) {
+          setFinalTranscript(final);
       }
     };
     
@@ -208,13 +215,13 @@ export function VoiceTransactionDialog({
             recognitionRef.current.abort();
         }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [processTranscript]);
+  }, []);
 
 
   const startListening = () => {
     if (isListening || !recognitionRef.current) return;
     setTranscript("");
+    setFinalTranscript("");
     setIsListening(true);
     recognitionRef.current.start();
   };

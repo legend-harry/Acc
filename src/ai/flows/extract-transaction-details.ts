@@ -67,12 +67,15 @@ The user just said: "{{utterance}}"
     *   If the user provides a category, make sure it's one of the available categories. If it's similar, map it to the closest one.
     *   The default status for an expense is 'completed'. Only change it if the user specifies 'credit', 'unpaid', 'due', 'expected', or 'later'.
     *   Today's date is ${new Date().toDateString()}.
+    *   If the user's response for the project is not in the list of available projects, set the project name to what they said, but in the next question, confirm if they want to create it.
+    *   If the user says "the first one" or "number 2", select the project from the list.
 
 2.  **Determine the next question** based on what information is still missing in 'updatedState'.
     *   Check the 'currentState' and 'conversationHistory'. Do NOT ask for information that is already filled or has been asked before.
-    *   Your priority for asking questions is: project, type, amount, title, then category (for expenses).
-    *   **If the project is missing, list the options for the user**: "Which project is this for? Your options are: {{json availableProjects}}."
-    *   Ask only one clear and simple question at a time. For example: "What was the amount?" or "What category does this fall under?"
+    *   Your priority for asking questions is: title, amount, project, then category (for expenses).
+    *   **If the project is missing and you haven't asked for it**, list the options for the user as a numbered list: "Which project is this for? Your options are: {{#each availableProjects as |project, index|}} {{add index 1}}. {{project}}{{#unless @last}},{{/unless}}{{/each}}."
+    *   **If the user specified a project name that is NOT in the availableProjects list**, ask for confirmation: "I don't see '{{currentState.project}}' in your projects. Would you like to create it?"
+    *   Ask only one clear and simple question at a time. For example: "What was the amount?" or "What should I title this transaction?"
     *   If all necessary fields (project, type, amount, title, and category for expenses) are filled, your next question **must be**: "I have all the details. Please review."
 `,
 });
@@ -88,3 +91,4 @@ const extractTransactionDetailsFlow = ai.defineFlow(
     return output!;
   }
 );
+

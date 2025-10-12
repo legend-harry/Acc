@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -95,7 +94,6 @@ export function VoiceTransactionDialog({
     }
   }, []);
 
-
   useEffect(() => {
     const initialGreeting = `Hello ${user}! I am your Finance Assistant. How may I help you?`;
     if (isOpen) {
@@ -104,7 +102,7 @@ export function VoiceTransactionDialog({
       setCurrentQuestion(initialGreeting);
       setTranscript("");
       setTransactionState({});
-      setConversationHistory([]);
+      setConversationHistory([initialGreeting]); // Start with initial greeting in history
       setIsProcessing(false);
       setIsComplete(false);
       setTimeout(() => speak(initialGreeting), 300);
@@ -162,7 +160,6 @@ export function VoiceTransactionDialog({
     }
   }, []);
 
-
   const startListening = () => {
     if (isListening || !recognitionRef.current) return;
     setTranscript("");
@@ -176,46 +173,46 @@ export function VoiceTransactionDialog({
   };
 
   const processTranscript = async (text: string) => {
-      if (!text.trim()) return;
+    if (!text.trim()) return;
 
-      if (conversationHistory.length === 0 && (text.toLowerCase().includes("transaction") || text.toLowerCase().includes("expense") || text.toLowerCase().includes("income"))) {
-          const nextQuestion = "Great. Let's start with the transaction details. What was the amount?";
-           setCurrentQuestion(nextQuestion);
-           setConversationHistory(prev => [...prev, currentQuestion]);
-           speak(nextQuestion);
-           return;
-      }
+    setIsProcessing(true);
+    
+    const availableProjectNames = projects.map(p => p.name);
+    
+    try {
+      const result = await extractTransactionDetails({
+        currentState: transactionState,
+        availableProjects: availableProjectNames,
+        availableCategories: categories,
+        utterance: text,
+        conversationHistory: conversationHistory
+      });
 
-      setIsProcessing(true);
+      // Debug logging
+      console.log("AI Response - Next Question:", result.nextQuestion);
+      console.log("Updated State:", result.updatedState);
+      console.log("Conversation History Length:", conversationHistory.length);
+
+      setTransactionState(result.updatedState);
+      setConversationHistory(prev => [...prev, result.nextQuestion]); // Fix: Use result.nextQuestion
+      setCurrentQuestion(result.nextQuestion);
       
-      const availableProjectNames = projects.map(p => p.name);
-      
-      try {
-          const result = await extractTransactionDetails({
-              currentState: transactionState,
-              availableProjects: availableProjectNames,
-              availableCategories: categories,
-              utterance: text,
-              conversationHistory: conversationHistory
-          });
-
-          setTransactionState(result.updatedState);
-          setCurrentQuestion(result.nextQuestion);
-          setConversationHistory(prev => [...prev, currentQuestion]);
-          
-          if (result.nextQuestion.includes("I have all the details")) {
-              setIsComplete(true);
-              speak("I have all the details. Please review the form and save.");
-          } else {
-              speak(result.nextQuestion);
-          }
-      } catch (e) {
-          console.error("AI processing error", e);
-          speak("Sorry, I had trouble understanding that. Could you please repeat?");
-      } finally {
-          setIsProcessing(false);
-          setTranscript("");
+      if (result.nextQuestion.includes("I have all the details")) {
+        setIsComplete(true);
+        speak("I have all the details. Please review the form and save.");
+      } else {
+        speak(result.nextQuestion);
       }
+    } catch (e) {
+      console.error("AI processing error", e);
+      const errorQuestion = "Sorry, I had trouble understanding that. Could you please repeat?";
+      setCurrentQuestion(errorQuestion);
+      setConversationHistory(prev => [...prev, errorQuestion]);
+      speak(errorQuestion);
+    } finally {
+      setIsProcessing(false);
+      setTranscript("");
+    }
   };
   
   const handleFinalize = () => {

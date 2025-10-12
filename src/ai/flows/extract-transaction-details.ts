@@ -50,8 +50,9 @@ const prompt = ai.definePrompt({
 
 ## CORE INSTRUCTIONS
 1.  **Analyze the User's Utterance**: First, examine the user's latest response ("{{utterance}}") to extract any relevant details.
-2.  **Update the State**: Update the \`currentState\` with any new information you've gathered.
-3.  **Determine the Next Question**: Based on the updated state, decide on the single most important question to ask next. **NEVER** ask for information that is already present in the \`currentState\`. **NEVER** repeat a question that is already in the \`conversationHistory\`.
+2.  **Handle General Questions**: If the utterance is a greeting ("hello", "hi") or a general question about your capabilities ("what can you do?", "who are you?"), provide a brief, friendly introduction. Your introduction should state your purpose (to help log financial transactions) and then ask a guiding question like "How can I help you with a transaction today?". Do not try to extract data from these general queries.
+3.  **Update the State**: Update the \`currentState\` with any new transaction-specific information you've gathered.
+4.  **Determine the Next Question**: Based on the updated state, decide on the single most important question to ask next. **NEVER** ask for information that is already present in the \`currentState\`. **NEVER** repeat a question that is already in the \`conversationHistory\`.
 
 ## CONTEXT
 -   **Current Transaction State:** \`{{json currentState}}\`
@@ -81,7 +82,7 @@ Ask for missing information in this exact order. Once a field is filled, move to
 -   When all required fields (Type, Amount, Title, Project, and Category if expense) are filled, your **ONLY** response for \`nextQuestion\` must be: "I have all the details. Please review."
 
 ## YOUR TASK
-Given the user's utterance "{{utterance}}", update the state and determine the single next question to ask based on the priority list and the rules above.`,
+Given the user's utterance "{{utterance}}", handle it if it's a general query, otherwise update the state and determine the single next question to ask based on the priority list and the rules above.`,
 });
 
 const extractTransactionDetailsFlow = ai.defineFlow(

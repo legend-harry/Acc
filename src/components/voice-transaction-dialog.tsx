@@ -103,7 +103,7 @@ export function VoiceTransactionDialog({
     setTranscript("");
     setFinalTranscript("");
     setTransactionState({});
-    setConversationHistory([initialGreeting]); // Start with the greeting in history
+    setConversationHistory([initialGreeting]);
     setIsProcessing(false);
     setIsComplete(false);
     speak(initialGreeting);
@@ -123,43 +123,44 @@ export function VoiceTransactionDialog({
   
   const processTranscript = useCallback(async (text: string) => {
     if (!text.trim()) return;
-
+  
     setIsProcessing(true);
-
+    const updatedHistory = [...conversationHistory, text];
+    setConversationHistory(updatedHistory);
+  
     const availableProjectNames = projects.map(p => p.name);
-    const historyForAI = [...conversationHistory];
-
+  
     try {
-        const result = await extractTransactionDetails({
-            currentState: transactionState,
-            availableProjects: availableProjectNames,
-            availableCategories: categories,
-            utterance: text,
-            conversationHistory: historyForAI
-        });
-        
-        setTransactionState(result.updatedState);
-        const nextQuestion = result.nextQuestion;
-        
-        setConversationHistory(currentHistory => [...currentHistory, nextQuestion]);
-        setCurrentQuestion(nextQuestion);
-        
-        if (nextQuestion.includes("I have all the details")) {
-            setIsComplete(true);
-            speak("I have all the details. Please review the form and save.");
-        } else {
-            speak(nextQuestion);
-        }
+      const result = await extractTransactionDetails({
+        currentState: transactionState,
+        availableProjects: availableProjectNames,
+        availableCategories: categories,
+        utterance: text,
+        conversationHistory: updatedHistory,
+      });
+  
+      setTransactionState(result.updatedState);
+      const nextQuestion = result.nextQuestion;
+  
+      setConversationHistory(currentHistory => [...currentHistory, nextQuestion]);
+      setCurrentQuestion(nextQuestion);
+  
+      if (nextQuestion.includes("I have all the details")) {
+        setIsComplete(true);
+        speak("I have all the details. Please review the form and save.");
+      } else {
+        speak(nextQuestion);
+      }
     } catch (e) {
-        console.error("AI processing error", e);
-        const errorQuestion = "Sorry, I had trouble understanding that. Could you please repeat?";
-        setConversationHistory(currentHistory => [...currentHistory, errorQuestion]);
-        setCurrentQuestion(errorQuestion);
-        speak(errorQuestion);
+      console.error("AI processing error", e);
+      const errorQuestion = "Sorry, I had trouble understanding that. Could you please repeat?";
+      setConversationHistory(currentHistory => [...currentHistory, errorQuestion]);
+      setCurrentQuestion(errorQuestion);
+      speak(errorQuestion);
     } finally {
-        setIsProcessing(false);
-        setTranscript("");
-        setFinalTranscript("");
+      setIsProcessing(false);
+      setTranscript("");
+      setFinalTranscript("");
     }
   }, [projects, categories, transactionState, conversationHistory, speak]);
   

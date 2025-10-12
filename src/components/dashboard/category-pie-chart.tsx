@@ -31,7 +31,8 @@ interface CategoryPieChartProps {
 export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
   const { currency } = useCurrency();
   const { data, config, total } = React.useMemo(() => {
-    const categorySpending = transactions.reduce((acc, t) => {
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    const categorySpending = expenseTransactions.reduce((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + t.amount;
       return acc;
     }, {} as Record<string, number>);
@@ -56,12 +57,12 @@ export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
     return { data: chartData, config: chartConfig, total: chartTotal };
   }, [transactions]);
 
-  if (transactions.length === 0) {
+  if (transactions.filter(t=>t.type === 'expense').length === 0) {
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Spending by Category</CardTitle>
-                <CardDescription>No transactions for this period.</CardDescription>
+                <CardDescription>No expense transactions for this period.</CardDescription>
             </CardHeader>
             <CardContent className="flex items-center justify-center h-[280px]">
                 <p className="text-muted-foreground">No data to display</p>
@@ -101,8 +102,14 @@ export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
               content={
                 <ChartLegendContent
                   formatter={(value, entry) => {
-                    const percentage = total > 0 ? (entry.payload.value / total) * 100 : 0;
-                    return `${value} (${percentage.toFixed(1)}%)`;
+                    const itemValue = entry.payload.value;
+                    const percentage = total > 0 ? (itemValue / total) * 100 : 0;
+                    return (
+                        <div className="flex w-full justify-between">
+                            <span>{value}</span>
+                            <span>{formatCurrency(itemValue, currency)} ({percentage.toFixed(0)}%)</span>
+                        </div>
+                    );
                   }}
                 />
               }

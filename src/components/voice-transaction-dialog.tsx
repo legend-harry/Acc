@@ -48,7 +48,7 @@ export function VoiceTransactionDialog({
   const { categories, loading: categoriesLoading } = useCategories();
 
   const [isListening, setIsListening] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(`Hello ${user}!`);
+  const [currentQuestion, setCurrentQuestion] = useState("");
   const [transcript, setTranscript] = useState("");
   const [transactionState, setTransactionState] = useState<Record<string, any>>({});
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
@@ -97,7 +97,7 @@ export function VoiceTransactionDialog({
 
 
   useEffect(() => {
-    const initialGreeting = `Hello ${user}!`;
+    const initialGreeting = `Hello ${user}! I am your Finance Assistant. How may I help you?`;
     if (isOpen) {
       // Reset state when dialog opens
       setIsListening(false);

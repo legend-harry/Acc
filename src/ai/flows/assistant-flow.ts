@@ -65,8 +65,8 @@ const assistantFlowInternal = ai.defineFlow(
     // In the future, we will add tools here to give the assistant new abilities.
     
     // Sanitize history and utterance to prevent "parts template" error
-    const sanitizedHistory = input.history.replace(/\n/g, ' ');
-    const sanitizedUtterance = input.utterance.replace(/\n/g, ' ');
+    const sanitizedHistory = input.history.replace(/(\r\n|\n|\r)/gm, " ");
+    const sanitizedUtterance = input.utterance.replace(/(\r\n|\n|\r)/gm, " ");
     const sanitizedInput = { ...input, history: sanitizedHistory, utterance: sanitizedUtterance };
 
     const { output } = await assistantPrompt(sanitizedInput);

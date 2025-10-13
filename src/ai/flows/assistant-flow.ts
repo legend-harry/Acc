@@ -25,6 +25,7 @@ export async function assistantFlow(input: AssistantFlowInput): Promise<Assistan
   return assistantFlowInternal(input);
 }
 
+// ✅ Correct message structure — each message.content must be an array
 const assistantPrompt = ai.definePrompt({
   name: 'assistantPrompt',
   input: { schema: AssistantFlowInputSchema },
@@ -32,7 +33,10 @@ const assistantPrompt = ai.definePrompt({
   messages: [
     {
       role: 'system',
-      content: `You are an expert financial assistant for an app called ExpenseWise.
+      content: [
+        {
+          type: 'text',
+          text: `You are an expert financial assistant for an app called ExpenseWise.
 Your user's name is {{user}}.
 Your main responsibilities are:
 1. Answering questions about financial data.
@@ -40,15 +44,26 @@ Your main responsibilities are:
 3. Politely refusing delete operations but guiding users to the correct page instead.
 
 Keep answers concise and friendly.`,
+        },
+      ],
     },
     {
       role: 'user',
-      content: `Conversation history: {{history}}\n\nCurrent message: {{utterance}}\n\nBased on this context, generate a helpful and relevant reply.`,
+      content: [
+        {
+          type: 'text',
+          text: `Conversation history: {{history}}
+
+Current message: {{utterance}}
+
+Based on this context, generate a helpful and relevant reply.`,
+        },
+      ],
     },
   ],
 });
 
-// Main flow definition
+// ✅ Flow definition
 const assistantFlowInternal = ai.defineFlow(
   {
     name: 'assistantFlow',
@@ -56,7 +71,7 @@ const assistantFlowInternal = ai.defineFlow(
     outputSchema: AssistantFlowOutputSchema,
   },
   async (input) => {
-    // Sanitize input to prevent template errors
+    // Sanitize input
     const sanitizedInput = {
       ...input,
       history: input.history.replace(/(\r\n|\n|\r)/gm, ' '),

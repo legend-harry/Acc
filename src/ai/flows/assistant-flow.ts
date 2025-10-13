@@ -6,7 +6,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 // Input schema for the main assistant flow
 const AssistantFlowInputSchema = z.object({
@@ -65,9 +65,10 @@ const assistantFlowInternal = ai.defineFlow(
     // For now, we just call the prompt directly.
     // In the future, we will add tools here to give the assistant new abilities.
     
-    // Sanitize history to prevent "parts template" error
+    // Sanitize history and utterance to prevent "parts template" error
     const sanitizedHistory = input.history.replace(/\n/g, ' ');
-    const sanitizedInput = { ...input, history: sanitizedHistory };
+    const sanitizedUtterance = input.utterance.replace(/\n/g, ' ');
+    const sanitizedInput = { ...input, history: sanitizedHistory, utterance: sanitizedUtterance };
 
     const { output } = await assistantPrompt(sanitizedInput);
     return output!;

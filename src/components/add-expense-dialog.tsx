@@ -169,7 +169,7 @@ export function AddExpenseDialog({
                       Project
                     </Label>
                     <Select name="projectId" required onValueChange={setSelectedProjectId}>
-                      <SelectTrigger className="col-span-3">
+                      <SelectTrigger className="col-span-3 text-muted-foreground/50">
                         <SelectValue placeholder="Select a project" />
                       </SelectTrigger>
                       <SelectContent>
@@ -208,6 +208,18 @@ export function AddExpenseDialog({
                   
                   {transactionType && (
                       <>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="title" className="text-right">
+                                Title
+                            </Label>
+                            <Input
+                                id="title"
+                                name="title"
+                                required
+                                className="col-span-3"
+                            />
+                          </div>
+
                           {transactionType === 'expense' && (
                           <>
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -215,7 +227,7 @@ export function AddExpenseDialog({
                                   Category
                               </Label>
                               <Select name="category" required disabled={!selectedProjectId}>
-                                  <SelectTrigger className="col-span-3">
+                                  <SelectTrigger className="col-span-3 text-muted-foreground/50">
                                   <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -264,17 +276,7 @@ export function AddExpenseDialog({
                               className="col-span-3"
                           />
                           </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="title" className="text-right">
-                              Title
-                          </Label>
-                          <Input
-                              id="title"
-                              name="title"
-                              required
-                              className="col-span-3"
-                          />
-                          </div>
+                          
                           <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="amount" className="text-right">
                               Amount

@@ -17,8 +17,19 @@ export default function DashboardPage() {
   const { projects, loading: projectsLoading } = useProjects();
   
   const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
+  const [pageTitle, setPageTitle] = useState("Dashboard");
 
   const loading = transactionsLoading || budgetsLoading || projectsLoading;
+
+  useEffect(() => {
+    // This effect runs only on the client, after hydration.
+    if (selectedProjectId === "all") {
+      setPageTitle("All Projects");
+    } else {
+      const projectName = projects.find(p => p.id === selectedProjectId)?.name;
+      setPageTitle(projectName || "Dashboard");
+    }
+  }, [selectedProjectId, projects]);
 
   const filteredData = useMemo(() => {
     if (selectedProjectId === "all") {
@@ -33,17 +44,13 @@ export default function DashboardPage() {
     };
   }, [transactions, budgets, selectedProjectId]);
 
-  const selectedProjectName = useMemo(() => {
-    if (selectedProjectId === "all") return "All Projects";
-    return projects.find(p => p.id === selectedProjectId)?.name || "Dashboard";
-  }, [selectedProjectId, projects]);
 
   return (
     <div>
       <div className="flex justify-between items-start mb-6">
         <div>
           <PageHeader
-            title={selectedProjectName}
+            title={pageTitle}
             description="A summary of your financial activity."
             className="mb-0"
           />

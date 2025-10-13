@@ -25,7 +25,7 @@ export async function assistantFlow(input: AssistantFlowInput): Promise<Assistan
   return assistantFlowInternal(input);
 }
 
-// ✅ Correct message structure — each message.content must be an array
+// Corrected prompt structure with clearer instructions
 const assistantPrompt = ai.definePrompt({
   name: 'assistantPrompt',
   input: { schema: AssistantFlowInputSchema },
@@ -39,11 +39,13 @@ const assistantPrompt = ai.definePrompt({
           text: `You are an expert financial assistant for an app called ExpenseWise.
 Your user's name is {{user}}.
 Your main responsibilities are:
-1. Answering questions about financial data.
-2. Helping the user perform in-app tasks like adding transactions or employees.
-3. Politely refusing delete operations but guiding users to the correct page instead.
+1. Answering questions about financial data (e.g., "what is my total spending?", "how much did I spend on groceries?").
+2. Helping the user perform in-app tasks (e.g., "add a new transaction", "log time for an employee").
+3. Politely refusing to perform destructive actions like deleting data, and instead guiding the user on how to do it themselves in the app.
 
-Keep answers concise and friendly.`,
+When a user asks a question, prioritize answering it based on the conversation history and the current message.
+Keep answers concise, friendly, and directly relevant to the user's request.
+DO NOT jump to a different task if the user is asking a question. For example, if the user asks "what is my total spending?", answer that question. Do not ask about adding an employee.`,
         },
       ],
     },
@@ -63,7 +65,7 @@ Based on this context, generate a helpful and relevant reply.`,
   ],
 });
 
-// ✅ Flow definition
+// Flow definition
 const assistantFlowInternal = ai.defineFlow(
   {
     name: 'assistantFlow',
@@ -71,7 +73,7 @@ const assistantFlowInternal = ai.defineFlow(
     outputSchema: AssistantFlowOutputSchema,
   },
   async (input) => {
-    // Sanitize input
+    // Sanitize input to prevent template errors by removing newlines
     const sanitizedInput = {
       ...input,
       history: input.history.replace(/(\r\n|\n|\r)/gm, ' '),

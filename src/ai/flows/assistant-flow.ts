@@ -43,11 +43,7 @@ Keep answers concise and friendly.`,
     },
     {
       role: 'user',
-      content: [
-        { text: 'Conversation history: {{history}}' },
-        { text: 'Current message: {{utterance}}' },
-        { text: 'Based on this context, generate a helpful and relevant reply.' },
-      ],
+      content: `Conversation history: {{history}}\n\nCurrent message: {{utterance}}\n\nBased on this context, generate a helpful and relevant reply.`,
     },
   ],
 });

@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +20,7 @@ import { useBudgets, useProjects } from "@/hooks/use-database";
 import { db } from "@/lib/firebase";
 import { ref, set, update, push, remove } from "firebase/database";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PlusCircle, Trash2, Sparkles } from "lucide-react";
+import { PlusCircle, Trash2, Sparkles, Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -423,6 +424,12 @@ export default function PlannerPage() {
       />
       <div className="flex justify-end gap-2 mb-4">
         <AddProjectDialog onSave={() => setRefreshKey(k => k + 1)} />
+        <Button asChild variant="outline">
+            <Link href="/profile">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+            </Link>
+        </Button>
       </div>
       <Card>
         <CardHeader>

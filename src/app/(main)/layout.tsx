@@ -10,7 +10,6 @@ import { useState, useEffect } from "react";
 import { ProfileSelectorDialog } from "@/components/profile-selector-dialog";
 import { UpgradeDialog } from "@/components/upgrade-dialog";
 import { CurrencyProvider } from "@/context/currency-context";
-import { Assistant } from "@/components/assistant/assistant";
 
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -46,7 +45,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <main className="flex-1 p-4 md:p-6 lg:p-8">
                     {children}
                 </main>
-                <Assistant />
             </div>
             <ProfileSelectorDialog 
                 isOpen={showProfileDialog} 

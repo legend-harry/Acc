@@ -8,6 +8,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Mic, Send, Sparkles, User as UserIcon, X, Minus, MicOff } from "lucide-react";
 import { assistantFlow } from "@/ai/flows/assistant-flow";
 import { useUser } from "@/context/user-context";
+import { useTransactions } from "@/hooks/use-database";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
@@ -35,6 +36,7 @@ const SpeechRecognition =
 
 export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const { user } = useUser();
+    const { transactions: allTransactions, loading: transactionsLoading } = useTransactions();
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState("");
     const [isListening, setIsListening] = useState(false);
@@ -60,8 +62,10 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
         addMessage('assistant', "Thinking...", true);
 
         try {
-            const history = messages.map(m => `${m.role}: ${m.content}`).join('\n');
-            const response = await assistantFlow({ utterance: text, history, user });
+            const history = messages.map(m => `${m.role}: ${m.content}`).join('\\n');
+            const transactionData = JSON.stringify(allTransactions, null, 2);
+            
+            const response = await assistantFlow({ utterance: text, history, user, transactionData });
             
             setMessages(prev => {
                 const newMessages = [...prev];
@@ -88,7 +92,7 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
                 return newMessages;
             });
         }
-    }, [messages, user, speak, voiceMode]);
+    }, [messages, user, speak, voiceMode, allTransactions]);
 
     useEffect(() => {
         if (isOpen) {
@@ -255,7 +259,7 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
                         >
                             {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                         </Button>
-                        <Button onClick={handleSend} type="button">
+                        <Button onClick={handleSend} type="button" disabled={transactionsLoading}>
                             <Send className="h-4 w-4" />
                         </Button>
                     </div>
@@ -264,5 +268,3 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
         </div>
     )
 }
-
-    

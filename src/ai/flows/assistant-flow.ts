@@ -11,6 +11,7 @@ const AssistantFlowInputSchema = z.object({
   utterance: z.string().describe("The user's most recent message."),
   history: z.string().describe("The entire conversation history, for context."),
   user: z.string().describe("The name of the current user."),
+  transactionData: z.string().describe('A JSON string of the user\'s transactions.'),
 });
 export type AssistantFlowInput = z.infer<typeof AssistantFlowInputSchema>;
 
@@ -38,14 +39,17 @@ const assistantPrompt = ai.definePrompt({
           type: 'text',
           text: `You are an expert financial assistant for an app called ExpenseWise.
 Your user's name is {{user}}.
+You have been provided with their transaction data. This is your ONLY source of truth. DO NOT make up information.
+If the data is not available or doesn't contain the answer, say that you cannot answer.
+
 Your main responsibilities are:
-1. Answering questions about financial data (e.g., "what is my total spending?", "how much did I spend on groceries?").
-2. Helping the user perform in-app tasks (e.g., "add a new transaction", "log time for an employee").
-3. Politely refusing to perform destructive actions like deleting data, and instead guiding the user on how to do it themselves in the app.
+1. Answering questions about the user's financial data using the provided transaction data.
+2. Helping the user perform in-app tasks (e.g., "add a new transaction").
+3. Politely refusing to perform destructive actions like deleting data.
 
 When a user asks a question, prioritize answering it based on the conversation history and the current message.
 Keep answers concise, friendly, and directly relevant to the user's request.
-DO NOT jump to a different task if the user is asking a question. For example, if the user asks "what is my total spending?", answer that question. Do not ask about adding an employee.`,
+DO NOT re-introduce yourself if there is conversation history.`,
         },
       ],
     },
@@ -54,11 +58,18 @@ DO NOT jump to a different task if the user is asking a question. For example, i
       content: [
         {
           type: 'text',
-          text: `Conversation history: {{history}}
+          text: `Transaction Data (JSON):
+\`\`\`json
+{{{transactionData}}}
+\`\`\`
 
-Current message: {{utterance}}
+Conversation history:
+{{history}}
 
-Based on this context, generate a helpful and relevant reply.`,
+Current message:
+{{utterance}}
+
+Based on the provided data and conversation context, generate a helpful and relevant reply.`,
         },
       ],
     },

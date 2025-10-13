@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Main AI assistant flow for ExpenseWise app.
@@ -26,7 +25,6 @@ export async function assistantFlow(input: AssistantFlowInput): Promise<Assistan
   return assistantFlowInternal(input);
 }
 
-// ✅ FIXED PROMPT — ensures only one message part is generated
 const assistantPrompt = ai.definePrompt({
   name: 'assistantPrompt',
   input: { schema: AssistantFlowInputSchema },
@@ -34,8 +32,7 @@ const assistantPrompt = ai.definePrompt({
   messages: [
     {
       role: 'system',
-      content: `
-You are an expert financial assistant for an app called ExpenseWise.
+      content: `You are an expert financial assistant for an app called ExpenseWise.
 Your user's name is {{user}}.
 Your main responsibilities are:
 1. Answering questions about financial data.
@@ -46,12 +43,11 @@ Keep answers concise and friendly.`,
     },
     {
       role: 'user',
-      content: `
-Conversation history: {{history}}
-
-Current message: {{utterance}}
-
-Based on this context, generate a helpful and relevant reply.`,
+      content: [
+        { text: 'Conversation history: {{history}}' },
+        { text: 'Current message: {{utterance}}' },
+        { text: 'Based on this context, generate a helpful and relevant reply.' },
+      ],
     },
   ],
 });

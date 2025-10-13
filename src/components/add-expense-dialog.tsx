@@ -32,8 +32,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUser } from "@/context/user-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { useCurrency } from "@/context/currency-context";
-import { VoiceTransactionDialog } from "./voice-transaction-dialog";
-import { Mic } from "lucide-react";
 
 
 export function AddExpenseDialog({
@@ -42,7 +40,6 @@ export function AddExpenseDialog({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [isVoiceDialogOpen, setIsVoiceDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { currency } = useCurrency();
@@ -55,9 +52,6 @@ export function AddExpenseDialog({
   const { user } = useUser();
   const [transactionType, setTransactionType] = useState<'expense' | 'income' | undefined>();
   
-  // State to hold pre-filled data from voice
-  const [prefilledData, setPrefilledData] = useState<Record<string, any> | null>(null);
-
   const handleReceiptChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -149,20 +143,6 @@ export function AddExpenseDialog({
         });
     }
   };
-  
-  const openVoiceDialog = () => {
-    setOpen(false); // Close the main dialog
-    setIsVoiceDialogOpen(true);
-  }
-
-  const handleVoiceDataFilled = (data: Record<string, any>) => {
-    setIsVoiceDialogOpen(false);
-    setPrefilledData(data);
-    setTransactionType(data.type || 'expense');
-    setSelectedProjectId(data.projectId || '');
-    setOpen(true);
-  };
-
 
   return (
     <>
@@ -171,7 +151,6 @@ export function AddExpenseDialog({
           if (!isOpen) {
               setTransactionType(undefined);
               setReceiptPreview(null);
-              setPrefilledData(null);
           }
       }}>
         <div onClick={() => setOpen(true)}>{children}</div>
@@ -182,14 +161,14 @@ export function AddExpenseDialog({
               Enter the details of your transaction. Click save when you're done.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} key={prefilledData ? 'form-prefilled' : 'form-empty'}>
+          <form onSubmit={handleSubmit}>
             <ScrollArea className="h-[70vh] p-1">
               <div className="grid gap-4 py-4 pr-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="project" className="text-right">
                       Project
                     </Label>
-                    <Select name="projectId" defaultValue={prefilledData?.projectId} required onValueChange={setSelectedProjectId}>
+                    <Select name="projectId" required onValueChange={setSelectedProjectId}>
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a project" />
                       </SelectTrigger>
@@ -215,7 +194,6 @@ export function AddExpenseDialog({
                         className="col-span-3 flex gap-4"
                         onValueChange={(value) => setTransactionType(value as 'expense' | 'income')}
                         value={transactionType}
-                        defaultValue={prefilledData?.type}
                       >
                           <div className="flex items-center space-x-2">
                           <RadioGroupItem value="expense" id="r-expense" />
@@ -236,7 +214,7 @@ export function AddExpenseDialog({
                               <Label htmlFor="category" className="text-right">
                                   Category
                               </Label>
-                              <Select name="category" defaultValue={prefilledData?.category} required disabled={!selectedProjectId}>
+                              <Select name="category" required disabled={!selectedProjectId}>
                                   <SelectTrigger className="col-span-3">
                                   <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
                                   </SelectTrigger>
@@ -255,7 +233,7 @@ export function AddExpenseDialog({
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right">Status</Label>
-                                <RadioGroup name="status" defaultValue={prefilledData?.status || "completed"} className="col-span-3 flex gap-4">
+                                <RadioGroup name="status" defaultValue="completed" className="col-span-3 flex gap-4">
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="completed" id="r-completed" />
                                         <Label htmlFor="r-completed">Completed</Label>
@@ -281,7 +259,7 @@ export function AddExpenseDialog({
                               id="date"
                               name="date"
                               type="date"
-                              defaultValue={prefilledData?.date || new Date().toISOString().split("T")[0]}
+                              defaultValue={new Date().toISOString().split("T")[0]}
                               required
                               className="col-span-3"
                           />
@@ -293,7 +271,6 @@ export function AddExpenseDialog({
                           <Input
                               id="title"
                               name="title"
-                              defaultValue={prefilledData?.title || ''}
                               required
                               className="col-span-3"
                           />
@@ -307,7 +284,6 @@ export function AddExpenseDialog({
                               name="amount"
                               type="number"
                               step="0.01"
-                              defaultValue={prefilledData?.amount || ''}
                               required
                               className="col-span-3"
                           />
@@ -319,7 +295,6 @@ export function AddExpenseDialog({
                           <Textarea
                               id="description"
                               name="description"
-                              defaultValue={prefilledData?.description || ''}
                               className="col-span-3"
                           />
                           </div>
@@ -330,7 +305,6 @@ export function AddExpenseDialog({
                           <Input
                               id="vendor"
                               name="vendor"
-                              defaultValue={prefilledData?.vendor || ''}
                               className="col-span-3"
                           />
                           </div>
@@ -341,7 +315,6 @@ export function AddExpenseDialog({
                           <Input
                               id="invoiceNo"
                               name="invoiceNo"
-                              defaultValue={prefilledData?.invoiceNo || ''}
                               className="col-span-3"
                           />
                           </div>
@@ -353,7 +326,6 @@ export function AddExpenseDialog({
                               id="qty"
                               name="qty"
                               type="number"
-                              defaultValue={prefilledData?.qty || ''}
                               className="col-span-3"
                           />
                           </div>
@@ -364,7 +336,6 @@ export function AddExpenseDialog({
                           <Input
                               id="unit"
                               name="unit"
-                              defaultValue={prefilledData?.unit || ''}
                               className="col-span-3"
                           />
                           </div>
@@ -375,7 +346,6 @@ export function AddExpenseDialog({
                           <Textarea
                               id="notes"
                               name="notes"
-                              defaultValue={prefilledData?.notes || ''}
                               className="col-span-3"
                           />
                           </div>
@@ -403,35 +373,22 @@ export function AddExpenseDialog({
                   )}
                 </div>
             </ScrollArea>
-            <DialogFooter className="pt-4 border-t flex-col-reverse sm:flex-row gap-2 sm:gap-0 sm:justify-between">
-              <Button type="button" variant="outline" onClick={openVoiceDialog}>
-                <Mic className="mr-2 h-4 w-4" />
-                Use Voice
-              </Button>
-              <div className="flex justify-end gap-2">
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary" onClick={() => {
-                      setReceiptPreview(null);
-                      setTransactionType(undefined);
-                      setPrefilledData(null);
-                  }}>
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button type="submit" disabled={isLoading || categoriesLoading || projectsLoading || !transactionType}>
-                  {isLoading ? "Saving..." : "Save Transaction"}
+            <DialogFooter className="pt-4 border-t">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary" onClick={() => {
+                    setReceiptPreview(null);
+                    setTransactionType(undefined);
+                }}>
+                  Cancel
                 </Button>
-              </div>
+              </DialogClose>
+              <Button type="submit" disabled={isLoading || categoriesLoading || projectsLoading || !transactionType}>
+                {isLoading ? "Saving..." : "Save Transaction"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-      
-      <VoiceTransactionDialog 
-        isOpen={isVoiceDialogOpen}
-        onOpenChange={setIsVoiceDialogOpen}
-        onDataFilled={handleVoiceDataFilled}
-      />
     </>
   );
 }

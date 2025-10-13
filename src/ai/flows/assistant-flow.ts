@@ -1,13 +1,13 @@
+
 'use server';
 /**
- * @fileOverview This is the main "brain" for the AI assistant.
- * It defines a flexible flow that can be extended with tools to perform various tasks.
+ * @fileOverview Main AI assistant flow for ExpenseWise app.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-// Input schema for the main assistant flow
+// Input schema
 const AssistantFlowInputSchema = z.object({
   utterance: z.string().describe("The user's most recent message."),
   history: z.string().describe("The entire conversation history, for context."),
@@ -15,45 +15,48 @@ const AssistantFlowInputSchema = z.object({
 });
 export type AssistantFlowInput = z.infer<typeof AssistantFlowInputSchema>;
 
-// Output schema for the main assistant flow
+// Output schema
 const AssistantFlowOutputSchema = z.object({
   answer: z.string().describe("The assistant's response to the user."),
 });
 export type AssistantFlowOutput = z.infer<typeof AssistantFlowOutputSchema>;
 
-// This is an exported wrapper function that makes the flow callable from the client
+// Exported callable wrapper
 export async function assistantFlow(input: AssistantFlowInput): Promise<AssistantFlowOutput> {
   return assistantFlowInternal(input);
 }
 
-// Define the prompt that the AI will use
+// ✅ FIXED PROMPT — ensures only one message part is generated
 const assistantPrompt = ai.definePrompt({
   name: 'assistantPrompt',
   input: { schema: AssistantFlowInputSchema },
   output: { schema: AssistantFlowOutputSchema },
-  // Define the system message and prompt using Handlebars templating
-  prompt: `You are an expert financial assistant for an app called ExpenseWise. Your user's name is {{user}}.
-Your primary jobs are:
-1. Answering questions about the user's financial data.
-2. Helping the user perform tasks within the app, like adding transactions or employees.
+  messages: [
+    {
+      role: 'system',
+      content: `
+You are an expert financial assistant for an app called ExpenseWise.
+Your user's name is {{user}}.
+Your main responsibilities are:
+1. Answering questions about financial data.
+2. Helping the user perform in-app tasks like adding transactions or employees.
+3. Politely refusing delete operations but guiding users to the correct page instead.
 
-## Conversation History
-{{{history}}}
+Keep answers concise and friendly.`,
+    },
+    {
+      role: 'user',
+      content: `
+Conversation history: {{history}}
 
-## Current User Message
-{{{utterance}}}
+Current message: {{utterance}}
 
-## YOUR TASK
-Based on the conversation history and the user's latest message, generate a helpful and friendly response.
-If you don't know how to do something, say so.
-
-## RULES
-- Keep your answers concise.
-- If the user asks what you can do, summarize your main jobs.
-- You are not permitted to perform delete operations. If asked to delete something, politely refuse and explain you don't have permission. You can, however, help the user navigate to the correct page.`,
+Based on this context, generate a helpful and relevant reply.`,
+    },
+  ],
 });
 
-// Define the main flow for the assistant
+// Main flow definition
 const assistantFlowInternal = ai.defineFlow(
   {
     name: 'assistantFlow',
@@ -61,13 +64,12 @@ const assistantFlowInternal = ai.defineFlow(
     outputSchema: AssistantFlowOutputSchema,
   },
   async (input) => {
-    // For now, we just call the prompt directly.
-    // In the future, we will add tools here to give the assistant new abilities.
-    
-    // Sanitize history and utterance to prevent "parts template" error
-    const sanitizedHistory = input.history.replace(/(\r\n|\n|\r)/gm, " ");
-    const sanitizedUtterance = input.utterance.replace(/(\r\n|\n|\r)/gm, " ");
-    const sanitizedInput = { ...input, history: sanitizedHistory, utterance: sanitizedUtterance };
+    // Sanitize input to prevent template errors
+    const sanitizedInput = {
+      ...input,
+      history: input.history.replace(/(\r\n|\n|\r)/gm, ' '),
+      utterance: input.utterance.replace(/(\r\n|\n|\r)/gm, ' '),
+    };
 
     const { output } = await assistantPrompt(sanitizedInput);
     return output!;

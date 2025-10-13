@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Users, Check, Moon, Sun, Palette, Sparkles, Crown, Settings } from "lucide-react";
+import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Users, Check, Moon, Sun, Palette, Sparkles, Crown, Settings, FolderKanban } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useUser } from "@/context/user-context";
 import Image from "next/image";
 import { useSubscription } from "@/context/subscription-context";
-import { AddEmployeeDialog } from "@/components/add-employee-dialog";
 import { InstallPwaButton } from "@/components/install-pwa-button";
+import { useProjects } from "@/hooks/use-database";
+import { useProjectFilter } from "@/context/project-filter-context";
+import { Project } from "@/types";
 
 
 const navItems = [
@@ -27,6 +29,39 @@ const navItems = [
 ];
 
 const profiles = ["Ammu", "Vijay", "Divyesh", "Anvika", "Guest"];
+
+function GlobalProjectSwitcher() {
+    const { projects } = useProjects();
+    const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
+    const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                    <FolderKanban className="h-[1.2rem] w-[1.2rem]" />
+                    <span className="sr-only">Switch Project</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{selectedProject ? `Project: ${selectedProject.name}` : "Select a Project"}</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                     <DropdownMenuRadioItem value="all">
+                        <FolderKanban className="mr-2 h-4 w-4" />
+                        <span>All Projects</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuSeparator />
+                    {projects.map((project: Project) => (
+                        <DropdownMenuRadioItem key={project.id} value={project.id}>
+                            <FolderKanban className="mr-2 h-4 w-4" />
+                            <span>{project.name}</span>
+                        </DropdownMenuRadioItem>
+                    ))}
+                </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
 
 function ProfileSwitcher() {
     const { user, setUser } = useUser();
@@ -204,6 +239,7 @@ export function Header() {
       <div className="flex items-center gap-2">
         <InstallPwaButton />
         <ThemeSwitcher />
+        <GlobalProjectSwitcher />
         <ProfileSwitcher />
         {!isPremium && !isMobile && (
             <Button asChild size="sm" className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white">

@@ -185,7 +185,7 @@ export default function EmployeesPage() {
         />
         <div className="flex gap-2">
             <AddEmployeeDialog>
-                <Button variant="outline">
+                <Button variant="secondary">
                     <User className="mr-2 h-4 w-4" /> Add Employee
                 </Button>
             </AddEmployeeDialog>

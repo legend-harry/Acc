@@ -11,17 +11,19 @@ type ProjectFilterContextType = {
 const ProjectFilterContext = createContext<ProjectFilterContextType | undefined>(undefined);
 
 export function ProjectFilterProvider({ children }: { children: ReactNode }) {
-    const [selectedProjectId, setSelectedProjectIdState] = useState<string>(() => {
-        if (typeof window !== "undefined") {
-            return sessionStorage.getItem('selectedProjectId') || "all";
-        }
-        return "all";
-    });
+    const [selectedProjectId, setSelectedProjectIdState] = useState<string>("all");
 
     useEffect(() => {
-        const storedProjectId = sessionStorage.getItem('selectedProjectId');
-        if (storedProjectId) {
-            setSelectedProjectIdState(storedProjectId);
+        const defaultProjectId = localStorage.getItem('defaultProjectId');
+        const sessionProjectId = sessionStorage.getItem('selectedProjectId');
+        
+        if (sessionProjectId) {
+            setSelectedProjectIdState(sessionProjectId);
+        } else if (defaultProjectId) {
+            setSelectedProjectIdState(defaultProjectId);
+            sessionStorage.setItem('selectedProjectId', defaultProjectId);
+        } else {
+            setSelectedProjectIdState("all");
         }
     }, []);
 

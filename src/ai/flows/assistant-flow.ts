@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Main AI assistant flow for ExpenseWise app.
@@ -47,7 +48,12 @@ Your main responsibilities are, in order of priority:
 
 IMPORTANT:
 -   If there is conversation history, continue the conversation. DO NOT re-introduce yourself.
--   Keep answers concise, friendly, and directly relevant to the user's most recent message.`,
+-   Keep answers concise, friendly, and directly relevant to the user's most recent message.
+-   This is the user's transaction data (JSON format). Use this to answer any financial questions:
+\`\`\`json
+{{{transactionData}}}
+\`\`\`
+`,
         },
       ],
     },
@@ -56,15 +62,10 @@ IMPORTANT:
       content: [
         {
           type: 'text',
-          text: `Here is the user's transaction data (JSON format). Use this to answer any financial questions.
-\`\`\`json
-{{{transactionData}}}
-\`\`\`
-
-Here is the conversation so far:
+          text: `Here is the conversation so far:
 {{history}}
 
-And here is the user's current message:
+And here is my current message:
 {{utterance}}
 
 Based on all of this context, generate the most helpful and relevant reply.`,
@@ -73,6 +74,7 @@ Based on all of this context, generate the most helpful and relevant reply.`,
     },
   ],
 });
+
 
 // Flow definition
 const assistantFlowInternal = ai.defineFlow(

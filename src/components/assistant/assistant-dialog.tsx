@@ -4,12 +4,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
-import { Mic, Send, Sparkles, User as UserIcon, X, Minus } from "lucide-react";
+import { Mic, Send, Sparkles, User as UserIcon, X, Minus, MicOff } from "lucide-react";
 import { assistantFlow } from "@/ai/flows/assistant-flow";
 import { useUser } from "@/context/user-context";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
+import { useSpeech } from "@/hooks/use-speech";
 
 type Message = {
     role: 'user' | 'assistant' | 'system';
@@ -39,9 +40,13 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
     const recognitionRef = useRef<any>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const [isExpanded, setIsExpanded] = useState(true);
+    const { speak, cancel } = useSpeech();
 
-    const addMessage = (role: Message['role'], content: string) => {
-        setMessages(prev => [...prev, { role, content }]);
+    const addMessage = (role: Message['role'], content: string, isThinking = false) => {
+        setMessages(prev => [...prev, { role, content, isThinking }]);
+        if (role === 'assistant' && !isThinking) {
+            speak(content);
+        }
     }
 
     const processUserInput = useCallback(async (text: string) => {
@@ -50,7 +55,7 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
         addMessage('user', text);
         setInputValue("");
         
-        setMessages(prev => [...prev, { role: 'assistant', content: "Thinking...", isThinking: true }]);
+        addMessage('assistant', "Thinking...", true);
 
         try {
             const history = messages.map(m => `${m.role}: ${m.content}`).join('\n');
@@ -62,12 +67,13 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
                 if (thinkingMessageIndex !== -1) {
                     newMessages[thinkingMessageIndex] = { role: 'assistant', content: response.answer };
                 }
+                speak(response.answer);
                 return newMessages;
             });
 
         } catch (error) {
             console.error("Assistant flow error:", error);
-            const errorMessage = "Thinking for a better answer...";
+            const errorMessage = "Sorry, I encountered an issue. Please try again.";
              setMessages(prev => {
                 const newMessages = [...prev];
                 const thinkingMessageIndex = newMessages.findIndex(m => m.isThinking);
@@ -76,16 +82,21 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
                 } else {
                     newMessages.push({ role: 'assistant', content: errorMessage });
                 }
+                speak(errorMessage);
                 return newMessages;
             });
         }
-    }, [messages, user]);
+    }, [messages, user, speak]);
 
     useEffect(() => {
         if (isOpen) {
-            setMessages([{ role: 'assistant', content: `Hi ${user}! How can I help you manage your finances today?` }]);
+            const welcomeMessage = `Hi ${user}! How can I help you manage your finances today?`;
+            setMessages([{ role: 'assistant', content: welcomeMessage }]);
+            speak(welcomeMessage);
+        } else {
+            cancel(); // Stop speaking if dialog is closed
         }
-    }, [isOpen, user]);
+    }, [isOpen, user, speak, cancel]);
     
     useEffect(() => {
         if (scrollAreaRef.current && isExpanded) {
@@ -115,6 +126,9 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
                 }
             }
             setInputValue(interimTranscript + finalTranscript);
+             if (finalTranscript) {
+                processUserInput(finalTranscript);
+            }
         };
 
         recognitionRef.current.onend = () => {
@@ -127,12 +141,13 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
         };
 
         return () => recognitionRef.current?.abort();
-    }, []);
+    }, [processUserInput]);
 
     const toggleListening = () => {
         if (isListening) {
             recognitionRef.current?.stop();
         } else {
+            cancel(); // Stop any current speech synthesis
             setInputValue('');
             recognitionRef.current?.start();
         }
@@ -230,11 +245,12 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
                             variant={isListening ? "destructive" : "outline"}
                             onClick={toggleListening}
                             type="button"
+                            disabled={!SpeechRecognition}
                         >
-                            {isListening ? <MicOff /> : <Mic />}
+                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                         </Button>
                         <Button onClick={handleSend} type="button">
-                            <Send />
+                            <Send className="h-4 w-4" />
                         </Button>
                     </div>
                 </CardFooter>

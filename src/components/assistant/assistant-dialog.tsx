@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -41,10 +42,11 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const [isExpanded, setIsExpanded] = useState(true);
     const { speak, cancel } = useSpeech();
+    const [voiceMode, setVoiceMode] = useState(false);
 
     const addMessage = (role: Message['role'], content: string, isThinking = false) => {
         setMessages(prev => [...prev, { role, content, isThinking }]);
-        if (role === 'assistant' && !isThinking) {
+        if (voiceMode && role === 'assistant' && !isThinking) {
             speak(content);
         }
     }
@@ -67,7 +69,7 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
                 if (thinkingMessageIndex !== -1) {
                     newMessages[thinkingMessageIndex] = { role: 'assistant', content: response.answer };
                 }
-                speak(response.answer);
+                if (voiceMode) speak(response.answer);
                 return newMessages;
             });
 
@@ -82,21 +84,23 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
                 } else {
                     newMessages.push({ role: 'assistant', content: errorMessage });
                 }
-                speak(errorMessage);
+                if (voiceMode) speak(errorMessage);
                 return newMessages;
             });
         }
-    }, [messages, user, speak]);
+    }, [messages, user, speak, voiceMode]);
 
     useEffect(() => {
         if (isOpen) {
             const welcomeMessage = `Hi ${user}! How can I help you manage your finances today?`;
             setMessages([{ role: 'assistant', content: welcomeMessage }]);
-            speak(welcomeMessage);
+            if (voiceMode) {
+                speak(welcomeMessage);
+            }
         } else {
             cancel(); // Stop speaking if dialog is closed
         }
-    }, [isOpen, user, speak, cancel]);
+    }, [isOpen, user, speak, cancel, voiceMode]);
     
     useEffect(() => {
         if (scrollAreaRef.current && isExpanded) {
@@ -144,6 +148,7 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
     }, [processUserInput]);
 
     const toggleListening = () => {
+        if (!voiceMode) setVoiceMode(true);
         if (isListening) {
             recognitionRef.current?.stop();
         } else {
@@ -155,6 +160,7 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
     };
 
     const handleSend = () => {
+        setVoiceMode(false);
         processUserInput(inputValue);
     };
 
@@ -258,3 +264,5 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
         </div>
     )
 }
+
+    

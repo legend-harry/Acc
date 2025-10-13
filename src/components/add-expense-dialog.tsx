@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +53,15 @@ export function AddExpenseDialog({
   const { user } = useUser();
   const [transactionType, setTransactionType] = useState<'expense' | 'income' | undefined>();
   
+  useEffect(() => {
+    if (open) {
+      const defaultProjectId = localStorage.getItem('defaultProjectId');
+      if (defaultProjectId && defaultProjectId !== 'all') {
+        setSelectedProjectId(defaultProjectId);
+      }
+    }
+  }, [open]);
+
   const handleReceiptChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -169,7 +178,7 @@ export function AddExpenseDialog({
                     <Label htmlFor="project" className="text-right">
                       Project *
                     </Label>
-                    <Select name="projectId" required onValueChange={setSelectedProjectId}>
+                    <Select name="projectId" required value={selectedProjectId} onValueChange={setSelectedProjectId}>
                         <SelectTrigger className="col-span-3">
                             <SelectValue />
                         </SelectTrigger>

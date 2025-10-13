@@ -34,6 +34,14 @@ function GlobalProjectSwitcher() {
     const { projects } = useProjects();
     const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
     const selectedProject = projects.find(p => p.id === selectedProjectId);
+    const [defaultProject, setDefaultProject] = useState<string>("");
+
+    useEffect(() => {
+        const storedDefault = localStorage.getItem("defaultProjectId");
+        if (storedDefault) {
+            setDefaultProject(storedDefault);
+        }
+    }, []);
 
     return (
         <DropdownMenu>
@@ -54,7 +62,7 @@ function GlobalProjectSwitcher() {
                     {projects.map((project: Project) => (
                         <DropdownMenuRadioItem key={project.id} value={project.id}>
                             <FolderKanban className="mr-2 h-4 w-4" />
-                            <span>{project.name}</span>
+                            <span>{project.name} {project.id === defaultProject && <span className="text-xs text-muted-foreground ml-2">(default)</span>}</span>
                         </DropdownMenuRadioItem>
                     ))}
                 </DropdownMenuRadioGroup>

@@ -119,7 +119,7 @@ function SettingsTab() {
                  <SelectItem value="all">All Projects</SelectItem>
                 {projects.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.name}
+                    {p.name} {p.id === defaultProject && "(default)"}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -137,6 +137,14 @@ function ProjectSettings() {
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [deletingProject, setDeletingProject] = useState<Project | null>(null);
     const [newProjectName, setNewProjectName] = useState("");
+    const [defaultProject, setDefaultProject] = useState<string>("");
+
+    useEffect(() => {
+        const storedDefault = localStorage.getItem("defaultProjectId");
+        if (storedDefault) {
+            setDefaultProject(storedDefault);
+        }
+    }, []);
 
     const handleEditClick = (project: Project) => {
         setEditingProject(project);
@@ -198,7 +206,12 @@ function ProjectSettings() {
                 <ul className="space-y-3">
                     {projects.map(project => (
                         <li key={project.id} className="flex items-center justify-between p-3 rounded-md border">
-                            <span className="font-medium">{project.name}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="font-medium">{project.name}</span>
+                                {project.id === defaultProject && (
+                                    <span className="text-xs text-muted-foreground">(default)</span>
+                                )}
+                            </div>
                             <div className="flex gap-2">
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(project)}>
                                     <Edit className="h-4 w-4" />

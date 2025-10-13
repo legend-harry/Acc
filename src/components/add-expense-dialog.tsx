@@ -170,11 +170,8 @@ export function AddExpenseDialog({
                       Project *
                     </Label>
                     <Select name="projectId" required onValueChange={setSelectedProjectId}>
-                        <SelectTrigger className={cn("col-span-3", !selectedProjectId && "text-muted-foreground")}>
-                            <SelectValue>
-                                {projects.find(p => p.id === selectedProjectId)?.name || 
-                                <span className="bg-gray-200 text-gray-500 rounded-md px-2 py-1">Select a project</span>}
-                            </SelectValue>
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Select a project" />
                         </SelectTrigger>
                         <SelectContent>
                             {projectsLoading ? (
@@ -231,12 +228,8 @@ export function AddExpenseDialog({
                                   Category*
                               </Label>
                               <Select name="category" required disabled={!selectedProjectId}>
-                                  <SelectTrigger className={cn("col-span-3", !selectedProjectId && "text-muted-foreground")}>
-                                    <SelectValue>
-                                        {!selectedProjectId ? 
-                                            <span className="bg-gray-200 text-gray-500 rounded-md px-2 py-1">First select a project</span> : 
-                                            <span className="bg-gray-200 text-gray-500 rounded-md px-2 py-1">Select a category</span>}
-                                    </SelectValue>
+                                  <SelectTrigger className="col-span-3">
+                                  <SelectValue placeholder="Select a category" />
                                   </SelectTrigger>
                                   <SelectContent>
                                   {categoriesLoading ? (
@@ -402,3 +395,5 @@ export function AddExpenseDialog({
     </>
   );
 }
+
+    

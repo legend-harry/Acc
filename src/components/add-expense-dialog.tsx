@@ -32,6 +32,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUser } from "@/context/user-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { useCurrency } from "@/context/currency-context";
+import { cn } from "@/lib/utils";
 
 
 export function AddExpenseDialog({
@@ -166,23 +167,26 @@ export function AddExpenseDialog({
               <div className="grid gap-4 py-4 pr-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="project" className="text-right">
-                      Project*
+                      Project *
                     </Label>
                     <Select name="projectId" required onValueChange={setSelectedProjectId}>
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select a project" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projectsLoading ? (
-                          <SelectItem value="loading" disabled>Loading...</SelectItem>
-                        ) : (
-                          projects.map((project) => (
-                            <SelectItem key={project.id} value={project.id}>
-                              {project.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
+                        <SelectTrigger className={cn("col-span-3", !selectedProjectId && "text-muted-foreground")}>
+                            <SelectValue>
+                                {projects.find(p => p.id === selectedProjectId)?.name || 
+                                <span className="bg-gray-200 text-gray-500 rounded-md px-2 py-1">Select a project</span>}
+                            </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {projectsLoading ? (
+                            <SelectItem value="loading" disabled>Loading...</SelectItem>
+                            ) : (
+                            projects.map((project) => (
+                                <SelectItem key={project.id} value={project.id}>
+                                {project.name}
+                                </SelectItem>
+                            ))
+                            )}
+                        </SelectContent>
                     </Select>
                   </div>
                   
@@ -227,8 +231,12 @@ export function AddExpenseDialog({
                                   Category*
                               </Label>
                               <Select name="category" required disabled={!selectedProjectId}>
-                                  <SelectTrigger className="col-span-3">
-                                  <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
+                                  <SelectTrigger className={cn("col-span-3", !selectedProjectId && "text-muted-foreground")}>
+                                    <SelectValue>
+                                        {!selectedProjectId ? 
+                                            <span className="bg-gray-200 text-gray-500 rounded-md px-2 py-1">First select a project</span> : 
+                                            <span className="bg-gray-200 text-gray-500 rounded-md px-2 py-1">Select a category</span>}
+                                    </SelectValue>
                                   </SelectTrigger>
                                   <SelectContent>
                                   {categoriesLoading ? (

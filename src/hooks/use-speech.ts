@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -13,7 +14,7 @@ export function useSpeech() {
     }, []);
 
     const speak = useCallback((text: string) => {
-        if (!text || !synthRef.current) return;
+        if (!text || !text.trim() || !synthRef.current) return;
         
         // Cancel any ongoing speech
         if (synthRef.current.speaking) {

@@ -171,7 +171,7 @@ export function AddExpenseDialog({
                     </Label>
                     <Select name="projectId" required onValueChange={setSelectedProjectId}>
                         <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Select a project" />
+                            <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                             {projectsLoading ? (
@@ -188,7 +188,7 @@ export function AddExpenseDialog({
                   </div>
                   
                   <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">Type*</Label>
+                      <Label className="text-right">Type *</Label>
                       <RadioGroup
                         name="type"
                         required
@@ -211,7 +211,7 @@ export function AddExpenseDialog({
                       <>
                           <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="title" className="text-right">
-                                Title*
+                                Title *
                             </Label>
                             <Input
                                 id="title"
@@ -225,11 +225,11 @@ export function AddExpenseDialog({
                           <>
                             <div className="grid grid-cols-4 items-center gap-4">
                               <Label htmlFor="category" className="text-right">
-                                  Category*
+                                  Category *
                               </Label>
                               <Select name="category" required disabled={!selectedProjectId}>
                                   <SelectTrigger className="col-span-3">
-                                  <SelectValue placeholder="Select a category" />
+                                  <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
                                   {categoriesLoading ? (
@@ -266,7 +266,7 @@ export function AddExpenseDialog({
 
                           <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="date" className="text-right">
-                              Date*
+                              Date *
                           </Label>
                           <Input
                               id="date"
@@ -280,7 +280,7 @@ export function AddExpenseDialog({
                           
                           <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="amount" className="text-right">
-                              Amount*
+                              Amount *
                           </Label>
                           <Input
                               id="amount"
@@ -395,5 +395,3 @@ export function AddExpenseDialog({
     </>
   );
 }
-
-    

@@ -166,7 +166,7 @@ export function EditTransactionDialog({
             <div className="grid gap-4 py-4 pr-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="project" className="text-right">
-                    Project
+                    Project *
                   </Label>
                   <Select name="projectId" defaultValue={transaction.projectId} required onValueChange={setSelectedProjectId}>
                     <SelectTrigger className="col-span-3">
@@ -187,7 +187,7 @@ export function EditTransactionDialog({
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Type</Label>
+                    <Label className="text-right">Type *</Label>
                     <RadioGroup
                       name="type"
                       value={transactionType}
@@ -212,7 +212,7 @@ export function EditTransactionDialog({
                         <>
                           <div className="grid grid-cols-4 items-center gap-4">
                               <Label htmlFor="category" className="text-right">
-                                  Category
+                                  Category *
                               </Label>
                               <Select name="category" defaultValue={transaction.category} required disabled={!selectedProjectId}>
                                   <SelectTrigger className="col-span-3">
@@ -253,7 +253,7 @@ export function EditTransactionDialog({
 
                         <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="date" className="text-right">
-                            Date
+                            Date *
                         </Label>
                         <Input
                             id="date"
@@ -266,7 +266,7 @@ export function EditTransactionDialog({
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="title" className="text-right">
-                            Title
+                            Title *
                         </Label>
                         <Input
                             id="title"
@@ -278,7 +278,7 @@ export function EditTransactionDialog({
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="amount" className="text-right">
-                            Amount
+                            Amount *
                         </Label>
                         <Input
                             id="amount"

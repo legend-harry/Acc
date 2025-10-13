@@ -122,21 +122,21 @@ export function AddEmployeeDialog({
             <div className="grid gap-4 py-4 pr-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
-                  Full Name
+                  Full Name *
                 </Label>
                 <Input id="name" name="name" required className="col-span-3" />
               </div>
               
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="wage" className="text-right">
-                  Wage/Salary
+                  Wage/Salary *
                 </Label>
                 <Input id="wage" name="wage" type="number" step="0.01" required className="col-span-3" />
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="wageType" className="text-right">
-                  Wage Type
+                  Wage Type *
                 </Label>
                 <Select name="wageType" required defaultValue="daily">
                   <SelectTrigger className="col-span-3">
@@ -158,7 +158,7 @@ export function AddEmployeeDialog({
               </div>
 
               <div className="grid grid-cols-4 items-start gap-4">
-                  <Label className="text-right pt-2">Projects</Label>
+                  <Label className="text-right pt-2">Projects *</Label>
                   <div className="col-span-3 space-y-2">
                     {projectsLoading ? (
                         <p className="text-sm text-muted-foreground">Loading projects...</p>

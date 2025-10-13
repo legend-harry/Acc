@@ -103,7 +103,7 @@ export function BulkLogTimeDialog({ isOpen, onOpenChange, employeeIds, onSave }:
             <div className="grid gap-4 py-4 pr-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="start-date" className="text-right">
-                        From
+                        From *
                     </Label>
                     <Input
                         id="start-date"
@@ -118,7 +118,7 @@ export function BulkLogTimeDialog({ isOpen, onOpenChange, employeeIds, onSave }:
 
                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="end-date" className="text-right">
-                        To
+                        To *
                     </Label>
                     <Input
                         id="end-date"

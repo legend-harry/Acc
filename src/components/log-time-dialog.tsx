@@ -123,7 +123,7 @@ export function LogTimeDialog({ children }: { children: React.ReactNode }) {
             <div className="grid gap-4 py-4 pr-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="employee" className="text-right">
-                  Employee
+                  Employee *
                 </Label>
                 <div className="col-span-3">
                    <Combobox
@@ -139,7 +139,7 @@ export function LogTimeDialog({ children }: { children: React.ReactNode }) {
 
                <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="date" className="text-right">
-                        Date
+                        Date *
                     </Label>
                     <Input
                         id="date"
@@ -201,5 +201,3 @@ export function LogTimeDialog({ children }: { children: React.ReactNode }) {
     </Dialog>
   );
 }
-
-    

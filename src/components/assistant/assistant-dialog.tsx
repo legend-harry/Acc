@@ -62,7 +62,7 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
         addMessage('assistant', "Thinking...", true);
 
         try {
-            const history = messages.map(m => `${m.role}: ${m.content}`).join('\\n');
+            const history = messages.map(m => `${m.role}: ${m.content}`).join('\n');
             const transactionData = JSON.stringify(allTransactions, null, 2);
             
             const response = await assistantFlow({ utterance: text, history, user, transactionData });
@@ -133,9 +133,9 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
                     interimTranscript += event.results[i][0].transcript;
                 }
             }
-            setInputValue(interimTranscript + finalTranscript);
+             setInputValue(inputValue + interimTranscript + finalTranscript);
              if (finalTranscript) {
-                processUserInput(finalTranscript);
+                processUserInput(inputValue + finalTranscript);
             }
         };
 
@@ -149,7 +149,7 @@ export function AssistantDialog({ isOpen, onOpenChange }: { isOpen: boolean, onO
         };
 
         return () => recognitionRef.current?.abort();
-    }, [processUserInput]);
+    }, [processUserInput, inputValue]);
 
     const toggleListening = () => {
         if (!voiceMode) setVoiceMode(true);

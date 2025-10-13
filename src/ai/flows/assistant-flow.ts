@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview This is the main "brain" for the AI assistant.
@@ -39,10 +38,10 @@ Your primary jobs are:
 2. Helping the user perform tasks within the app, like adding transactions or employees.
 
 ## Conversation History
-{{history}}
+{{{history}}}
 
 ## Current User Message
-{{utterance}}
+{{{utterance}}}
 
 ## YOUR TASK
 Based on the conversation history and the user's latest message, generate a helpful and friendly response.

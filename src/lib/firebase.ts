@@ -17,3 +17,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
+
+// The Firebase Realtime Database SDK includes offline support by default.
+// It automatically handles temporary network interruptions and resyncs data
+// once connectivity is restored. No explicit `enablePersistence` call is needed here.

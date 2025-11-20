@@ -63,7 +63,7 @@ function SettingsTab() {
   const { employees } = useEmployees();
   const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
   const [defaultProject, setDefaultProject] = useState<string>("all");
-  const [primaryEmployee, setPrimaryEmployee] = useState<string>("");
+  const [primaryEmployee, setPrimaryEmployee] = useState<string>("none");
 
   useEffect(() => {
     const storedDefault = localStorage.getItem("defaultProjectId");
@@ -87,7 +87,11 @@ function SettingsTab() {
 
   const handlePrimaryEmployeeChange = (employeeId: string) => {
     setPrimaryEmployee(employeeId);
-    localStorage.setItem("primaryEmployeeId", employeeId);
+    if (employeeId === 'none') {
+        localStorage.removeItem("primaryEmployeeId");
+    } else {
+        localStorage.setItem("primaryEmployeeId", employeeId);
+    }
   }
 
   return (
@@ -145,7 +149,7 @@ function SettingsTab() {
                     <SelectValue placeholder="Select an employee" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {employees.map((e: Employee) => (
                     <SelectItem key={e.id} value={e.id}>
                         {e.name}

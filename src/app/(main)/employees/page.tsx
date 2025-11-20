@@ -35,6 +35,7 @@ import { useAttendance } from "@/hooks/use-attendance";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 
 export default function EmployeesPage() {
@@ -58,6 +59,21 @@ export default function EmployeesPage() {
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const { currency } = useCurrency();
   const [isBulkLogTimeOpen, setIsBulkLogTimeOpen] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Request notification permission on component mount
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          toast({ title: "Notifications Enabled", description: "You'll receive attendance reminders." });
+        } else {
+          toast({ title: "Notifications Denied", description: "You won't receive attendance reminders.", variant: "destructive" });
+        }
+      });
+    }
+  }, [toast]);
+
 
   const filteredEmployees = useMemo(() => {
     if (selectedProjectId === "all") {

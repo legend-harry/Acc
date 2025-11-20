@@ -1,78 +1,120 @@
-// Choose a cache name
-const cacheName = 'ExpenseWise-v1';
+// This should be at the very top of your service worker file
+importScripts("https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js");
 
-// List the files to precache
-const precacheResources = [
+const CACHE_NAME = 'expensetracker-v1';
+const urlsToCache = [
   '/',
-  '/dashboard',
-  '/transactions',
-  '/planner',
-  '/reports',
-  '/employees',
-  '/profile',
-  '/upgrade',
   '/manifest.json',
   '/Fintrack(logo).png',
-  // You might need to add more assets here, like specific CSS or JS files if they aren't inlined
+  // Add other critical assets here
 ];
 
-// When the service worker is installed, open a new cache and add all of our precache resources to it
+// Firebase configuration from your app
+const firebaseConfig = {
+  projectId: "studio-8032858002-f6cbf",
+  appId: "1:577729465600:web:50e627ef49874158d3b7e5",
+  storageBucket: "studio-8032858002-f6cbf.firebasestorage.app",
+  apiKey: "AIzaSyD1bdATBTBi-QJTP0j1pTbzO2342ogENws",
+  authDomain: "studio-8032858002-f6cbf.firebaseapp.com",
+  measurementId: "",
+  messagingSenderId: "577729465600",
+  databaseURL: "https://budget-app-3dfc3-default-rtdb.asia-southeast1.firebasedatabase.app",
+};
+
+// Initialize Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
+
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(cacheName).then((cache) => {
-      return cache.addAll(precacheResources);
-    })
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('Opened cache');
+        return cache.addAll(urlsToCache);
+      })
   );
 });
 
-// When a new service worker activates, remove any outdated caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(
-        keyList.map((key) => {
-          if (key !== cacheName) {
-            return caches.delete(key);
-          }
-        })
-      );
-    })
-  );
-});
-
-
-// When a fetch request is made, try to serve a cached response first
 self.addEventListener('fetch', (event) => {
-  // We only want to cache GET requests
-  if (event.request.method !== 'GET') {
-    return;
-  }
-  
-  // For navigation requests, use a network-first strategy to ensure users get the latest pages,
-  // but fall back to the cache if offline.
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
-    return;
-  }
-
-  // For other requests (CSS, JS, images), use a cache-first strategy
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      // If we have a cached response, return it
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      
-      // Otherwise, fetch the resource from the network
-      return fetch(event.request).then((networkResponse) => {
-        // And cache it for next time
-        return caches.open(cacheName).then((cache) => {
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
-        });
-      });
-    })
+    caches.match(event.request)
+      .then((response) => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      })
   );
+});
+
+
+self.addEventListener('activate', (event) => {
+    console.log('Service worker activated');
+    event.waitUntil(
+        self.clients.claim()
+    );
+});
+
+
+self.addEventListener('push', event => {
+    console.log('Push received:', event);
+    const data = event.data.json();
+    console.log('Push data:', data);
+
+    const title = data.title || 'ExpenseWise';
+    const options = {
+        body: data.body,
+        icon: '/Fintrack(logo).png',
+        badge: '/Fintrack(logo).png',
+        actions: data.actions || [],
+        data: data.data // Pass along any custom data
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    console.log('Notification click received.', event.action);
+
+    if (event.action === 'mark_present') {
+        const employeeId = event.notification.data.employeeId;
+        const dateString = new Date().toISOString().split('T')[0];
+        
+        if (employeeId) {
+            console.log(`Marking ${employeeId} as present for ${dateString}`);
+            const attendanceRef = db.ref(`attendance/${dateString}/${employeeId}`);
+            
+            // We need to get the existing record to not overwrite notes, etc.
+            const updatePromise = attendanceRef.once('value').then(snapshot => {
+                const existingRecord = snapshot.val() || {};
+                return attendanceRef.set({
+                    ...existingRecord,
+                    status: 'full-day',
+                    employeeId: employeeId,
+                    date: dateString,
+                });
+            }).then(() => {
+                console.log('Attendance marked successfully.');
+                // Optionally show a confirmation notification
+                return self.registration.showNotification('Attendance Marked', {
+                    body: `Attendance has been marked for today.`,
+                    icon: '/Fintrack(logo).png'
+                });
+            }).catch(error => {
+                console.error('Failed to mark attendance:', error);
+            });
+
+            event.waitUntil(updatePromise);
+        }
+    } else {
+        // Default action: open the app
+        event.waitUntil(
+            clients.openWindow(event.notification.data.url || '/')
+        );
+    }
 });

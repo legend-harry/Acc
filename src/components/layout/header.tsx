@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Users, Check, Moon, Sun, Palette, Sparkles, Crown, Settings, FolderKanban } from "lucide-react";
+import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Users, Check, Moon, Sun, Palette, Sparkles, Crown, Settings, FolderKanban, Bell } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { InstallPwaButton } from "@/components/install-pwa-button";
 import { useProjects } from "@/hooks/use-database";
 import { useProjectFilter } from "@/context/project-filter-context";
 import { Project } from "@/types";
+import { NotificationBell } from "../notification-bell";
 
 
 const navItems = [
@@ -245,6 +246,7 @@ export function Header() {
       )}
 
       <div className="flex items-center gap-2">
+        <NotificationBell />
         <InstallPwaButton />
         <ThemeSwitcher />
         <GlobalProjectSwitcher />

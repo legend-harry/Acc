@@ -20,7 +20,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Currency, useCurrency } from "@/context/currency-context";
 import { useUser } from "@/context/user-context";
-import { useProjects } from "@/hooks/use-database";
+import { useProjects, useEmployees } from "@/hooks/use-database";
 import { useProjectFilter } from "@/context/project-filter-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,7 @@ import { useState, useEffect } from "react";
 import { ref, update, remove } from "firebase/database";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import type { Project } from "@/types";
+import type { Project, Employee } from "@/types";
 
 const currencies: { value: Currency; label: string }[] = [
   { value: "INR", label: "INR (Indian Rupee)" },
@@ -60,13 +60,19 @@ const currencies: { value: Currency; label: string }[] = [
 function SettingsTab() {
   const { currency, setCurrency } = useCurrency();
   const { projects } = useProjects();
+  const { employees } = useEmployees();
   const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
   const [defaultProject, setDefaultProject] = useState<string>("all");
+  const [primaryEmployee, setPrimaryEmployee] = useState<string>("");
 
   useEffect(() => {
     const storedDefault = localStorage.getItem("defaultProjectId");
     if (storedDefault) {
       setDefaultProject(storedDefault);
+    }
+    const storedPrimary = localStorage.getItem("primaryEmployeeId");
+    if (storedPrimary) {
+      setPrimaryEmployee(storedPrimary);
     }
   }, []);
 
@@ -77,6 +83,11 @@ function SettingsTab() {
     if (selectedProjectId === localStorage.getItem("defaultProjectId")) {
         setSelectedProjectId(projectId);
     }
+  }
+
+  const handlePrimaryEmployeeChange = (employeeId: string) => {
+    setPrimaryEmployee(employeeId);
+    localStorage.setItem("primaryEmployeeId", employeeId);
   }
 
   return (
@@ -125,6 +136,24 @@ function SettingsTab() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+         <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+            <Label htmlFor="primary-employee-select">Primary Employee for Notifications</Label>
+            <div className="md:col-span-2">
+                <Select value={primaryEmployee} onValueChange={handlePrimaryEmployeeChange}>
+                <SelectTrigger id="primary-employee-select" className="w-full">
+                    <SelectValue placeholder="Select an employee" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {employees.map((e: Employee) => (
+                    <SelectItem key={e.id} value={e.id}>
+                        {e.name}
+                    </SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+            </div>
         </div>
       </CardContent>
     </Card>

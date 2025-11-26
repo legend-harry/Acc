@@ -1,120 +1,138 @@
-// This should be at the very top of your service worker file
-importScripts("https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js");
 
-const CACHE_NAME = 'expensetracker-v1';
+const CACHE_NAME = 'expensewise-cache-v2';
 const urlsToCache = [
   '/',
-  '/manifest.json',
-  '/Fintrack(logo).png',
-  // Add other critical assets here
+  '/offline.html' // A fallback page
 ];
 
-// Firebase configuration from your app
-const firebaseConfig = {
-  projectId: "studio-8032858002-f6cbf",
-  appId: "1:577729465600:web:50e627ef49874158d3b7e5",
-  storageBucket: "studio-8032858002-f6cbf.firebasestorage.app",
-  apiKey: "AIzaSyD1bdATBTBi-QJTP0j1pTbzO2342ogENws",
-  authDomain: "studio-8032858002-f6cbf.firebaseapp.com",
-  measurementId: "",
-  messagingSenderId: "577729465600",
-  databaseURL: "https://budget-app-3dfc3-default-rtdb.asia-southeast1.firebasedatabase.app",
-};
-
-// Initialize Firebase
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.database();
-
-
-self.addEventListener('install', (event) => {
+// Install a service worker
+self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
+      .then(cache => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
   );
+  self.skipWaiting();
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      })
+// Activate the service worker
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
   );
+  return self.clients.claim();
 });
 
 
-self.addEventListener('activate', (event) => {
-    console.log('Service worker activated');
-    event.waitUntil(
-        self.clients.claim()
+// Cache and return requests
+self.addEventListener('fetch', event => {
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match('/offline.html'))
+        );
+        return;
+    }
+
+    event.respondWith(
+        caches.match(event.request)
+        .then(response => {
+            // Cache hit - return response
+            if (response) {
+            return response;
+            }
+
+            return fetch(event.request).then(
+            response => {
+                // Check if we received a valid response
+                if(!response || response.status !== 200 || response.type !== 'basic') {
+                return response;
+                }
+
+                const responseToCache = response.clone();
+
+                caches.open(CACHE_NAME)
+                .then(cache => {
+                    cache.put(event.request, responseToCache);
+                });
+
+                return response;
+            }
+            );
+        })
     );
 });
 
 
-self.addEventListener('push', event => {
-    console.log('Push received:', event);
-    const data = event.data.json();
-    console.log('Push data:', data);
+self.addEventListener('notificationclick', event => {
+  const { action, employeeId } = event.notification.data;
+  event.notification.close();
 
-    const title = data.title || 'ExpenseWise';
-    const options = {
-        body: data.body,
-        icon: '/Fintrack(logo).png',
-        badge: '/Fintrack(logo).png',
-        actions: data.actions || [],
-        data: data.data // Pass along any custom data
-    };
+  if (action === 'mark_present' && employeeId) {
+    // We cannot access the database directly from the service worker.
+    // Instead, we will focus a client and send a message.
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+        // Find the first visible client
+        const visibleClient = clientList.find(client => client.visibilityState === 'visible');
 
-    event.waitUntil(self.registration.showNotification(title, options));
+        if (visibleClient) {
+          // If a client is visible, focus it and send a message.
+          visibleClient.navigate(event.notification.data.url).then(client => {
+            client.focus();
+            client.postMessage({
+              type: 'MARK_ATTENDANCE',
+              payload: { employeeId, date: new Date().toISOString().split('T')[0] }
+            });
+          });
+        } else if (clients.openWindow) {
+          // If no client is visible, open a new window.
+          clients.openWindow(event.notification.data.url).then(client => {
+             // The message will be sent once the client is ready, handled in the client-side code.
+          });
+        }
+      })
+    );
+  } else if (event.action === 'dismiss') {
+    // Just close the notification.
+  } else {
+     event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+             if (clientList.length > 0) {
+                let client = clientList[0];
+                for (let i = 0; i < clientList.length; i++) {
+                    if (clientList[i].focused) {
+                        client = clientList[i];
+                    }
+                }
+                return client.focus();
+            }
+            return clients.openWindow('/');
+        })
+    );
+  }
 });
 
-self.addEventListener('notificationclick', event => {
-    event.notification.close();
-    console.log('Notification click received.', event.action);
 
-    if (event.action === 'mark_present') {
-        const employeeId = event.notification.data.employeeId;
-        const dateString = new Date().toISOString().split('T')[0];
-        
-        if (employeeId) {
-            console.log(`Marking ${employeeId} as present for ${dateString}`);
-            const attendanceRef = db.ref(`attendance/${dateString}/${employeeId}`);
-            
-            // We need to get the existing record to not overwrite notes, etc.
-            const updatePromise = attendanceRef.once('value').then(snapshot => {
-                const existingRecord = snapshot.val() || {};
-                return attendanceRef.set({
-                    ...existingRecord,
-                    status: 'full-day',
-                    employeeId: employeeId,
-                    date: dateString,
-                });
-            }).then(() => {
-                console.log('Attendance marked successfully.');
-                // Optionally show a confirmation notification
-                return self.registration.showNotification('Attendance Marked', {
-                    body: `Attendance has been marked for today.`,
-                    icon: '/Fintrack(logo).png'
-                });
-            }).catch(error => {
-                console.error('Failed to mark attendance:', error);
-            });
-
-            event.waitUntil(updatePromise);
-        }
-    } else {
-        // Default action: open the app
-        event.waitUntil(
-            clients.openWindow(event.notification.data.url || '/')
-        );
-    }
+self.addEventListener('push', event => {
+  console.log('Push received:', event.data.text());
+  const { title, ...options } = JSON.parse(event.data.text());
+  event.waitUntil(
+    self.registration.showNotification(title, {
+        ...options,
+        // Default values
+        icon: '/Fintrack(logo).png',
+        badge: '/Fintrack(logo).png',
+    })
+  );
 });

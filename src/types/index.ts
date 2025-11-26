@@ -35,6 +35,7 @@ export type BudgetSummary = {
 export type Project = {
     id: string;
     name: string;
+    archived?: boolean;
 };
 
 export type Employee = {

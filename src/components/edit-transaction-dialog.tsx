@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,8 @@ export function EditTransactionDialog({
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   
   const { projects, loading: projectsLoading } = useProjects();
+  const activeProjects = useMemo(() => projects.filter(p => !p.archived), [projects]);
+
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const { categories, loading: categoriesLoading } = useCategories(selectedProjectId);
 
@@ -176,7 +178,7 @@ export function EditTransactionDialog({
                       {projectsLoading ? (
                         <SelectItem value="loading" disabled>Loading...</SelectItem>
                       ) : (
-                        projects.map((project) => (
+                        activeProjects.map((project) => (
                           <SelectItem key={project.id} value={project.id}>
                             {project.name}
                           </SelectItem>

@@ -107,6 +107,7 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
         const newProjectRef = push(projectsRef);
         await set(newProjectRef, {
             name: projectName.trim(),
+            archived: false,
         });
         toast({
             title: "Project Added",
@@ -294,15 +295,18 @@ export default function PlannerPage() {
 
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const activeProjects = useMemo(() => projects.filter(p => !p.archived), [projects]);
+
+
   useEffect(() => {
-    // If the globally selected project is "all", default to the first project if available.
-    if (selectedProjectId === 'all' && projects.length > 0) {
-      setSelectedProjectId(projects[0].id);
-    } else if (!selectedProjectId && projects.length > 0) {
-      // If nothing is selected, default to the first project
-      setSelectedProjectId(projects[0].id);
+    // If the globally selected project is "all", default to the first active project if available.
+    if (selectedProjectId === 'all' && activeProjects.length > 0) {
+      setSelectedProjectId(activeProjects[0].id);
+    } else if (!selectedProjectId && activeProjects.length > 0) {
+      // If nothing is selected, default to the first active project
+      setSelectedProjectId(activeProjects[0].id);
     }
-  }, [projects, selectedProjectId, setSelectedProjectId]);
+  }, [activeProjects, selectedProjectId, setSelectedProjectId]);
 
   const projectBudgets = useMemo(() => {
     if (selectedProjectId === 'all') return [];
@@ -441,12 +445,12 @@ export default function PlannerPage() {
                 </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId} disabled={projects.length === 0}>
+              <Select value={selectedProjectId} onValueChange={setSelectedProjectId} disabled={activeProjects.length === 0}>
                   <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue placeholder="Select a project" />
                   </SelectTrigger>
                   <SelectContent>
-                      {projects.map((project: Project) => (
+                      {activeProjects.map((project: Project) => (
                           <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
                       ))}
                   </SelectContent>
@@ -475,10 +479,10 @@ export default function PlannerPage() {
               </Button>
             </div>
           ))}
-           {projects.length === 0 && (
-              <p className="text-muted-foreground text-center col-span-3 py-10">No projects found. Add one to get started.</p>
+           {activeProjects.length === 0 && (
+              <p className="text-muted-foreground text-center col-span-3 py-10">No active projects found. Add one to get started.</p>
            )}
-           {projects.length > 0 && selectedProjectId === 'all' && (
+           {activeProjects.length > 0 && selectedProjectId === 'all' && (
               <p className="text-muted-foreground text-center col-span-3 py-10">Please select a project to view or edit its budgets.</p>
            )}
            {selectedProjectId && selectedProjectId !== 'all' && projectBudgets.length === 0 && (

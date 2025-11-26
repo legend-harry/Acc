@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,12 +44,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Edit, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Edit, Trash2, Archive, ArchiveRestore, ArchiveX } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { ref, update, remove } from "firebase/database";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, Employee } from "@/types";
+import { Separator } from "@/components/ui/separator";
 
 const currencies: { value: Currency; label: string }[] = [
   { value: "INR", label: "INR (Indian Rupee)" },
@@ -168,6 +170,7 @@ function ProjectSettings() {
     const { projects, loading } = useProjects();
     const { toast } = useToast();
     const [editingProject, setEditingProject] = useState<Project | null>(null);
+    const [archivingProject, setArchivingProject] = useState<Project | null>(null);
     const [deletingProject, setDeletingProject] = useState<Project | null>(null);
     const [newProjectName, setNewProjectName] = useState("");
     const [defaultProject, setDefaultProject] = useState<string>("");
@@ -178,6 +181,13 @@ function ProjectSettings() {
             setDefaultProject(storedDefault);
         }
     }, []);
+
+    const { activeProjects, archivedProjects } = useMemo(() => {
+        const active = projects.filter(p => !p.archived);
+        const archived = projects.filter(p => p.archived);
+        return { activeProjects: active, archivedProjects: archived };
+    }, [projects]);
+
 
     const handleEditClick = (project: Project) => {
         setEditingProject(project);
@@ -209,16 +219,50 @@ function ProjectSettings() {
             setNewProjectName("");
         }
     }
+    
+    const handleArchiveProject = async () => {
+        if (!archivingProject) return;
+        try {
+            const projectRef = ref(db, `projects/${archivingProject.id}`);
+            await update(projectRef, { archived: true });
+            toast({
+                title: "Project Archived",
+                description: `Project "${archivingProject.name}" has been moved to archives.`
+            });
+        } catch (error) {
+            console.error("Failed to archive project", error);
+            toast({ variant: "destructive", title: "Archive Failed"});
+        } finally {
+            setArchivingProject(null);
+        }
+    }
+    
+    const handleRestoreProject = async (project: Project) => {
+        try {
+            const projectRef = ref(db, `projects/${project.id}`);
+            await update(projectRef, { archived: false });
+            toast({
+                title: "Project Restored",
+                description: `Project "${project.name}" has been restored.`
+            });
+        } catch (error) {
+            console.error("Failed to restore project", error);
+            toast({ variant: "destructive", title: "Restore Failed"});
+        }
+    }
+
 
     const handleDeleteProject = async () => {
         if (!deletingProject) return;
 
         try {
+            // Note: This permanently deletes the project.
+            // You might want to also delete associated transactions/budgets in a real app.
             await remove(ref(db, `projects/${deletingProject.id}`));
-            // Note: This doesn't delete associated transactions/budgets.
+            
             toast({
-                title: "Project Deleted",
-                description: `Project "${deletingProject.name}" has been deleted.`
+                title: "Project Deleted Permanently",
+                description: `Project "${deletingProject.name}" has been permanently deleted.`
             });
         } catch (error) {
              console.error("Failed to delete project", error);
@@ -230,35 +274,66 @@ function ProjectSettings() {
 
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Project Management</CardTitle>
-                <CardDescription>Edit or delete your projects.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ul className="space-y-3">
-                    {projects.map(project => (
-                        <li key={project.id} className="flex items-center justify-between p-3 rounded-md border">
-                            <div className="flex items-center gap-2">
-                                <span className="font-medium">{project.name}</span>
-                                {project.id === defaultProject && (
-                                    <span className="text-xs text-muted-foreground">(default)</span>
-                                )}
-                            </div>
-                            <div className="flex gap-2">
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(project)}>
-                                    <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingProject(project)}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </li>
-                    ))}
-                    {loading && <li className="text-muted-foreground">Loading projects...</li>}
-                    {!loading && projects.length === 0 && <li className="text-muted-foreground text-center py-4">No projects found.</li>}
-                </ul>
-            </CardContent>
+        <>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Project Management</CardTitle>
+                    <CardDescription>Edit or archive your active projects.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ul className="space-y-3">
+                        {activeProjects.map(project => (
+                            <li key={project.id} className="flex items-center justify-between p-3 rounded-md border">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">{project.name}</span>
+                                    {project.id === defaultProject && (
+                                        <span className="text-xs text-muted-foreground">(default)</span>
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(project)}>
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setArchivingProject(project)}>
+                                        <Archive className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </li>
+                        ))}
+                        {loading && <li className="text-muted-foreground">Loading projects...</li>}
+                        {!loading && activeProjects.length === 0 && <li className="text-muted-foreground text-center py-4">No active projects found.</li>}
+                    </ul>
+                </CardContent>
+            </Card>
+
+            {archivedProjects.length > 0 && (
+                 <Card className="mt-6">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Archive className="h-5 w-5" />
+                            Archived Projects
+                        </CardTitle>
+                        <CardDescription>Restore projects or delete them permanently.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-3">
+                            {archivedProjects.map(project => (
+                                <li key={project.id} className="flex items-center justify-between p-3 rounded-md border bg-muted/50">
+                                    <span className="font-medium text-muted-foreground">{project.name}</span>
+                                    <div className="flex gap-2">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleRestoreProject(project)}>
+                                            <ArchiveRestore className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingProject(project)}>
+                                            <ArchiveX className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
+            )}
 
              {/* Edit Dialog */}
             <Dialog open={!!editingProject} onOpenChange={(isOpen) => !isOpen && setEditingProject(null)}>
@@ -281,26 +356,44 @@ function ProjectSettings() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation */}
-            <AlertDialog open={!!deletingProject} onOpenChange={(isOpen) => !isOpen && setDeletingProject(null)}>
+            {/* Archive Confirmation */}
+            <AlertDialog open={!!archivingProject} onOpenChange={(isOpen) => !isOpen && setArchivingProject(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Archive Project?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will delete the project <span className="font-bold">"{deletingProject?.name}"</span>. 
-                            This action does not delete associated transactions or budgets.
-                            This cannot be undone.
+                            Are you sure you want to archive the project <span className="font-bold">"{archivingProject?.name}"</span>? 
+                            It will be hidden from the main app but can be restored later.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteProject}>
-                            Yes, delete project
+                        <AlertDialogAction onClick={handleArchiveProject}>
+                            Yes, archive it
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </Card>
+            
+            {/* Delete Confirmation */}
+            <AlertDialog open={!!deletingProject} onOpenChange={(isOpen) => !isOpen && setDeletingProject(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Permanently?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the project <span className="font-bold">"{deletingProject?.name}"</span>. 
+                            This action does not delete associated transactions or budgets and cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive hover:bg-destructive/90">
+                            Yes, delete permanently
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     )
 }
 
@@ -313,19 +406,19 @@ export default function ProfilePage() {
         title={`${user}'s Profile`}
         description="View and manage your profile information and settings."
       />
-      <Tabs defaultValue="settings" className="w-full">
+      <Tabs defaultValue="projects" className="w-full">
         <TabsList>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="profile" disabled>
             Profile
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="settings" className="mt-6">
-          <SettingsTab />
-        </TabsContent>
         <TabsContent value="projects" className="mt-6">
             <ProjectSettings />
+        </TabsContent>
+        <TabsContent value="settings" className="mt-6">
+          <SettingsTab />
         </TabsContent>
         <TabsContent value="profile">
           <p>Profile details coming soon.</p>

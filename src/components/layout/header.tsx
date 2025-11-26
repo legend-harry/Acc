@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Users, Check, Moon, Sun, Palette, Sparkles, Crown, Settings, FolderKanban, Bell } from "lucide-react";
+import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Users, Check, Moon, Sun, Palette, Sparkles, Crown, Settings, FolderKanban, Bell, Archive } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,6 @@ const profiles = ["Ammu", "Vijay", "Divyesh", "Anvika", "Guest"];
 function GlobalProjectSwitcher() {
     const { projects } = useProjects();
     const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
-    const selectedProject = projects.find(p => p.id === selectedProjectId);
     const [defaultProject, setDefaultProject] = useState<string>("");
 
     useEffect(() => {
@@ -43,6 +42,10 @@ function GlobalProjectSwitcher() {
             setDefaultProject(storedDefault);
         }
     }, []);
+
+    const activeProjects = projects.filter(p => !p.archived);
+    const archivedProjects = projects.filter(p => p.archived);
+    const selectedProject = projects.find(p => p.id === selectedProjectId);
 
     return (
         <DropdownMenu>
@@ -60,10 +63,17 @@ function GlobalProjectSwitcher() {
                         <span>All Projects</span>
                     </DropdownMenuRadioItem>
                     <DropdownMenuSeparator />
-                    {projects.map((project: Project) => (
+                    {activeProjects.map((project: Project) => (
                         <DropdownMenuRadioItem key={project.id} value={project.id}>
                             <FolderKanban className="mr-2 h-4 w-4" />
                             <span>{project.name} {project.id === defaultProject && <span className="text-xs text-muted-foreground ml-2">(default)</span>}</span>
+                        </DropdownMenuRadioItem>
+                    ))}
+                    {archivedProjects.length > 0 && <DropdownMenuSeparator />}
+                    {archivedProjects.map((project: Project) => (
+                         <DropdownMenuRadioItem key={project.id} value={project.id}>
+                            <Archive className="mr-2 h-4 w-4" />
+                            <span>{project.name}</span>
                         </DropdownMenuRadioItem>
                     ))}
                 </DropdownMenuRadioGroup>

@@ -10,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { useProjects, useEmployees, useAttendanceForDates } from "@/hooks/use-database";
@@ -28,15 +29,15 @@ import { OvertimeDialog } from "@/components/overtime-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LogTimeDialog } from "@/components/log-time-dialog";
 import { Label } from "@/components/ui/label";
-import { formatCurrency } from "@/lib/data";
+import { formatCurrency, formatDate } from "@/lib/data";
 import { useCurrency } from "@/context/currency-context";
 import { BulkLogTimeDialog } from "@/components/bulk-log-time-dialog";
 import { useAttendance } from "@/hooks/use-attendance";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { User } from "lucide-react";
+import { User, Archive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
+import { Separator } from "@/components/ui/separator";
 
 export default function EmployeesPage() {
   const router = useRouter();
@@ -74,16 +75,38 @@ export default function EmployeesPage() {
     }
   }, [toast]);
 
+  const { activeEmployees, pastEmployees } = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const active = employees.filter(emp => {
+        if (emp.employmentType === 'permanent') return true;
+        if (emp.employmentEndDate) {
+            return new Date(emp.employmentEndDate) >= today;
+        }
+        return true; // Default to active if end date is missing for temporary
+    });
+
+    const past = employees.filter(emp => {
+        if (emp.employmentType === 'temporary' && emp.employmentEndDate) {
+            return new Date(emp.employmentEndDate) < today;
+        }
+        return false;
+    });
+
+    return { activeEmployees: active, pastEmployees: past };
+  }, [employees]);
+
 
   const filteredEmployees = useMemo(() => {
     if (selectedProjectId === "all") {
-      return employees;
+      return activeEmployees;
     }
-    return employees.filter(
+    return activeEmployees.filter(
       (emp) =>
         emp.projectIds && emp.projectIds.includes(selectedProjectId)
     );
-  }, [employees, selectedProjectId]);
+  }, [activeEmployees, selectedProjectId]);
 
   const handleDateChange = (date: Date | undefined) => {
     setSelectedDate(date || new Date());
@@ -146,6 +169,94 @@ export default function EmployeesPage() {
 
   const loading = employeesLoading || projectsLoading || attendanceLoading || datesLoading;
 
+  const EmployeeList = ({ emps }: { emps: Employee[] }) => (
+    <tbody>
+        {emps.map((emp) => {
+            const record = attendance[emp.id];
+            return (
+                <tr key={emp.id} onClick={() => router.push(`/employees/${emp.id}`)} className={cn("border-b", "hover:bg-muted/50 cursor-pointer")}>
+                <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                    {bulkEditMode && (
+                    <Checkbox
+                        checked={selectedEmployees.includes(emp.id)}
+                        onCheckedChange={(checked) =>
+                        setSelectedEmployees((prev) =>
+                            checked
+                            ? [...prev, emp.id]
+                            : prev.filter((id) => id !== emp.id)
+                        )
+                        }
+                    />
+                    )}
+                </td>
+                <td className="p-3 font-medium">
+                    <div>
+                        {emp.name}
+                        {emp.employmentType === 'temporary' && (
+                            <p className="text-xs text-muted-foreground">Temporary (until {formatDate(emp.employmentEndDate || '')})</p>
+                        )}
+                    </div>
+                </td>
+                <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                    <Select
+                    value={record?.status || "absent"}
+                    onValueChange={(value) =>
+                        handleAttendanceChange(
+                        emp.id,
+                        value as "full-day" | "half-day" | "absent"
+                        )
+                    }
+                    >
+                    <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="full-day">
+                        Full Day
+                        </SelectItem>
+                        <SelectItem value="half-day">
+                        Half Day
+                        </SelectItem>
+                        <SelectItem value="absent">Absent</SelectItem>
+                    </SelectContent>
+                    </Select>
+                </td>
+                <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2">
+                    <Checkbox
+                        id={`ot-${emp.id}`}
+                        checked={!!record?.overtimeHours}
+                        onCheckedChange={(checked) => {
+                        if (checked) {
+                            setOvertimeEmployee(emp);
+                        } else {
+                            // Remove overtime
+                            const {
+                            overtimeHours,
+                            overtimeRate,
+                            ...rest
+                            } = record;
+                            updateAttendance(emp.id, rest);
+                        }
+                        }}
+                    />
+                    <Label htmlFor={`ot-${emp.id}`} className="cursor-pointer">
+                                            {record?.overtimeHours ? (
+                                                <button className="text-xs text-muted-foreground underline" onClick={() => setOvertimeEmployee(emp)}>
+                                                    {record.overtimeHours}hr @ {formatCurrency(record.overtimeRate || 0, currency)}
+                                                </button>
+                                            ) : (
+                                                'Log OT'
+                                            )}
+                                            </Label>
+                    </div>
+                </td>
+                </tr>
+            );
+        })}
+    </tbody>
+  );
+
   if (loading && employees.length === 0) {
     return (
       <div>
@@ -179,7 +290,7 @@ export default function EmployeesPage() {
     );
   }
   
-  if (employees.length === 0) {
+  if (employees.length === 0 && !loading) {
     return (
         <div className="flex flex-col items-center justify-center h-[60vh] text-center">
             <h2 className="text-2xl font-semibold mb-2">No Employees Found</h2>
@@ -212,7 +323,7 @@ export default function EmployeesPage() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4">
               <div>
@@ -291,90 +402,44 @@ export default function EmployeesPage() {
                       <th className="text-left p-3 font-medium">Overtime</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {filteredEmployees.map((emp) => {
-                      const record = attendance[emp.id];
-                      return (
-                        <tr key={emp.id} onClick={() => router.push(`/employees/${emp.id}`)} className={cn("border-b", "hover:bg-muted/50 cursor-pointer")}>
-                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                            {bulkEditMode && (
-                              <Checkbox
-                                checked={selectedEmployees.includes(emp.id)}
-                                onCheckedChange={(checked) =>
-                                  setSelectedEmployees((prev) =>
-                                    checked
-                                      ? [...prev, emp.id]
-                                      : prev.filter((id) => id !== emp.id)
-                                  )
-                                }
-                              />
-                            )}
-                          </td>
-                          <td className="p-3 font-medium">
-                            {emp.name}
-                          </td>
-                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                            <Select
-                              value={record?.status || "absent"}
-                              onValueChange={(value) =>
-                                handleAttendanceChange(
-                                  emp.id,
-                                  value as "full-day" | "half-day" | "absent"
-                                )
-                              }
-                            >
-                              <SelectTrigger className="w-[120px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="full-day">
-                                  Full Day
-                                </SelectItem>
-                                <SelectItem value="half-day">
-                                  Half Day
-                                </SelectItem>
-                                <SelectItem value="absent">Absent</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                id={`ot-${emp.id}`}
-                                checked={!!record?.overtimeHours}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setOvertimeEmployee(emp);
-                                  } else {
-                                    // Remove overtime
-                                    const {
-                                      overtimeHours,
-                                      overtimeRate,
-                                      ...rest
-                                    } = record;
-                                    updateAttendance(emp.id, rest);
-                                  }
-                                }}
-                              />
-                              <Label htmlFor={`ot-${emp.id}`} className="cursor-pointer">
-                                                     {record?.overtimeHours ? (
-                                                        <button className="text-xs text-muted-foreground underline" onClick={() => setOvertimeEmployee(emp)}>
-                                                            {record.overtimeHours}hr @ {formatCurrency(record.overtimeRate || 0, currency)}
-                                                        </button>
-                                                     ) : (
-                                                        'Log OT'
-                                                     )}
-                                                    </Label>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
+                  <EmployeeList emps={filteredEmployees} />
                 </table>
+                 {filteredEmployees.length === 0 && (
+                    <div className="text-center p-8 text-muted-foreground">
+                        No active employees for this project.
+                    </div>
+                 )}
               </div>
             </CardContent>
           </Card>
+
+          {pastEmployees.length > 0 && (
+              <Card>
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-muted-foreground">
+                          <Archive className="h-5 w-5" />
+                          Past Employees
+                      </CardTitle>
+                      <CardDescription>These employees' contracts have ended.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <ul className="space-y-3">
+                          {pastEmployees.map(emp => (
+                              <li key={emp.id} className="flex justify-between items-center p-3 rounded-md border">
+                                  <div>
+                                      <p className="font-medium">{emp.name}</p>
+                                      <p className="text-sm text-muted-foreground">Ended on {formatDate(emp.employmentEndDate || '')}</p>
+                                  </div>
+                                  <Button variant="ghost" onClick={() => router.push(`/employees/${emp.id}`)}>
+                                      View History
+                                  </Button>
+                              </li>
+                          ))}
+                      </ul>
+                  </CardContent>
+              </Card>
+          )}
+
         </div>
 
         <div>

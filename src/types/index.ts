@@ -45,6 +45,8 @@ export type Employee = {
   projectIds: string[];
   overtimeRateMultiplier: number;
   notes?: string;
+  employmentType: 'permanent' | 'temporary';
+  employmentEndDate?: string; // ISO string for temporary employees
 };
 
 export type AttendanceStatus = 'full-day' | 'half-day' | 'absent' | 'scheduled';

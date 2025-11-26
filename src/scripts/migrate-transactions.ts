@@ -3,60 +3,88 @@ import { db } from '../src/lib/firebase';
 import { ref, get, update } from 'firebase/database';
 import type { Transaction } from '@/types';
 
-async function migrateTransactions() {
-    console.log("Starting transaction migration...");
+async function migrateData() {
+    console.log("Starting data migration...");
+    
+    // Migrate Transactions
     const transactionsRef = ref(db, 'transactions');
     try {
-        const snapshot = await get(transactionsRef);
-        const data = snapshot.val();
+        const transactionSnapshot = await get(transactionsRef);
+        const transactionData = transactionSnapshot.val();
 
-        if (!data) {
-            console.log("No transactions found to migrate.");
-            return;
-        }
+        if (transactionData) {
+            const transactionUpdates: Record<string, any> = {};
+            let transactionsMigrated = 0;
 
-        const updates: Record<string, any> = {};
-        let transactionsMigrated = 0;
+            Object.keys(transactionData).forEach(key => {
+                const transaction = transactionData[key];
+                let needsUpdate = false;
+                if (transaction.status === undefined) {
+                    transactionUpdates[`/transactions/${key}/status`] = 'completed';
+                    needsUpdate = true;
+                }
+                if (transaction.projectId === undefined) {
+                    transactionUpdates[`/transactions/${key}/projectId`] = '-NztBqYtA3So9WwL0d5V'; 
+                    needsUpdate = true;
+                }
+                if (transaction.glCode !== undefined) {
+                    transactionUpdates[`/transactions/${key}/glCode`] = null;
+                    needsUpdate = true;
+                }
 
-        Object.keys(data).forEach(key => {
-            const transaction = data[key];
-            let needsUpdate = false;
-            // Check if the status field is missing
-            if (transaction.status === undefined) {
-                updates[`/transactions/${key}/status`] = 'completed';
-                needsUpdate = true;
+                if(needsUpdate) transactionsMigrated++;
+            });
+
+            if (transactionsMigrated > 0) {
+                console.log(`Found ${transactionsMigrated} transactions to update.`);
+                await update(ref(db), transactionUpdates);
+                console.log("Successfully updated transactions.");
+            } else {
+                console.log("All transactions are up to date. No migration needed.");
             }
-            if (transaction.projectId === undefined) {
-                // Defaulting to a project id. Make sure this project exists.
-                // You might want to create a default project first if it doesn't.
-                updates[`/transactions/${key}/projectId`] = '-NztBqYtA3So9WwL0d5V'; 
-                needsUpdate = true;
-            }
-            // Remove glCode if it exists
-            if (transaction.glCode !== undefined) {
-                updates[`/transactions/${key}/glCode`] = null;
-                needsUpdate = true;
-            }
-
-            if(needsUpdate) transactionsMigrated++;
-        });
-
-        if (transactionsMigrated > 0) {
-            console.log(`Found ${transactionsMigrated} transactions to update.`);
-            await update(ref(db), updates);
-            console.log("Successfully updated transactions.");
         } else {
-            console.log("All transactions are up to date. No migration needed.");
+            console.log("No transactions found to migrate.");
         }
 
     } catch (error) {
         console.error('Error migrating transactions:', error);
-        process.exit(1);
-    } finally {
-        console.log("Migration script finished.");
-        // The script hangs without this in some environments.
-        process.exit(0);
     }
+    
+    // Migrate Employees
+    const employeesRef = ref(db, 'employees');
+    try {
+        const employeeSnapshot = await get(employeesRef);
+        const employeeData = employeeSnapshot.val();
+
+        if (employeeData) {
+            const employeeUpdates: Record<string, any> = {};
+            let employeesMigrated = 0;
+
+            Object.keys(employeeData).forEach(key => {
+                const employee = employeeData[key];
+                if (employee.employmentType === undefined) {
+                    employeeUpdates[`/employees/${key}/employmentType`] = 'permanent';
+                    employeesMigrated++;
+                }
+            });
+
+            if (employeesMigrated > 0) {
+                console.log(`Found ${employeesMigrated} employees to update.`);
+                await update(ref(db), employeeUpdates);
+                console.log("Successfully updated employees with employmentType.");
+            } else {
+                console.log("All employees are up to date with employmentType. No migration needed.");
+            }
+        } else {
+            console.log("No employees found to migrate.");
+        }
+    } catch (error) {
+        console.error('Error migrating employees:', error);
+    }
+
+
+    console.log("Migration script finished.");
+    process.exit(0); // Exit after all migrations
 }
 
-migrateTransactions();
+migrateData();

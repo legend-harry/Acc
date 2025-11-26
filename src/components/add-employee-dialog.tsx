@@ -29,6 +29,7 @@ import { ref, push, set } from "firebase/database";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "./ui/checkbox";
 import type { Project } from "@/types";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 export function AddEmployeeDialog({
   children,
@@ -42,6 +43,7 @@ export function AddEmployeeDialog({
   const { toast } = useToast();
   const { projects, loading: projectsLoading } = useProjects();
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [employmentType, setEmploymentType] = useState<"permanent" | "temporary">("permanent");
 
   const handleProjectToggle = (projectId: string) => {
     setSelectedProjects((prev) =>
@@ -60,6 +62,7 @@ export function AddEmployeeDialog({
     const wageType = formData.get("wageType") as "hourly" | "daily" | "monthly";
     const overtimeRateMultiplier = formData.get("overtimeRateMultiplier") as string;
     const notes = formData.get("notes") as string;
+    const employmentEndDate = formData.get("employmentEndDate") as string;
 
     if (!name || !wage || !wageType || selectedProjects.length === 0) {
         toast({
@@ -78,6 +81,8 @@ export function AddEmployeeDialog({
         projectIds: selectedProjects,
         overtimeRateMultiplier: Number(overtimeRateMultiplier) || 1.5,
         notes,
+        employmentType,
+        employmentEndDate: employmentType === 'temporary' ? new Date(employmentEndDate).toISOString() : '',
     };
     
     try {
@@ -89,6 +94,7 @@ export function AddEmployeeDialog({
         setOpen(false);
         (event.target as HTMLFormElement).reset();
         setSelectedProjects([]);
+        setEmploymentType("permanent");
         
         toast({
             title: "Employee Added",
@@ -127,6 +133,37 @@ export function AddEmployeeDialog({
                 <Input id="name" name="name" required className="col-span-3" />
               </div>
               
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Type *</Label>
+                <RadioGroup
+                    value={employmentType}
+                    onValueChange={(value) => setEmploymentType(value as "permanent" | "temporary")}
+                    className="col-span-3 flex gap-4"
+                >
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="permanent" id="r-permanent" />
+                        <Label htmlFor="r-permanent">Permanent</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="temporary" id="r-temporary" />
+                        <Label htmlFor="r-temporary">Temporary</Label>
+                    </div>
+                </RadioGroup>
+              </div>
+              
+              {employmentType === 'temporary' && (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="employmentEndDate" className="text-right">End Date *</Label>
+                      <Input
+                          id="employmentEndDate"
+                          name="employmentEndDate"
+                          type="date"
+                          required
+                          className="col-span-3"
+                      />
+                  </div>
+              )}
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="wage" className="text-right">
                   Wage/Salary *

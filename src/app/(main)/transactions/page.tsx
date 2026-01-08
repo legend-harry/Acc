@@ -1,0 +1,247 @@
+
+"use client";
+
+import { useState, useMemo } from 'react';
+import { PageHeader } from "@/components/page-header";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { formatCurrency, formatDate } from "@/lib/data";
+import { Button } from '@/components/ui/button';
+import { ChevronRight, Receipt, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import Image from 'next/image';
+import { Transaction } from '@/types';
+import { getCategoryColorClass, getCategoryBadgeColorClass } from '@/lib/utils';
+import { useTransactions, useCategories } from '@/hooks/use-database';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+
+const TRANSACTIONS_PER_PAGE = 20;
+
+const ReceiptPreviewDialog = ({ transaction }: { transaction: Transaction }) => {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Receipt for {transaction.title}</DialogTitle>
+        </DialogHeader>
+        <div className="mt-4 overflow-auto">
+          <div className="w-full min-w-[600px] relative group">
+            {transaction.receiptUrl ? (
+                <Image
+                    src={transaction.receiptUrl}
+                    alt={`Receipt for ${transaction.title}`}
+                    width={1200}
+                    height={1600}
+                    className="w-full h-auto object-contain transition-transform duration-300 ease-in-out group-hover:scale-125"
+                />
+            ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                    <Receipt className="h-12 w-12 mb-4" />
+                    <p>No receipt image available.</p>
+                </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+
+export default function TransactionsPage() {
+    const { transactions, loading } = useTransactions();
+    const { categories } = useCategories();
+    const isMobile = useIsMobile();
+    
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState("all");
+    const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
+
+    const filteredTransactions = useMemo(() => 
+        [...transactions]
+        .filter(t => {
+            const searchTermLower = searchTerm.toLowerCase();
+            const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
+            const matchesSearch = searchTerm.trim() === '' ||
+                t.title.toLowerCase().includes(searchTermLower) ||
+                t.vendor.toLowerCase().includes(searchTermLower) ||
+                (t.description && t.description.toLowerCase().includes(searchTermLower));
+            return matchesCategory && matchesSearch;
+        })
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        [transactions, searchTerm, selectedCategory]
+    );
+
+    const visibleTransactions = filteredTransactions.slice(0, visibleCount);
+
+    const loadMore = () => {
+        setVisibleCount(prevCount => prevCount + TRANSACTIONS_PER_PAGE);
+    };
+
+    const renderTransactionItem = (t: Transaction) => (
+        <div key={t.id} className="flex justify-between items-center py-3 animate-in fade-in slide-in-from-bottom-1 duration-300">
+            <div className="flex-1">
+                <div className="font-medium">{t.title}</div>
+                <div className="text-sm text-muted-foreground">{t.vendor}</div>
+                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                    <span>{formatDate(t.date)}</span>
+                    <span className='flex items-center gap-1'><User className='h-3 w-3' />{t.createdBy}</span>
+                </div>
+            </div>
+            <div className="flex flex-col items-end ml-4">
+                <div className="font-medium text-lg">{formatCurrency(t.amount)}</div>
+                <Badge variant="outline" className={`mt-1 text-xs ${getCategoryBadgeColorClass(t.category)}`}>{t.category}</Badge>
+            </div>
+            {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
+        </div>
+    );
+
+  return (
+    <div>
+      <PageHeader
+        title="Transactions"
+        description="A detailed list of all your expenses."
+      />
+
+    <Card className="mb-6">
+        <CardContent className="p-4 flex flex-col md:flex-row gap-4">
+            <Input 
+                placeholder="Search by title, vendor, description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+            />
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full md:w-[280px]">
+                    <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </CardContent>
+    </Card>
+
+      {isMobile ? (
+         <div className="space-y-4">
+            {loading ? (
+                Array.from({ length: 10 }).map((_, i) => (
+                    <Card key={i}><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
+                ))
+            ) : (
+                visibleTransactions.map(t => (
+                    <Card key={t.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300 shadow-sm">
+                        <CardContent className={`p-4 ${getCategoryColorClass(t.category)} transition-colors duration-200`}>
+                            {renderTransactionItem(t)}
+                        </CardContent>
+                    </Card>
+                ))
+            )}
+             {visibleCount < filteredTransactions.length && (
+                <div className="text-center mt-4">
+                <Button onClick={loadMore} variant="outline">Load More</Button>
+                </div>
+            )}
+            {!loading && filteredTransactions.length === 0 && (
+                <div className="text-center py-10 text-muted-foreground">
+                    No transactions match your search.
+                </div>
+            )}
+         </div>
+      ) : (
+        <Card>
+            <CardHeader>
+            <CardTitle>All Expenses</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="w-12">Receipt</TableHead>
+                </TableRow>
+                </TableHeader>
+                <TableBody>
+                {loading ? (
+                    Array.from({ length: 10 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-5 w-16 float-right" /></TableCell>
+                        <TableCell />
+                    </TableRow>
+                    ))
+                ) : (
+                    visibleTransactions.map((t) => (
+                    <TableRow key={t.id} className={`${getCategoryColorClass(t.category)} transition-colors duration-200 hover:bg-muted/40 animate-in fade-in slide-in-from-bottom-1`}>
+                        <TableCell>{formatDate(t.date)}</TableCell>
+                        <TableCell>
+                        <div className="font-medium">{t.title}</div>
+                        <div className="hidden text-sm text-muted-foreground md:inline">
+                            {t.vendor}
+                        </div>
+                        </TableCell>
+                        <TableCell>{t.createdBy}</TableCell>
+                        <TableCell>
+                        <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                        {formatCurrency(t.amount)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                        {t.receiptUrl && <ReceiptPreviewDialog transaction={t} />}
+                        </TableCell>
+                    </TableRow>
+                    ))
+                )}
+                {!loading && filteredTransactions.length === 0 && (
+                     <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                            No transactions match your filters.
+                        </TableCell>
+                    </TableRow>
+                )}
+                </TableBody>
+            </Table>
+            {visibleCount < filteredTransactions.length && !loading && (
+                <div className="text-center mt-4 pt-4 border-t">
+                <Button onClick={loadMore} variant="outline">Load More</Button>
+                </div>
+            )}
+            </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

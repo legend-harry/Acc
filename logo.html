@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Expense Tracker Logo</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f9f0 0%, #e6f4e6 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+        }
+        
+        h1 {
+            color: #2e8b57;
+            margin-top: 0;
+        }
+        
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .logo {
+            width: 250px;
+            height: 250px;
+            position: relative;
+        }
+        
+        .logo-bg {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sceptre {
+            position: absolute;
+            height: 180px;
+            width: 20px;
+            background: linear-gradient(to bottom, #f4d03f 0%, #d4af37 100%);
+            border-radius: 10px;
+            top: 35px;
+            left: 125px;
+            z-index: 1;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .sceptre-top {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle at 30% 30%, #ff66cc 0%, #cc0099 100%);
+            border-radius: 50%;
+            top: 25px;
+            left: -5px;
+            box-shadow: 0 0 10px rgba(204, 0, 153, 0.7);
+        }
+        
+        .sceptre-bottom {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle at 30% 30%, #f4d03f 0%, #d4af37 100%);
+            border-radius: 50%;
+            top: 165px;
+            left: -10px;
+        }
+        
+        .letter-d {
+            position: absolute;
+            width: 120px;
+            height: 180px;
+            background: linear-gradient(to bottom, #2e8b57 0%, #3cb371 100%);
+            border-radius: 60px 120px 120px 60px;
+            top: 35px;
+            left: 65px;
+            z-index: 2;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .d-stroke {
+            position: absolute;
+            width: 20px;
+            height: 180px;
+            background: linear-gradient(to bottom, #228b22 0%, #2e8b57 100%);
+            left: 20px;
+            border-radius: 10px;
+        }
+        
+        .d-line {
+            position: absolute;
+            width: 80px;
+            height: 6px;
+            background: #f8f8f8;
+            border-radius: 3px;
+            left: 30px;
+        }
+        
+        .line-1 {
+            top: 70px;
+        }
+        
+        .line-2 {
+            top: 110px;
+        }
+        
+        .crown {
+            position: absolute;
+            width: 100px;
+            height: 50px;
+            top: 15px;
+            left: 75px;
+            z-index: 3;
+        }
+        
+        .crown-base {
+            position: absolute;
+            width: 100px;
+            height: 20px;
+            background: linear-gradient(to bottom, #f4d03f 0%, #d4af37 100%);
+            border-radius: 10px 10px 0 0;
+            bottom: 0;
+        }
+        
+        .crown-point {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 30px solid #f4d03f;
+            bottom: 20px;
+            left: 30px;
+        }
+        
+        .crown-point-left {
+            left: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 25px solid #d4af37;
+        }
+        
+        .crown-point-right {
+            left: 70px;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 25px solid #d4af37;
+        }
+        
+        .crown-jewel {
+            position: absolute;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+        }
+        
+        .jewel-1 {
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle at 30% 30%, #ff3333 0%, #cc0000 100%);
+            top: 30px;
+            left: 42px;
+        }
+        
+        .jewel-2 {
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle at 30% 30%, #2e8b57 0%, #006400 100%);
+            top: 35px;
+            left: 15px;
+        }
+        
+        .jewel-3 {
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle at 30% 30%, #2e8b57 0%, #006400 100%);
+            top: 35px;
+            right: 15px;
+        }
+        
+        .shine {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            top: 20px;
+            left: 20px;
+            filter: blur(5px);
+        }
+        
+        .app-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2e8b57;
+            margin-top: 20px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tagline {
+            font-size: 18px;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 10px;
+        }
+        
+        .color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+        
+        .color-1 { background: #2e8b57; }
+        .color-2 { background: #3cb371; }
+        .color-3 { background: #d4af37; }
+        .color-4 { background: #f4d03f; }
+        .color-5 { background: #cc0099; }
+        
+        .description {
+            margin-top: 30px;
+            color: #555;
+            line-height: 1.6;
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Royal Expense Tracker Logo</h1>
+        
+        <div class="logo-container">
+            <div class="logo">
+                <div class="logo-bg"></div>
+                <div class="sceptre">
+                    <div class="sceptre-top"></div>
+                    <div class="sceptre-bottom"></div>
+                </div>
+                <div class="letter-d">
+                    <div class="d-stroke"></div>
+                    <div class="d-line line-1"></div>
+                    <div class="d-line line-2"></div>
+                    <div class="shine"></div>
+                </div>
+                <div class="crown">
+                    <div class="crown-base"></div>
+                    <div class="crown-point"></div>
+                    <div class="crown-point-left"></div>
+                    <div class="crown-point-right"></div>
+                    <div class="crown-jewel jewel-1"></div>
+                    <div class="crown-jewel jewel-2"></div>
+                    <div class="crown-jewel jewel-3"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="app-name">Royal Expense Tracker</div>
+        <div class="tagline">Track your expenses like royalty</div>
+        
+        <div class="color-palette">
+            <div class="color color-1"></div>
+            <div class="color color-2"></div>
+            <div class="color color-3"></div>
+            <div class="color color-4"></div>
+            <div class="color color-5"></div>
+        </div>
+        
+        <div class="description">
+            <p>This logo design features a regal "D" shaped like a dollar sign, adorned with a jeweled crown and holding a monarch's sceptre. The green color represents financial growth and stability, while the gold crown and sceptre symbolize luxury and premium quality.</p>
+            <p>The design is perfect for an expense tracker app that wants to position itself as a premium financial tool, helping users manage their money like royalty.</p>
+        </div>
+    </div>
+</body>
+</html>

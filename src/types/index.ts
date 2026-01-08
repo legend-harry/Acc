@@ -29,3 +29,60 @@ export type BudgetSummary = {
   category: string;
   budget: number;
 };
+
+export type Employee = {
+  id: string;
+  name: string;
+  role: string;
+  email?: string;
+  phone?: string;
+  dailyWage: number;
+  projectIds: string[];
+  employmentType: 'permanent' | 'temporary';
+  employmentStartDate?: string;
+  employmentEndDate?: string;
+  createdAt: string;
+};
+
+export type Project = {
+  id: string;
+  name: string;
+  description?: string;
+  status: 'active' | 'completed' | 'on-hold';
+  startDate?: string;
+  endDate?: string;
+  budget?: number;
+  createdAt: string;
+};
+
+export type AttendanceStatus = 'full-day' | 'half-day' | 'absent';
+
+export type AttendanceRecord = {
+  employeeId: string;
+  date: string;
+  status: AttendanceStatus;
+  overtimeHours?: number;
+  overtimeRate?: number;
+  notes?: string;
+  projectId?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DailySummary = {
+  date: string;
+  status: 'present' | 'absent' | 'half-day' | 'mixed';
+  totalPresent: number;
+  totalAbsent: number;
+  totalHalfDay: number;
+};
+
+export type MonthlyAttendanceSummary = {
+  totalDays: number;
+  fullDays: number;
+  halfDays: number;
+  absent: number;
+  totalWages: number;
+  overtimeHours: number;
+  overtimeWages: number;
+};

@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, Wallet, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Check } from "lucide-react";
+import { PlusCircle, Wallet, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Check, Fish } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ const navItems = [
   { href: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
   { href: "/budgets", icon: Target, label: "Budgets" },
   { href: "/reports", icon: PieChart, label: "Reports" },
+  { href: "/farming", icon: Fish, label: "Farming" },
 ];
 
 const profiles = ["Ammu", "Vijay", "Divyesh", "Anvika", "Guest"];

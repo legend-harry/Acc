@@ -86,3 +86,68 @@ export type MonthlyAttendanceSummary = {
   overtimeHours: number;
   overtimeWages: number;
 };
+
+// Shrimp Farming Types
+export type InventoryItemType = 'feed' | 'minerals' | 'chemicals' | 'medicine' | 'equipment' | 'other';
+
+export type InventoryItem = {
+  id: string;
+  name: string;
+  type: InventoryItemType;
+  quantity: number;
+  unit: string; // kg, liter, piece, etc.
+  minimumThreshold: number;
+  reorderQuantity: number;
+  unitCost: number;
+  supplier?: string;
+  lastRestocked: string;
+  expiryDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PondActivity = {
+  id: string;
+  pondId: string;
+  type: 'feeding' | 'water-change' | 'cleaning' | 'health-check' | 'harvesting' | 'treatment' | 'testing' | 'other';
+  description: string;
+  quantity?: number;
+  quantityUnit?: string;
+  date: string;
+  time?: string;
+  performedBy: string;
+  notes?: string;
+  imageUrl?: string;
+  createdAt: string;
+};
+
+export type Pond = {
+  id: string;
+  name: string;
+  area: number; // in square meters
+  capacity: number; // estimated shrimp capacity
+  currentStock: number;
+  waterQuality: {
+    ph?: number;
+    temperature?: number;
+    salinity?: number;
+    dissolvedOxygen?: number;
+    ammonia?: number;
+    lastTestedDate?: string;
+  };
+  status: 'active' | 'fallow' | 'preparation' | 'harvesting';
+  cycleStartDate?: string;
+  expectedHarvestDate?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FarmingStats = {
+  totalPonds: number;
+  activePonds: number;
+  totalStockValue: number;
+  feedUsageThisMonth: number;
+  averageSurvivalRate: number;
+  nextHarvestDate?: string;
+};

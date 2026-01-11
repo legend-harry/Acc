@@ -27,7 +27,6 @@ import { formatCurrency } from "@/lib/data";
 import { useCategories, useProjects } from "@/hooks/use-database";
 import { db } from "@/lib/firebase";
 import { ref, update } from "firebase/database";
-import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { ScrollArea } from "./ui/scroll-area";
 import { useUser } from "@/context/user-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
@@ -95,24 +94,7 @@ export function EditTransactionDialog({
     }
     
     let receiptUrl = transaction.receiptUrl || "";
-    // Check if the receipt has been changed
-    if (receiptPreview && receiptPreview !== transaction.receiptUrl) {
-        try {
-            const storage = getStorage();
-            const newReceiptRef = storageRef(storage, `receipts/${new Date().getTime()}`);
-            await uploadString(newReceiptRef, receiptPreview, 'data_url');
-            receiptUrl = await getDownloadURL(newReceiptRef);
-        } catch (error) {
-            console.error("Error uploading receipt:", error);
-            toast({
-                variant: "destructive",
-                title: "Receipt Upload Failed",
-                description: "There was an error uploading your receipt image.",
-            });
-            setIsLoading(false);
-            return;
-        }
-    }
+    // Receipt upload to Firebase Storage disabled for now
     
     const updatedTransaction = {
         ...transaction, // Keep original data like createdAt, id

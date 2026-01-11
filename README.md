@@ -65,6 +65,26 @@ Leverage the power of AI to get a deeper understanding of your finances.
 *   **Generate Insights**: On the Dashboard or any monthly report page, click the "Generate Insights" button.
 *   **Spending Analysis**: The AI analyzes your transaction data to identify spending patterns, highlight unusual entries, and suggest potential areas for savings.
 
+### 6. 🦐 Shrimp Farming Project Management (NEW!)
+Comprehensive management system for shrimp aquaculture operations with AI-powered insights.
+
+*   **Dashboard**: Real-time farm metrics (FCR, survival rate, pond status)
+*   **Daily Operations Log**: Water quality tracking with AI suggestions
+*   **Financial Tracking**: Cost analysis, ROI projections, market price converter
+*   **Project Journey**: Timeline visualization with phase checklists
+*   **AI Reports**: Automated report generation with analysis and recommendations
+*   **Knowledge Base**: Searchable reference library for diseases, best practices, regulations
+*   **Pond Management**: Multi-step wizard for adding new ponds with AI design recommendations
+*   **Features**:
+    - Real-time water quality monitoring (pH, DO, temperature, ammonia)
+    - AI-powered cost optimization
+    - Production forecasting based on FCR trends
+    - Comprehensive knowledge base with disease identification
+    - Phase-based task management
+    - Multi-report export (PDF, Excel, CSV)
+
+For detailed implementation guide, see [SHRIMP_FARMING_IMPLEMENTATION.md](./SHRIMP_FARMING_IMPLEMENTATION.md)
+
 ## User Interface (UI) and User Experience (UX)
 
 *   **Modern & Clean Design**: The app uses a professional and aesthetically pleasing design system based on **ShadCN UI** components and **Tailwind CSS**.

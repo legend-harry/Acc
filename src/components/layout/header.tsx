@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Users, Check, Moon, Sun, Palette, Sparkles, Crown, Settings, FolderKanban, Bell, Archive } from "lucide-react";
+import { PlusCircle, LayoutDashboard, ArrowLeftRight, Target, PieChart, User, Users, Check, Moon, Sun, Palette, Sparkles, Crown, Settings, FolderKanban, Bell, Archive, Fish } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ const navItems = [
   { href: "/planner", icon: Target, label: "Planner" },
   { href: "/employees", icon: Users, label: "Employees" },
   { href: "/reports", icon: PieChart, label: "Reports" },
+  { href: "/shrimp", icon: Fish, label: "Fish Farm" },
 ];
 
 const profiles = ["Ammu", "Vijay", "Divyesh", "Anvika", "Guest"];

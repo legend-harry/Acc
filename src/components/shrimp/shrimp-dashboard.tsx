@@ -23,44 +23,24 @@ export function ShrimpDashboard({ ponds, currentPhase, alerts }: any) {
       </Card>
 
       {/* Key Metrics Grid */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Feed Conversion Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1.4</div>
-            <p className="text-xs text-muted-foreground mt-1">↓ Better than target</p>
-          </CardContent>
-        </Card>
-
-        <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '50ms' }}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Survival Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">85%</div>
-            <p className="text-xs text-muted-foreground mt-1">✓ On track</p>
-          </CardContent>
-        </Card>
-
-        <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '100ms' }}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Weight</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12g</div>
-            <p className="text-xs text-muted-foreground mt-1">↑ Growing well</p>
-          </CardContent>
-        </Card>
-
-        <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms' }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Ponds</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{ponds.length}</div>
             <p className="text-xs text-muted-foreground mt-1">{ponds.filter((p: any) => p.status === 'active').length} active</p>
+          </CardContent>
+        </Card>
+
+        <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '50ms' }}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Stock</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{ponds.reduce((sum: number, p: any) => sum + (p.currentStock || 0), 0).toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">shrimp across all ponds</p>
           </CardContent>
         </Card>
       </div>
@@ -82,22 +62,18 @@ export function ShrimpDashboard({ ponds, currentPhase, alerts }: any) {
                   {pond.status}
                 </Badge>
               </div>
-              <div className="grid grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <span className="text-muted-foreground">pH</span>
-                  <p className="font-semibold">7.8</p>
+                  <span className="text-muted-foreground">Type</span>
+                  <p className="font-semibold capitalize">{pond.shrimpType}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">DO</span>
-                  <p className="font-semibold text-orange-600">4.2</p>
+                  <span className="text-muted-foreground">Farming</span>
+                  <p className="font-semibold capitalize">{pond.farmingType}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Temp</span>
-                  <p className="font-semibold">28°C</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Ammonia</span>
-                  <p className="font-semibold">0.1</p>
+                  <span className="text-muted-foreground">Cycle Day</span>
+                  <p className="font-semibold">{pond.cycleDay || 0}</p>
                 </div>
               </div>
             </div>

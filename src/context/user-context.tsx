@@ -6,6 +6,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 type UserContextType = {
     user: string;
     setUser: (user: string) => void;
+    selectedProfile: string;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -29,7 +30,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
 
     return (
-        <UserContext.Provider value={{ user, setUser }}>
+        <UserContext.Provider value={{ user, setUser, selectedProfile: user }}>
             {children}
         </UserContext.Provider>
     );

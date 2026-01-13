@@ -136,6 +136,10 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (data.analysis) {
@@ -145,13 +149,31 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
           title: "Progress Analyzed",
           description: "AI has prepared recommended steps for your farm",
         });
+      } else if (data.status === 'mock' || data.mockData) {
+        // Handle mock response during development
+        setProgressAnalysis(data.analysis || { status: 'Continuing with current operations' });
+        setUpcomingSteps(data.upcomingSteps || ['Monitor daily', 'Check water quality', 'Continue feeding schedule']);
+        toast({
+          title: "Progress Analyzed (Demo Mode)",
+          description: "Using sample recommendations",
+        });
       }
     } catch (error) {
       console.error('Progress analysis error:', error);
+      // Provide a workaround with mock data
+      const mockAnalysis = {
+        status: `Currently in ${formData.currentStage} phase - ${formData.daysInCycle} days elapsed`,
+      };
+      const mockSteps = [
+        `Continue monitoring ${formData.currentStage} phase progress`,
+        `Maintain ${formData.waterQuality} water quality`,
+        `Keep feeding schedule at ${formData.feedingStatus} level`,
+      ];
+      setProgressAnalysis(mockAnalysis);
+      setUpcomingSteps(mockSteps);
       toast({
-        variant: "destructive",
-        title: "Analysis Failed",
-        description: "Could not analyze farm progress",
+        title: "Using Demo Analysis",
+        description: "AI service unavailable - showing template recommendations",
       });
     } finally {
       setIsAnalyzing(false);
@@ -270,7 +292,8 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         waterSource: formData.waterSource,
         currentStock: formData.seedAmount,
         status: 'preparing',
-        cycleDay: 0,
+        currentStage: formData.currentStage,
+        cycleDay: formData.daysInCycle || 0,
         linkedProjectId: projectId || null,
       });
 
@@ -404,7 +427,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                 </div>
                 <div className="bg-blue-50 border border-blue-200 rounded p-3">
                   <p className="text-sm font-semibold text-gray-900">
-                    Calculated Area: {calculateArea().toFixed(2)} hectares ({(calculateArea() * 10000).toFixed(0)} m²)
+                    Calculated Area: {(calculateArea() * 2.471).toFixed(2)} acres ({(calculateArea() * 10000).toFixed(0)} m²)
                   </p>
                   <p className="text-xs text-gray-600 mt-1">
                     Volume: {(formData.length * formData.width * formData.depth).toFixed(0)} m³
@@ -537,19 +560,26 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <div className="space-y-2">
-                    <Label className="text-gray-900 font-medium">Current Stage</Label>
+                    <Label className="text-gray-900 font-medium">Current Project Phase</Label>
                     <Select value={formData.currentStage} onValueChange={(value) => setFormData({ ...formData, currentStage: value as any })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="planning">🗓️ Planning Phase</SelectItem>
-                        <SelectItem value="preparation">🔨 Pond Preparation</SelectItem>
-                        <SelectItem value="stocking">🦐 Stocking Phase</SelectItem>
-                        <SelectItem value="operation">📊 Operation/Farming</SelectItem>
-                        <SelectItem value="harvest">🎯 Harvest Ready</SelectItem>
+                        <SelectItem value="planning">📋 Phase 1: Planning & Design - Site assessment, budget prep, pond design</SelectItem>
+                        <SelectItem value="preparation">🔨 Phase 2: Pond Preparation - Excavation, water system, equipment setup</SelectItem>
+                        <SelectItem value="stocking">🦐 Phase 3: Stocking & Acclimation - Water prep, PL acclimation, seed release</SelectItem>
+                        <SelectItem value="operation">📊 Phase 4: Operation & Maintenance - Daily farming, monitoring, feeding (10-16 weeks)</SelectItem>
+                        <SelectItem value="harvest">🎯 Phase 5: Harvest & Processing - Harvest, grading, quality checks</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {formData.currentStage === 'planning' && '💡 Planning Phase: Assess site, calculate costs, design pond layout'}
+                      {formData.currentStage === 'preparation' && '💡 Preparation Phase: Building infrastructure and installing equipment'}
+                      {formData.currentStage === 'stocking' && '💡 Stocking Phase: Acclimating PL and releasing into pond'}
+                      {formData.currentStage === 'operation' && '💡 Operation Phase: Active farming with daily monitoring and feeding'}
+                      {formData.currentStage === 'harvest' && '💡 Harvest Phase: Preparing for harvest and post-cycle analysis'}
+                    </p>
                   </div>
 
                   {formData.currentStage !== 'planning' && (
@@ -560,8 +590,16 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                           type="number"
                           min="0"
                           max="150"
-                          value={formData.daysInCycle}
-                          onChange={(e) => setFormData({ ...formData, daysInCycle: parseInt(e.target.value) || 0 })}
+                          value={formData.daysInCycle || ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
+                            setFormData({ ...formData, daysInCycle: isNaN(val) ? 0 : val });
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
+                            if (isNaN(val) || val < 0) setFormData({ ...formData, daysInCycle: 0 });
+                            if (val > 150) setFormData({ ...formData, daysInCycle: 150 });
+                          }}
                           className="text-gray-900"
                         />
                       </div>
@@ -647,28 +685,52 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                     <CardHeader>
                       <CardTitle className="text-sm text-green-900 flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        Analysis Results
+                        Progress Analysis & Next Steps
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
+                      <div className="bg-white rounded p-3 border border-green-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="text-xs text-gray-600 uppercase">Current Phase</p>
+                            <p className="font-bold text-gray-900">
+                              {formData.currentStage === 'planning' && '📋 Phase 1: Planning & Design'}
+                              {formData.currentStage === 'preparation' && '🔨 Phase 2: Pond Preparation'}
+                              {formData.currentStage === 'stocking' && '🦐 Phase 3: Stocking & Acclimation'}
+                              {formData.currentStage === 'operation' && '📊 Phase 4: Operation & Maintenance'}
+                              {formData.currentStage === 'harvest' && '🎯 Phase 5: Harvest & Processing'}
+                            </p>
+                          </div>
+                          {formData.daysInCycle > 0 && (
+                            <div className="text-right">
+                              <p className="text-xs text-gray-600 uppercase">Progress</p>
+                              <p className="font-bold text-blue-600">{formData.daysInCycle} days</p>
+                            </div>
+                          )}
+                        </div>
+                        <Progress value={(formData.daysInCycle / 150) * 100} className="h-2" />
+                      </div>
+
                       <div>
                         <p className="font-semibold text-gray-900 mb-1">Current Status:</p>
-                        <p className="text-gray-700">{progressAnalysis.status}</p>
+                        <p className="text-gray-700 bg-white p-2 rounded">{progressAnalysis.status}</p>
                       </div>
+
                       <div>
-                        <p className="font-semibold text-gray-900 mb-2">Upcoming Steps:</p>
-                        <ul className="space-y-1">
+                        <p className="font-semibold text-gray-900 mb-2">📍 Upcoming Steps:</p>
+                        <ul className="space-y-2">
                           {upcomingSteps.map((step: any, idx: number) => (
-                            <li key={idx} className="flex gap-2 text-gray-700">
-                              <span className="font-semibold text-green-600">{idx + 1}.</span>
+                            <li key={idx} className="flex gap-2 text-gray-700 bg-white p-2 rounded">
+                              <span className="font-bold text-green-600 min-w-6">{idx + 1}.</span>
                               <span>{step}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
+
                       <div>
-                        <p className="font-semibold text-gray-900 mb-1">Recommendation:</p>
-                        <p className="text-gray-700">{progressAnalysis.recommendation}</p>
+                        <p className="font-semibold text-gray-900 mb-1">💡 Recommendation:</p>
+                        <p className="text-gray-700 bg-white p-2 rounded italic">{progressAnalysis.recommendation}</p>
                       </div>
                     </CardContent>
                   </Card>

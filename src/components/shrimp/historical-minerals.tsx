@@ -3,6 +3,9 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { useDocuments } from '@/hooks/use-shrimp';
 import {
   LineChart,
   Line,
@@ -34,86 +37,7 @@ interface MineralGraphProps {
 }
 
 export function HistoricalMineralGraphs({ pondName, pondId }: MineralGraphProps) {
-  // Mock data - replace with real data from your API
-  const mockData: MineralData[] = [
-    {
-      date: '2026-01-05',
-      phosphorus: 45,
-      potassium: 120,
-      nitrogen: 85,
-      calcium: 200,
-      magnesium: 60,
-      sulphur: 30,
-      boron: 0.8,
-      ironPPM: 2.5,
-    },
-    {
-      date: '2026-01-06',
-      phosphorus: 48,
-      potassium: 125,
-      nitrogen: 88,
-      calcium: 205,
-      magnesium: 62,
-      sulphur: 31,
-      boron: 0.85,
-      ironPPM: 2.6,
-    },
-    {
-      date: '2026-01-07',
-      phosphorus: 50,
-      potassium: 130,
-      nitrogen: 90,
-      calcium: 210,
-      magnesium: 64,
-      sulphur: 32,
-      boron: 0.9,
-      ironPPM: 2.7,
-    },
-    {
-      date: '2026-01-08',
-      phosphorus: 52,
-      potassium: 135,
-      nitrogen: 92,
-      calcium: 215,
-      magnesium: 66,
-      sulphur: 33,
-      boron: 0.88,
-      ironPPM: 2.8,
-    },
-    {
-      date: '2026-01-09',
-      phosphorus: 55,
-      potassium: 140,
-      nitrogen: 95,
-      calcium: 220,
-      magnesium: 68,
-      sulphur: 34,
-      boron: 0.95,
-      ironPPM: 2.9,
-    },
-    {
-      date: '2026-01-10',
-      phosphorus: 58,
-      potassium: 145,
-      nitrogen: 98,
-      calcium: 225,
-      magnesium: 70,
-      sulphur: 35,
-      boron: 1.0,
-      ironPPM: 3.0,
-    },
-    {
-      date: '2026-01-11',
-      phosphorus: 60,
-      potassium: 150,
-      nitrogen: 100,
-      calcium: 230,
-      magnesium: 72,
-      sulphur: 36,
-      boron: 1.05,
-      ironPPM: 3.1,
-    },
-  ];
+  const { documents } = useDocuments(pondId);
 
   const mineralColors = {
     phosphorus: '#FF6B6B',      // Red
@@ -148,7 +72,47 @@ export function HistoricalMineralGraphs({ pondName, pondId }: MineralGraphProps)
     ironPPM: { min: 1.5, max: 4.0, unit: 'ppm' },
   };
 
-  const latestData = mockData[mockData.length - 1];
+  const parsedMinerals = useMemo(() => {
+    const docsWithMinerals = documents.filter(doc => doc.minerals);
+    if (!docsWithMinerals.length) return [] as MineralData[];
+
+    return docsWithMinerals.map(doc => {
+      const m = doc.minerals || {};
+      return {
+        date: doc.uploadDate?.split('T')[0] || doc.uploadDate || 'unknown',
+        phosphorus: Number(m.phosphorus ?? 0),
+        potassium: Number(m.potassium ?? 0),
+        nitrogen: Number(m.nitrogen ?? 0),
+        calcium: Number(m.calcium ?? 0),
+        magnesium: Number(m.magnesium ?? 0),
+        sulphur: Number(m.sulphur ?? 0),
+        boron: Number(m.boron ?? 0),
+        ironPPM: Number(m.ironPPM ?? m.iron ?? 0),
+      } as MineralData;
+    });
+  }, [documents]);
+
+  const mineralData: MineralData[] = parsedMinerals;
+
+  if (!mineralData.length) {
+    return (
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="text-lg">Minerals - {pondName}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert className="border-blue-200 bg-blue-50">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800 ml-2">
+              Upload test result documents with mineral data to populate this chart.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const latestData = mineralData[mineralData.length - 1];
 
   const getMineralStatus = (key: string, value: number) => {
     const range = optimalRanges[key];
@@ -193,7 +157,7 @@ export function HistoricalMineralGraphs({ pondName, pondId }: MineralGraphProps)
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={mockData}>
+              <LineChart data={mineralData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis
                 dataKey="date"
@@ -251,7 +215,7 @@ export function HistoricalMineralGraphs({ pondName, pondId }: MineralGraphProps)
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={mockData}>
+              <LineChart data={mineralData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis
                 dataKey="date"
@@ -309,7 +273,7 @@ export function HistoricalMineralGraphs({ pondName, pondId }: MineralGraphProps)
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={mockData}>
+              <LineChart data={mineralData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis
                 dataKey="date"

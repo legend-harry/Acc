@@ -18,23 +18,40 @@ interface Phase {
   duration: string;
 }
 
-export function ProjectJourneyMap({ projectPhase = 'operation' }: { projectPhase?: string }) {
+export function ProjectJourneyMap({ 
+  projectPhase = 'operation',
+  currentStage = 'operation' 
+}: { 
+  projectPhase?: string;
+  currentStage?: 'planning' | 'preparation' | 'stocking' | 'operation' | 'harvest';
+}) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [expandedPhase, setExpandedPhase] = useState<string | null>('operation');
+  const [expandedPhase, setExpandedPhase] = useState<string | null>(currentStage || 'operation');
+
+  // Map currentStage to phase IDs
+  const stageToPhaseMap: Record<string, string> = {
+    planning: 'planning',
+    preparation: 'setup',
+    stocking: 'stocking',
+    operation: 'operation',
+    harvest: 'harvest',
+  };
+
+  const activePhaseId = stageToPhaseMap[currentStage] || 'operation';
 
   const phases: Phase[] = [
     {
       id: 'planning',
-      name: 'Planning & Design',
-      status: 'completed',
-      progress: 100,
-      description: 'Project planning, site selection, and system design',
+      name: '📋 Phase 1: Planning & Design',
+      status: activePhaseId === 'planning' ? 'current' : (['setup', 'stocking', 'operation', 'harvest'].includes(activePhaseId) ? 'completed' : 'upcoming'),
+      progress: activePhaseId === 'planning' ? 50 : (['setup', 'stocking', 'operation', 'harvest'].includes(activePhaseId) ? 100 : 0),
+      description: 'Assess location, calculate requirements, design pond layout and budget',
       checklist: [
         { item: 'Site assessment and soil testing', completed: true },
-        { item: 'Stocking density calculation', completed: true },
-        { item: 'Budget preparation', completed: true },
-        { item: 'Pond layout design', completed: true },
+        { item: 'Stocking density calculation (target: 80-120/m²)', completed: true },
+        { item: 'Budget preparation and cost estimation', completed: true },
+        { item: 'Pond layout design and dimension planning', completed: true },
       ],
       resources: [
         { name: 'Site Selection Guide', url: '#' },
@@ -44,15 +61,15 @@ export function ProjectJourneyMap({ projectPhase = 'operation' }: { projectPhase
     },
     {
       id: 'setup',
-      name: 'Setup & Preparation',
-      status: 'completed',
-      progress: 100,
-      description: 'Pond construction, water system setup, and equipment installation',
+      name: '🔨 Phase 2: Pond Preparation',
+      status: activePhaseId === 'setup' ? 'current' : (['stocking', 'operation', 'harvest'].includes(activePhaseId) ? 'completed' : 'upcoming'),
+      progress: activePhaseId === 'setup' ? 50 : (['stocking', 'operation', 'harvest'].includes(activePhaseId) ? 100 : 0),
+      description: 'Construct pond, install aeration & water systems, test equipment',
       checklist: [
         { item: 'Pond excavation and leveling', completed: true },
-        { item: 'Aeration system installation', completed: true },
-        { item: 'Water supply and draining setup', completed: true },
-        { item: 'Equipment calibration and testing', completed: true },
+        { item: 'Aeration system installation and testing', completed: true },
+        { item: 'Water supply and draining infrastructure setup', completed: true },
+        { item: 'Equipment calibration and functionality testing', completed: true },
       ],
       resources: [
         { name: 'Equipment Manual', url: '#' },
@@ -62,53 +79,53 @@ export function ProjectJourneyMap({ projectPhase = 'operation' }: { projectPhase
     },
     {
       id: 'stocking',
-      name: 'Stocking & Acclimation',
-      status: 'completed',
-      progress: 100,
-      description: 'Water preparation, seed acclimation, and initial stocking',
+      name: '🦐 Phase 3: Stocking & Acclimation',
+      status: activePhaseId === 'stocking' ? 'current' : (['operation', 'harvest'].includes(activePhaseId) ? 'completed' : 'upcoming'),
+      progress: activePhaseId === 'stocking' ? 50 : (['operation', 'harvest'].includes(activePhaseId) ? 100 : 0),
+      description: 'Prepare water, acclimate post-larvae (PL), release into pond',
       checklist: [
-        { item: 'Water treatment and conditioning', completed: true },
-        { item: 'PL quality assessment', completed: true },
-        { item: 'Acclimation process', completed: true },
-        { item: 'Post-stocking monitoring', completed: true },
+        { item: 'Water treatment and conditioning (salinity, temperature)', completed: true },
+        { item: 'PL quality assessment and health check', completed: true },
+        { item: 'Gradual acclimation process (2-4 hours)', completed: true },
+        { item: 'Post-stocking monitoring and observation', completed: true },
       ],
       resources: [
         { name: 'Acclimation Protocol', url: '#' },
         { name: 'Water Quality Standards', url: '#' },
       ],
-      duration: '1 week',
+      duration: '1 day',
     },
     {
       id: 'operation',
-      name: 'Operation & Maintenance',
-      status: 'current',
-      progress: 45,
-      description: 'Daily monitoring, feeding, maintenance, and problem management',
+      name: '📊 Phase 4: Operation & Maintenance',
+      status: activePhaseId === 'operation' ? 'current' : (activePhaseId === 'harvest' ? 'completed' : 'upcoming'),
+      progress: activePhaseId === 'operation' ? 45 : (activePhaseId === 'harvest' ? 100 : 0),
+      description: 'Daily farming operations: monitoring, feeding, maintenance (10-16 weeks)',
       checklist: [
-        { item: 'Daily water quality testing', completed: true },
-        { item: 'Feeding schedule optimization', completed: true },
-        { item: 'Health monitoring and observation', completed: false },
-        { item: 'Disease prevention protocol', completed: false },
-        { item: 'Equipment maintenance', completed: false },
+        { item: 'Daily water quality testing (pH, DO, ammonia, temp)', completed: true },
+        { item: 'Feeding schedule optimization based on growth', completed: true },
+        { item: 'Health monitoring and disease observation', completed: false },
+        { item: 'Disease prevention protocol enforcement', completed: false },
+        { item: 'Equipment maintenance and system checks', completed: false },
       ],
       resources: [
         { name: 'Daily Operations Manual', url: '#' },
         { name: 'Disease Identification Guide', url: '#' },
         { name: 'Emergency Response Plan', url: '#' },
       ],
-      duration: '12 weeks',
+      duration: '10-16 weeks',
     },
     {
       id: 'harvest',
-      name: 'Harvest & Processing',
-      status: 'upcoming',
-      progress: 0,
-      description: 'Harvesting, grading, processing, and quality control',
+      name: '🎯 Phase 5: Harvest & Processing',
+      status: activePhaseId === 'harvest' ? 'current' : 'upcoming',
+      progress: activePhaseId === 'harvest' ? 50 : 0,
+      description: 'Harvest shrimp, grade by size, process, and perform quality control',
       checklist: [
-        { item: 'Harvest planning and scheduling', completed: false },
-        { item: 'Partial harvest practice', completed: false },
-        { item: 'Size grading setup', completed: false },
-        { item: 'Quality assurance testing', completed: false },
+        { item: 'Harvest planning and optimal timing determination', completed: false },
+        { item: 'Partial harvest practice (if applicable)', completed: false },
+        { item: 'Size grading setup and calibration', completed: false },
+        { item: 'Quality assurance and freshness testing', completed: false },
       ],
       resources: [
         { name: 'Harvest Guidelines', url: '#' },
@@ -118,15 +135,15 @@ export function ProjectJourneyMap({ projectPhase = 'operation' }: { projectPhase
     },
     {
       id: 'analysis',
-      name: 'Analysis & Planning',
+      name: '📈 Phase 6: Analysis & Planning',
       status: 'upcoming',
       progress: 0,
-      description: 'Post-cycle analysis, reporting, and next cycle planning',
+      description: 'Analyze production, calculate ROI, plan improvements for next cycle',
       checklist: [
-        { item: 'Production data analysis', completed: false },
-        { item: 'Financial reconciliation', completed: false },
-        { item: 'Performance review', completed: false },
-        { item: 'Next cycle improvement plan', completed: false },
+        { item: 'Production data collection and analysis (FCR, survival rate, yield)', completed: false },
+        { item: 'Financial reconciliation and ROI calculation', completed: false },
+        { item: 'Performance review against targets', completed: false },
+        { item: 'Next cycle improvement plan and optimization', completed: false },
       ],
       resources: [
         { name: 'Analysis Template', url: '#' },

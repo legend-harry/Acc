@@ -22,6 +22,7 @@ export interface Pond {
   status: 'active' | 'preparing' | 'harvesting' | 'resting';
   createdAt: string;
   currentPhase?: string;
+  currentStage?: 'planning' | 'preparation' | 'stocking' | 'operation' | 'harvest';
   cycleDay?: number;
   linkedProjectId?: string | null;
 }
@@ -44,6 +45,36 @@ export interface InventoryItem {
   reorderPoint?: number;
   notes?: string;
   updatedAt: string;
+}
+
+export interface Document {
+  id: string;
+  pondId: string;
+  name: string;
+  type: 'soil-testing' | 'water-testing' | 'feed-analysis' | 'health-report' | 'shrimp-health-image' | 'pond-condition' | 'equipment-photo' | 'unknown';
+  uploadDate: string;
+  confidence: number;
+  fileSize: string;
+  aiAnalysis?: string;
+  isImage?: boolean;
+  minerals?: Record<string, number>;
+  previewData?: string;
+  url?: string;
+}
+
+export interface ImageAnalysis {
+  id: string;
+  pondId: string;
+  name: string;
+  uploadDate: string;
+  uploadDay: number;
+  phase: string;
+  type: 'shrimp-health-image' | 'pond-condition' | 'equipment-photo';
+  aiAnalysis: string;
+  confidence: number;
+  fileSize: string;
+  previewData?: string;
+  url?: string;
 }
 
 export function usePonds() {
@@ -241,4 +272,94 @@ export function useInventory() {
   };
 
   return { items, loading, addItem, updateItem, deleteItem };
+}
+
+export function useDocuments(pondId: string) {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { selectedProfile } = useUser();
+
+  useEffect(() => {
+    if (!selectedProfile || !pondId) {
+      setDocuments([]);
+      setLoading(false);
+      return;
+    }
+
+    const docsRef = ref(db, `shrimp/${selectedProfile}/documents/${pondId}`);
+    const unsubscribe = onValue(docsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const list = Object.entries(data).map(([id, doc]: [string, any]) => ({ id, ...doc }));
+        list.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+        setDocuments(list);
+      } else {
+        setDocuments([]);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [selectedProfile, pondId]);
+
+  const addDocument = async (doc: Omit<Document, 'id'>) => {
+    if (!selectedProfile || !pondId) return;
+    const docsRef = ref(db, `shrimp/${selectedProfile}/documents/${pondId}`);
+    const newRef = push(docsRef);
+    await set(newRef, doc);
+    return newRef.key;
+  };
+
+  const deleteDocument = async (id: string) => {
+    if (!selectedProfile || !pondId) return;
+    const docRef = ref(db, `shrimp/${selectedProfile}/documents/${pondId}/${id}`);
+    await remove(docRef);
+  };
+
+  return { documents, loading, addDocument, deleteDocument };
+}
+
+export function useImageAnalysis(pondId: string) {
+  const [images, setImages] = useState<ImageAnalysis[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { selectedProfile } = useUser();
+
+  useEffect(() => {
+    if (!selectedProfile || !pondId) {
+      setImages([]);
+      setLoading(false);
+      return;
+    }
+
+    const imagesRef = ref(db, `shrimp/${selectedProfile}/images/${pondId}`);
+    const unsubscribe = onValue(imagesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const list = Object.entries(data).map(([id, img]: [string, any]) => ({ id, ...img }));
+        list.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+        setImages(list);
+      } else {
+        setImages([]);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [selectedProfile, pondId]);
+
+  const addImage = async (img: Omit<ImageAnalysis, 'id'>) => {
+    if (!selectedProfile || !pondId) return;
+    const imagesRef = ref(db, `shrimp/${selectedProfile}/images/${pondId}`);
+    const newRef = push(imagesRef);
+    await set(newRef, img);
+    return newRef.key;
+  };
+
+  const deleteImage = async (id: string) => {
+    if (!selectedProfile || !pondId) return;
+    const imgRef = ref(db, `shrimp/${selectedProfile}/images/${pondId}/${id}`);
+    await remove(imgRef);
+  };
+
+  return { images, loading, addImage, deleteImage };
 }

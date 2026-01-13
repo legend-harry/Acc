@@ -141,7 +141,10 @@ export default function ShrimpFarmingPage() {
 
           {/* Journey Map Tab */}
           <TabsContent value="journey" className="space-y-4 animate-in fade-in duration-300">
-            <ProjectJourneyMap projectPhase={currentPhase.name} />
+            <ProjectJourneyMap 
+              projectPhase={currentPhase.name}
+              currentStage={ponds.find(p => p.id === activePond)?.currentStage || 'operation'}
+            />
           </TabsContent>
 
           {/* Operations Tab */}

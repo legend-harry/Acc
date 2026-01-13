@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-import { Wand2, Loader2, Plus } from 'lucide-react';
+import { Textarea } from "@/components/ui/textarea";
+import { Wand2, Loader2, Plus, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
 import { useToast } from '@/hooks/use-toast';
 import { usePonds } from '@/hooks/use-shrimp';
 import { useProjects } from '@/hooks/use-database';
@@ -26,11 +28,14 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
   const { toast } = useToast();
   const { addPond } = usePonds();
   const { projects } = useProjects();
-  const [step, setStep] = useState(1); // 1: Basic Info, 2: Design, 3: Review
+  const [step, setStep] = useState(1); // 1: Basic Info, 2: Progress Assessment, 3: Design, 4: Review
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [recommendations, setRecommendations] = useState<any>(null);
-  const [showMetrics, setShowMetrics] = useState(true); // true = metric (hectares), false = imperial (acres)
+  const [progressAnalysis, setProgressAnalysis] = useState<any>(null);
+  const [upcomingSteps, setUpcomingSteps] = useState<any[]>([]);
+  const [showMetrics, setShowMetrics] = useState(true);
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [isCreatingProject, setIsCreatingProject] = useState(false);
@@ -49,6 +54,13 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
     expectedCount: 42500,
     waterSource: 'well',
     linkedProjectId: 'none',
+    // Progress Assessment fields
+    currentStage: 'planning' as 'planning' | 'preparation' | 'stocking' | 'operation' | 'harvest',
+    daysInCycle: 0,
+    currentStockHealth: 'good' as 'excellent' | 'good' | 'fair' | 'poor',
+    waterQuality: 'good' as 'excellent' | 'good' | 'fair' | 'poor',
+    feedingStatus: 'optimal' as 'optimal' | 'normal' | 'reduced' | 'ceased',
+    observations: '',
   });
 
   const productionModels = [
@@ -79,7 +91,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         body: JSON.stringify({
           pondName: formData.pondName,
           area: formData.area,
-          productionModel: formData.productionModel,
+          productionModel: formData.farmingType,
           species: formData.species,
           waterSource: formData.waterSource,
         }),
@@ -103,6 +115,46 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
       });
     } finally {
       setIsOptimizing(false);
+    }
+  };
+
+  const handleAnalyzeProgress = async () => {
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch('/api/ai/analyze-farm-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pondName: formData.pondName,
+          currentStage: formData.currentStage,
+          daysInCycle: formData.daysInCycle,
+          stockHealth: formData.currentStockHealth,
+          waterQuality: formData.waterQuality,
+          feedingStatus: formData.feedingStatus,
+          farmingType: formData.farmingType,
+          observations: formData.observations,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.analysis) {
+        setProgressAnalysis(data.analysis);
+        setUpcomingSteps(data.upcomingSteps || []);
+        toast({
+          title: "Progress Analyzed",
+          description: "AI has prepared recommended steps for your farm",
+        });
+      }
+    } catch (error) {
+      console.error('Progress analysis error:', error);
+      toast({
+        variant: "destructive",
+        title: "Analysis Failed",
+        description: "Could not analyze farm progress",
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -248,8 +300,16 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         expectedCount: 42500,
         waterSource: 'well',
         linkedProjectId: 'none',
+        currentStage: 'planning',
+        daysInCycle: 0,
+        currentStockHealth: 'good',
+        waterQuality: 'good',
+        feedingStatus: 'optimal',
+        observations: '',
       });
       setRecommendations(null);
+      setProgressAnalysis(null);
+      setUpcomingSteps([]);
       onOpenChange(false);
     } catch (error) {
       toast({
@@ -269,13 +329,17 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         <DialogHeader>
           <DialogTitle>Add New Pond</DialogTitle>
           <DialogDescription>
-            Step {step} of 3 - Configure your new shrimp farming pond
+            Step {step} of 4 - 
+            {step === 1 && ' Enter pond details'}
+            {step === 2 && ' Assess farm progress'}
+            {step === 3 && ' Configure design'}
+            {step === 4 && ' Review and create'}
           </DialogDescription>
         </DialogHeader>
 
         {/* Step Indicator */}
         <div className="flex gap-2 mb-6">
-          {[1, 2, 3].map(s => (
+          {[1, 2, 3, 4].map(s => (
             <div
               key={s}
               className={`flex-1 h-2 rounded-full ${
@@ -420,7 +484,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                 {shrimpTypes.map(type => (
                   <button
                     key={type.id}
-                    onClick={() => setFormData({ ...formData, shrimpType: type.id })}
+                    onClick={() => setFormData({ ...formData, shrimpType: type.id as 'white' | 'tiger' | 'giant' })}
                     className={`p-3 rounded border-2 text-left transition-all ${
                       formData.shrimpType === type.id
                         ? 'border-blue-600 bg-blue-50'
@@ -444,7 +508,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                 {productionModels.map(model => (
                   <button
                     key={model.id}
-                    onClick={() => setFormData({ ...formData, farmingType: model.id })}
+                    onClick={() => setFormData({ ...formData, farmingType: model.id as 'extensive' | 'semi-intensive' | 'intensive' })}
                     className={`p-3 rounded border-2 text-center transition-all text-sm ${
                       formData.farmingType === model.id
                         ? 'border-blue-600 bg-blue-50'
@@ -460,8 +524,162 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
           </div>
         )}
 
-        {/* Step 2: Design & Resources */}
+        {/* Step 2: Progress Assessment */}
         {step === 2 && (
+          <div className="space-y-4">
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="text-base text-gray-900 flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-blue-600" />
+                  AI Farm Progress Assessment
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label className="text-gray-900 font-medium">Current Stage</Label>
+                    <Select value={formData.currentStage} onValueChange={(value) => setFormData({ ...formData, currentStage: value as any })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="planning">🗓️ Planning Phase</SelectItem>
+                        <SelectItem value="preparation">🔨 Pond Preparation</SelectItem>
+                        <SelectItem value="stocking">🦐 Stocking Phase</SelectItem>
+                        <SelectItem value="operation">📊 Operation/Farming</SelectItem>
+                        <SelectItem value="harvest">🎯 Harvest Ready</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.currentStage !== 'planning' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label className="text-gray-900 font-medium">Days in Current Cycle</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="150"
+                          value={formData.daysInCycle}
+                          onChange={(e) => setFormData({ ...formData, daysInCycle: parseInt(e.target.value) || 0 })}
+                          className="text-gray-900"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-gray-900 font-medium">Stock Health Status</Label>
+                        <Select value={formData.currentStockHealth} onValueChange={(value) => setFormData({ ...formData, currentStockHealth: value as any })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="excellent">✨ Excellent</SelectItem>
+                            <SelectItem value="good">✅ Good</SelectItem>
+                            <SelectItem value="fair">⚠️ Fair</SelectItem>
+                            <SelectItem value="poor">❌ Poor</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-gray-900 font-medium">Water Quality</Label>
+                        <Select value={formData.waterQuality} onValueChange={(value) => setFormData({ ...formData, waterQuality: value as any })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="excellent">✨ Excellent</SelectItem>
+                            <SelectItem value="good">✅ Good</SelectItem>
+                            <SelectItem value="fair">⚠️ Fair</SelectItem>
+                            <SelectItem value="poor">❌ Poor</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-gray-900 font-medium">Feeding Status</Label>
+                        <Select value={formData.feedingStatus} onValueChange={(value) => setFormData({ ...formData, feedingStatus: value as any })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="optimal">🎯 Optimal</SelectItem>
+                            <SelectItem value="normal">📌 Normal</SelectItem>
+                            <SelectItem value="reduced">📉 Reduced</SelectItem>
+                            <SelectItem value="ceased">⏸️ Ceased</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-gray-900 font-medium">Additional Observations (Optional)</Label>
+                        <Textarea
+                          placeholder="E.g., unusual behavior, disease signs, environmental changes..."
+                          value={formData.observations}
+                          onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                          className="min-h-20 text-gray-900"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <Button
+                  onClick={handleAnalyzeProgress}
+                  disabled={isAnalyzing}
+                  className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Generate Progress Analysis & Next Steps
+                    </>
+                  )}
+                </Button>
+
+                {progressAnalysis && (
+                  <Card className="border-green-200 bg-green-50 mt-4">
+                    <CardHeader>
+                      <CardTitle className="text-sm text-green-900 flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        Analysis Results
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                      <div>
+                        <p className="font-semibold text-gray-900 mb-1">Current Status:</p>
+                        <p className="text-gray-700">{progressAnalysis.status}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 mb-2">Upcoming Steps:</p>
+                        <ul className="space-y-1">
+                          {upcomingSteps.map((step: any, idx: number) => (
+                            <li key={idx} className="flex gap-2 text-gray-700">
+                              <span className="font-semibold text-green-600">{idx + 1}.</span>
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 mb-1">Recommendation:</p>
+                        <p className="text-gray-700">{progressAnalysis.recommendation}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Step 3: Design & Resources */}
+        {step === 3 && (
           <div className="space-y-4">
             {/* Stocking Density with Recommended Bar */}
             <Card className="border-purple-200 bg-purple-50">
@@ -568,7 +786,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                 {productionModels.map(model => (
                   <button
                     key={model.id}
-                    onClick={() => setFormData({ ...formData, farmingType: model.id })}
+                    onClick={() => setFormData({ ...formData, farmingType: model.id as 'extensive' | 'semi-intensive' | 'intensive' })}
                     className={`p-3 rounded border-2 text-left transition-all ${
                       formData.farmingType === model.id
                         ? 'border-blue-600 bg-blue-50'
@@ -716,8 +934,8 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
           </div>
         )}
 
-        {/* Step 3: Review & Confirm */}
-        {step === 3 && (
+        {/* Step 4: Review & Confirm */}
+        {step === 4 && (
           <div className="space-y-4">
             <Card>
               <CardHeader>
@@ -796,10 +1014,11 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
             </Button>
           )}
           <div className="flex-1" />
-          {step < 3 ? (
+          {step < 4 ? (
             <Button
               onClick={() => setStep(step + 1)}
               className="gap-2"
+              disabled={step === 2 && !progressAnalysis}
             >
               Continue
             </Button>

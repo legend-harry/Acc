@@ -15,12 +15,12 @@ export function DailyLogForm({ pondId, pondName }: { pondId: string; pondName: s
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    ph: 7.8,
-    do: 4.2,
+    ph: 7.5,
+    do: 5.0,
     temperature: 28,
-    ammonia: 0.1,
-    feedingAmount: 12,
-    feedingConsumption: 90,
+    ammonia: 0,
+    feedingAmount: 0,
+    feedingConsumption: 0,
     observations: '',
     actions: '',
   });

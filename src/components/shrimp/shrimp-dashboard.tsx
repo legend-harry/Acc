@@ -1,11 +1,37 @@
 "use client";
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, AlertTriangle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { TrendingUp, AlertTriangle, Trash2, ChevronRight } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-export function ShrimpDashboard({ ponds, currentPhase, alerts }: any) {
+export function ShrimpDashboard({ ponds, currentPhase, alerts, onPondSelect, onDeletePond }: any) {
+  const [deleteConfirming, setDeleteConfirming] = useState<string | null>(null);
+  const [selectedPond, setSelectedPond] = useState<string | null>(null);
+  const { toast } = useToast();
+  const handleDeleteClick = (pondId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (deleteConfirming === pondId) {
+      // Confirm delete
+      onDeletePond(pondId);
+      setDeleteConfirming(null);
+      toast({
+        title: "Pond Deleted",
+        description: "The pond has been removed successfully",
+      });
+    } else {
+      // Start confirmation timer
+      setDeleteConfirming(pondId);
+      setTimeout(() => {
+        setDeleteConfirming(null);
+      }, 3000);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Phase Info */}
@@ -52,16 +78,47 @@ export function ShrimpDashboard({ ponds, currentPhase, alerts }: any) {
         </CardHeader>
         <CardContent className="space-y-4">
           {ponds.map((pond: any) => (
-            <div key={pond.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+            <div
+              key={pond.id}
+              onClick={() => {
+                setSelectedPond(pond.id);
+                onPondSelect?.(pond.id);
+              }}
+              className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                selectedPond === pond.id
+                  ? 'bg-blue-50 border-blue-300 shadow-md'
+                  : 'hover:bg-muted/50 hover:border-blue-200'
+              }`}
+            >
               <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h3 className="font-semibold">{pond.name}</h3>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">{pond.name}</h3>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <p className="text-sm text-muted-foreground">{pond.area} ha | {pond.currentStock.toLocaleString()} shrimp</p>
                 </div>
-                <Badge variant={pond.status === 'active' ? 'default' : 'secondary'}>
-                  {pond.status}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={pond.status === 'active' ? 'default' : 'secondary'}>
+                    {pond.status}
+                  </Badge>
+                  <Button
+                    onClick={(e) => handleDeleteClick(pond.id, e)}
+                    variant={deleteConfirming === pond.id ? 'destructive' : 'ghost'}
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
+
+              {deleteConfirming === pond.id && (
+                <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                  Click delete again to confirm (3 sec timeout)
+                </div>
+              )}
+
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Type</span>

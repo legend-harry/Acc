@@ -29,7 +29,7 @@ export default function ShrimpFarmingPage() {
   const [activePond, setActivePond] = useState<string>('');
   const { selectedProfile } = useUser();
 
-  const { ponds, loading: pondsLoading } = usePonds();
+  const { ponds, loading: pondsLoading, deletePond } = usePonds();
   const { alerts, loading: alertsLoading } = useAlerts();
 
   // Set first pond as active if none selected
@@ -78,16 +78,23 @@ export default function ShrimpFarmingPage() {
 
       {/* Empty State */}
       {ponds.length === 0 && (
-        <Card className="border-2 border-dashed border-gray-300">
-          <CardContent className="pt-12 pb-12 text-center">
-            <div className="space-y-4">
-              <div className="text-6xl">🦐</div>
-              <h3 className="text-xl font-semibold text-gray-900">No Ponds Created Yet</h3>
-              <p className="text-gray-600">Get started by creating your first shrimp farming pond</p>
-              <Button onClick={() => setShowAddPond(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Create First Pond
-              </Button>
+        <Card className="border-2 border-dashed border-blue-300 bg-gradient-to-br from-blue-50 to-cyan-50">
+          <CardContent className="pt-16 pb-16 text-center">
+            <div className="space-y-6">
+              <div className="text-7xl animate-bounce">🦐</div>
+              <div className="space-y-2">
+                <h3 className="text-3xl font-bold text-gray-900">Welcome to Your Farm Management</h3>
+                <p className="text-lg text-gray-600">Start by adding your first pond and let AI guide you through setup</p>
+              </div>
+              <div className="space-y-3 mt-8">
+                <Button onClick={() => setShowAddPond(true)} className="gap-2 px-8 py-6 text-lg bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-5 w-5" />
+                  Add New Farm
+                </Button>
+                <p className="text-sm text-gray-500">
+                  Our AI will help you assess your farm progress and prepare upcoming steps
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -127,12 +134,14 @@ export default function ShrimpFarmingPage() {
               ponds={ponds} 
               currentPhase={currentPhase}
               alerts={alerts}
+              onPondSelect={setActivePond}
+              onDeletePond={deletePond}
             />
           </TabsContent>
 
           {/* Journey Map Tab */}
           <TabsContent value="journey" className="space-y-4 animate-in fade-in duration-300">
-            <ProjectJourneyMap currentPhase={currentPhase} />
+            <ProjectJourneyMap projectPhase={currentPhase.name} />
           </TabsContent>
 
           {/* Operations Tab */}
@@ -187,14 +196,13 @@ export default function ShrimpFarmingPage() {
                 pondId={activePond}
                 pondName={ponds.find(p => p.id === activePond)?.name || ''}
               />
-            return (
-              <div className="space-y-8">
+            ) : (
+              <Card>
                 <CardContent className="pt-6 text-center text-gray-600">
                   Please select a pond to view status
                 </CardContent>
               </Card>
             )}
-                    <p className="text-xs text-gray-500 mt-1">Profile: {selectedProfile} · Ponds: {ponds.length}</p>
           </TabsContent>
 
           {/* Documents Tab */}

@@ -57,20 +57,21 @@ export default function ShrimpFarmingPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 md:space-y-8 px-2 md:px-0">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold">🦐 Shrimp Farming Management</h1>
-          <p className="text-muted-foreground mt-1">Complete farm operations & project lifecycle tracking</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl md:text-3xl font-bold break-words">🦐 Shrimp Farming Management</h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base break-words">Complete farm operations & project lifecycle tracking</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setShowImageUpload(true)} variant="outline" className="gap-2">
-            <Image className="h-4 w-4" />
-            Analyze Image
+        <div className="flex gap-2 flex-shrink-0">
+          <Button onClick={() => setShowImageUpload(true)} variant="outline" className="gap-1 md:gap-2 text-xs md:text-sm">
+            <Image className="h-3 w-3 md:h-4 md:w-4" />
+            <span className="hidden sm:inline">Analyze</span>
+            <span className="sm:hidden">📸</span>
           </Button>
-          <Button onClick={() => setShowAddPond(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4" />
+          <Button onClick={() => setShowAddPond(true)} className="gap-1 md:gap-2 bg-blue-600 hover:bg-blue-700 text-xs md:text-sm whitespace-nowrap">
+            <Plus className="h-3 w-3 md:h-4 md:w-4" />
             Add Pond
           </Button>
         </div>
@@ -79,19 +80,19 @@ export default function ShrimpFarmingPage() {
       {/* Empty State */}
       {ponds.length === 0 && (
         <Card className="border-2 border-dashed border-blue-300 bg-gradient-to-br from-blue-50 to-cyan-50">
-          <CardContent className="pt-16 pb-16 text-center">
-            <div className="space-y-6">
-              <div className="text-7xl animate-bounce">🦐</div>
+          <CardContent className="pt-8 pb-8 md:pt-16 md:pb-16 text-center px-4">
+            <div className="space-y-4 md:space-y-6">
+              <div className="text-5xl md:text-7xl animate-bounce">🦐</div>
               <div className="space-y-2">
-                <h3 className="text-3xl font-bold text-gray-900">Welcome to Your Farm Management</h3>
-                <p className="text-lg text-gray-600">Start by adding your first pond and let AI guide you through setup</p>
+                <h3 className="text-xl md:text-3xl font-bold text-gray-900 break-words">Welcome to Your Farm Management</h3>
+                <p className="text-sm md:text-lg text-gray-600 break-words max-w-2xl mx-auto">Start by adding your first pond and let AI guide you through setup</p>
               </div>
-              <div className="space-y-3 mt-8">
-                <Button onClick={() => setShowAddPond(true)} className="gap-2 px-8 py-6 text-lg bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-5 w-5" />
+              <div className="space-y-3 mt-4 md:mt-8">
+                <Button onClick={() => setShowAddPond(true)} className="gap-2 px-6 py-4 md:px-8 md:py-6 text-base md:text-lg bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 md:h-5 md:w-5" />
                   Add New Farm
                 </Button>
-                <p className="text-sm text-gray-500">
+                <p className="text-xs md:text-sm text-gray-500 break-words max-w-md mx-auto px-4">
                   Our AI will help you assess your farm progress and prepare upcoming steps
                 </p>
               </div>
@@ -105,10 +106,10 @@ export default function ShrimpFarmingPage() {
         <div className="grid gap-2">
           {alerts.slice(0, 3).map(alert => (
             <Card key={alert.id} className={alert.level === 'critical' ? 'border-red-500 bg-red-50' : alert.level === 'warning' ? 'border-orange-500 bg-orange-50' : 'border-blue-500 bg-blue-50'}>
-              <CardContent className="pt-4 flex items-center gap-3">
-                <AlertTriangle className={alert.level === 'critical' ? 'h-5 w-5 text-red-600' : alert.level === 'warning' ? 'h-5 w-5 text-orange-600' : 'h-5 w-5 text-blue-600'} />
-                <span className={alert.level === 'critical' ? 'text-red-900' : alert.level === 'warning' ? 'text-orange-900' : 'text-blue-900'}>{alert.message}</span>
-                <Button size="sm" variant="outline" className="ml-auto">Review</Button>
+              <CardContent className="pt-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <AlertTriangle className={`flex-shrink-0 ${alert.level === 'critical' ? 'h-5 w-5 text-red-600' : alert.level === 'warning' ? 'h-5 w-5 text-orange-600' : 'h-5 w-5 text-blue-600'}`} />
+                <span className={`flex-1 text-sm md:text-base break-words ${alert.level === 'critical' ? 'text-red-900' : alert.level === 'warning' ? 'text-orange-900' : 'text-blue-900'}`}>{alert.message}</span>
+                <Button size="sm" variant="outline" className="self-end sm:self-center flex-shrink-0">Review</Button>
               </CardContent>
             </Card>
           ))}
@@ -118,15 +119,17 @@ export default function ShrimpFarmingPage() {
       {/* Main Content - Only show if ponds exist */}
       {ponds.length > 0 && (
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="journey">Journey</TabsTrigger>
-            <TabsTrigger value="operations">Operations</TabsTrigger>
-            <TabsTrigger value="status">Status</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="minerals">Minerals</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-2 px-2 md:mx-0 md:px-0">
+            <TabsList className="inline-flex md:grid md:w-full md:grid-cols-7 min-w-max md:min-w-0">
+              <TabsTrigger value="dashboard" className="text-xs md:text-sm">Dashboard</TabsTrigger>
+              <TabsTrigger value="journey" className="text-xs md:text-sm">Journey</TabsTrigger>
+              <TabsTrigger value="operations" className="text-xs md:text-sm">Operations</TabsTrigger>
+              <TabsTrigger value="status" className="text-xs md:text-sm">Status</TabsTrigger>
+              <TabsTrigger value="documents" className="text-xs md:text-sm">Documents</TabsTrigger>
+              <TabsTrigger value="minerals" className="text-xs md:text-sm">Minerals</TabsTrigger>
+              <TabsTrigger value="reports" className="text-xs md:text-sm">Reports</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-4 animate-in fade-in duration-300">
@@ -164,16 +167,14 @@ export default function ShrimpFarmingPage() {
                       onClick={() => setActivePond(pond.id)}
                     >
                       <CardContent className="pt-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{pond.name}</h3>
-
-                        <InventoryManager />
-                            <p className="text-sm text-gray-600">
-                              {pond.currentStock.toLocaleString()} shrimp | {pond.area.toFixed(1)} ha | {pond.shrimpType} shrimp
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-gray-900 break-words">{pond.name}</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 break-words">
+                              {pond.currentStock.toLocaleString()} shrimp | {(pond.area * 2.471).toFixed(1)} acres | {pond.shrimpType} shrimp
                             </p>
                           </div>
-                          <Badge variant={pond.status === 'active' ? 'default' : 'secondary'} className="capitalize">
+                          <Badge variant={pond.status === 'active' ? 'default' : 'secondary'} className="capitalize self-start sm:self-center flex-shrink-0">
                             {pond.status}
                           </Badge>
                         </div>

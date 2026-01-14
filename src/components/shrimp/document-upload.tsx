@@ -168,12 +168,18 @@ export function DocumentUploadComponent({ pondName, pondId }: DocumentUploadProp
       }
 
       toast({
-        title: isImage ? 'Image Analyzed' : 'Document Uploaded',
-        description: isImage ? 'Image analysis saved to progress images.' : 'Document stored and parsed.',
+        title: isImage ? '✅ Image Analyzed' : '✅ Document Uploaded',
+        description: isImage ? 'Image analysis saved to progress images.' : 'Document stored, parsed, and analysis added to knowledge base.',
       });
     } catch (err) {
       console.error('Upload error:', err);
-      setError('Upload failed. Please try again.');
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Upload failed: ${errorMsg}. Please check your file and try again.`);
+      toast({
+        variant: 'destructive',
+        title: '❌ Upload Failed',
+        description: errorMsg.includes('API error') ? 'Server error. Please try again in a moment.' : 'Could not process file. Please check format and try again.',
+      });
     } finally {
       setLoading(false);
       if (fileInputRef.current) {

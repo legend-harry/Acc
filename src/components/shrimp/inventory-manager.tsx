@@ -69,22 +69,23 @@ export function InventoryManager() {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Add Item */}
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
-            <Label>Name</Label>
+            <Label className="text-sm">Name</Label>
             <Input
               placeholder="e.g., Grower Feed 35%"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="h-10 text-base"
             />
           </div>
           <div className="space-y-2">
-            <Label>Category</Label>
+            <Label className="text-sm">Category</Label>
             <Select
               value={form.category}
               onValueChange={(v) => setForm({ ...form, category: v as CategoryId })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-10">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
@@ -95,15 +96,16 @@ export function InventoryManager() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Quantity</Label>
+            <Label className="text-sm">Quantity</Label>
             <div className="flex gap-2">
               <Input
                 type="number"
                 value={form.quantity}
                 onChange={(e) => setForm({ ...form, quantity: parseFloat(e.target.value) || 0 })}
+                className="h-10 text-base"
               />
               <Input
-                className="w-24"
+                className="w-20 sm:w-24 h-10 text-base"
                 placeholder="unit"
                 value={form.unit}
                 onChange={(e) => setForm({ ...form, unit: e.target.value })}
@@ -111,27 +113,30 @@ export function InventoryManager() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Reorder Point (optional)</Label>
+            <Label className="text-sm">Reorder Point (optional)</Label>
             <Input
               type="number"
               value={form.reorderPoint}
               onChange={(e) => setForm({ ...form, reorderPoint: parseFloat(e.target.value) || 0 })}
+              className="h-10 text-base"
             />
           </div>
           <div className="space-y-2">
-            <Label>Location (optional)</Label>
+            <Label className="text-sm">Location (optional)</Label>
             <Input
               placeholder="e.g., Store Room A"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
+              className="h-10 text-base"
             />
           </div>
           <div className="space-y-2">
-            <Label>Notes (optional)</Label>
+            <Label className="text-sm">Notes (optional)</Label>
             <Input
               placeholder="e.g., Expiry Nov 2026"
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              className="h-10 text-base"
             />
           </div>
         </div>
@@ -152,29 +157,33 @@ export function InventoryManager() {
         ) : items.length === 0 ? (
           <div className="text-sm text-muted-foreground">No inventory items yet. Add feed or equipment to get started.</div>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
             {items.map(item => (
               <Card key={item.id} className="border-gray-200">
                 <CardContent className="pt-4 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="font-semibold text-gray-900">{item.name}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <p className="font-semibold text-gray-900 text-sm md:text-base break-words">{item.name}</p>
                       <div className="flex flex-wrap gap-2 text-xs text-gray-600">
                         <Badge variant="outline" className="capitalize">{item.category}</Badge>
                         {item.location && <Badge variant="secondary">{item.location}</Badge>}
-                        <span>Updated: {new Date(item.updatedAt).toLocaleDateString()}</span>
+                        <span className="hidden sm:inline">Updated: {new Date(item.updatedAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                     {typeof item.reorderPoint === 'number' && item.reorderPoint > 0 && item.quantity <= item.reorderPoint && (
-                      <Badge variant="destructive" className="text-xs">Reorder</Badge>
+                      <Badge variant="destructive" className="text-xs flex-shrink-0">Reorder</Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" onClick={() => adjustQuantity(item.id, -1)}><Minus className="h-4 w-4" /></Button>
-                    <div className="text-lg font-semibold">{item.quantity} {item.unit}</div>
-                    <Button variant="outline" size="icon" onClick={() => adjustQuantity(item.id, 1)}><Plus className="h-4 w-4" /></Button>
+                  <div className="flex items-center gap-3 justify-center">
+                    <Button variant="outline" size="icon" onClick={() => adjustQuantity(item.id, -1)} className="h-9 w-9">
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <div className="text-base md:text-lg font-semibold min-w-[80px] text-center">{item.quantity} {item.unit}</div>
+                    <Button variant="outline" size="icon" onClick={() => adjustQuantity(item.id, 1)} className="h-9 w-9">
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
-                  {item.notes && <p className="text-xs text-gray-600">{item.notes}</p>}
+                  {item.notes && <p className="text-xs text-gray-600 break-words">{item.notes}</p>}
                 </CardContent>
               </Card>
             ))}

@@ -53,36 +53,37 @@ export function ShrimpChatBot() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 sm:p-4 shadow-lg hover:shadow-xl transition-all z-50"
         title="Open Shrimp Farming Assistant"
+        aria-label="Open Shrimp Farming Assistant"
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
       </button>
     );
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-96 shadow-xl z-50">
-      <CardHeader className="bg-blue-600 text-white rounded-t-lg flex flex-row items-center justify-between p-4">
-        <CardTitle className="text-base">🦐 Shrimp Assistant</CardTitle>
+    <Card className="fixed bottom-4 right-4 w-full max-w-sm sm:w-96 shadow-xl z-50 max-h-[90vh] flex flex-col">
+      <CardHeader className="bg-blue-600 text-white rounded-t-lg flex flex-row items-center justify-between p-3 sm:p-4 flex-shrink-0">
+        <CardTitle className="text-sm sm:text-base">🦐 Shrimp Assistant</CardTitle>
         <button
           onClick={() => setIsOpen(false)}
           className="hover:bg-blue-700 p-1 rounded"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
       </CardHeader>
 
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4 flex-1 overflow-hidden flex flex-col">
         {/* Messages */}
-        <div className="h-64 overflow-y-auto space-y-3 bg-gray-50 rounded-lg p-3">
+        <div className="h-56 sm:h-64 overflow-y-auto space-y-3 bg-gray-50 rounded-lg p-2 sm:p-3 flex-shrink-0">
           {messages.map((msg, i) => (
             <div
               key={i}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`px-3 py-2 rounded-lg max-w-xs text-sm ${
+                className={`px-3 py-2 rounded-lg max-w-xs text-xs sm:text-sm break-words ${
                   msg.role === 'user'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-200 text-gray-900'
@@ -94,7 +95,7 @@ export function ShrimpChatBot() {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-gray-200 text-gray-900 px-3 py-2 rounded-lg text-sm">
+              <div className="bg-gray-200 text-gray-900 px-3 py-2 rounded-lg text-xs sm:text-sm">
                 Thinking...
               </div>
             </div>
@@ -102,21 +103,21 @@ export function ShrimpChatBot() {
         </div>
 
         {/* Input */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <Input
             placeholder="Ask about farming..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-            className="text-sm"
+            className="text-sm h-9 sm:h-10"
           />
           <Button
             size="sm"
             onClick={handleSendMessage}
             disabled={isLoading || !input.trim()}
-            className="gap-1"
+            className="gap-1 flex-shrink-0"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         </div>
 
@@ -125,14 +126,14 @@ export function ShrimpChatBot() {
           variant="outline"
           size="sm"
           onClick={openGeminiChat}
-          className="w-full gap-2 text-xs"
+          className="w-full gap-2 text-xs flex-shrink-0"
         >
           <ExternalLink className="h-3 w-3" />
           Open Gemini Chat
         </Button>
 
         {/* Quick Questions */}
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-muted-foreground flex-shrink-0">
           <p className="font-semibold mb-2">Quick Questions:</p>
           <div className="flex flex-wrap gap-1">
             {[

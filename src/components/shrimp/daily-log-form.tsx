@@ -71,19 +71,25 @@ export function DailyLogForm({ pondId, pondName }: { pondId: string; pondName: s
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Daily Log - {pondName}</CardTitle>
+      <Card className="max-h-[calc(100vh-200px)] overflow-y-auto">
+        <CardHeader className="sticky top-0 bg-background z-10 border-b">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <CardTitle className="text-base md:text-lg">Daily Log - {pondName}</CardTitle>
+            <Button onClick={handleAIAssist} disabled={isLoading} variant="outline" size="sm" className="gap-2 w-full sm:w-auto">
+              {isLoading ? <Wand2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+              <span className="text-xs md:text-sm">AI Assist</span>
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6">
         {/* Water Parameters */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg">Water Parameters</h3>
+        <div className="space-y-3 md:space-y-4">
+          <h3 className="font-semibold text-base md:text-lg">Water Parameters</h3>
           
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label>pH Level</Label>
-              <span className="text-sm font-semibold">{formData.ph.toFixed(1)}</span>
+              <Label className="text-sm">pH Level</Label>
+              <Badge variant="outline" className="text-xs">{formData.ph.toFixed(1)}</Badge>
             </div>
             <Slider
               value={[formData.ph]}
@@ -98,10 +104,10 @@ export function DailyLogForm({ pondId, pondName }: { pondId: string; pondName: s
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label>Dissolved Oxygen (DO)</Label>
-              <span className={`text-sm font-semibold ${formData.do < 5 ? 'text-orange-600' : 'text-green-600'}`}>
+              <Label className="text-sm">Dissolved Oxygen (DO)</Label>
+              <Badge variant={formData.do < 5 ? 'destructive' : 'outline'} className="text-xs">
                 {formData.do.toFixed(1)} ppm
-              </span>
+              </Badge>
             </div>
             <Slider
               value={[formData.do]}
@@ -116,8 +122,10 @@ export function DailyLogForm({ pondId, pondName }: { pondId: string; pondName: s
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label>Temperature</Label>
-              <span className="text-sm font-semibold">{formData.temperature}°C</span>
+              <Label className="text-sm">Temperature</Label>
+              <Badge variant={formData.temperature < 28 || formData.temperature > 30 ? 'secondary' : 'outline'} className="text-xs">
+                {formData.temperature}°C
+              </Badge>
             </div>
             <Slider
               value={[formData.temperature]}
@@ -132,8 +140,10 @@ export function DailyLogForm({ pondId, pondName }: { pondId: string; pondName: s
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label>Ammonia (NH₃)</Label>
-              <span className="text-sm font-semibold">{formData.ammonia.toFixed(2)} ppm</span>
+              <Label className="text-sm">Ammonia (NH₃)</Label>
+              <Badge variant={formData.ammonia > 0.5 ? 'destructive' : 'outline'} className="text-xs">
+                {formData.ammonia.toFixed(2)} ppm
+              </Badge>
             </div>
             <Slider
               value={[formData.ammonia]}
@@ -148,82 +158,85 @@ export function DailyLogForm({ pondId, pondName }: { pondId: string; pondName: s
         </div>
 
         {/* Feeding */}
-        <div className="space-y-4 pt-4 border-t">
-          <h3 className="font-semibold text-lg">Feeding</h3>
+        <div className="space-y-3 md:space-y-4 pt-4 border-t">
+          <h3 className="font-semibold text-base md:text-lg">Feeding</h3>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
             <div className="space-y-2">
-              <Label>Amount (kg)</Label>
+              <Label className="text-sm">Amount (kg)</Label>
               <Input
                 type="number"
                 value={formData.feedingAmount}
                 onChange={(e) => setFormData({ ...formData, feedingAmount: parseFloat(e.target.value) })}
                 step={1}
+                className="h-10 text-base"
               />
             </div>
             <div className="space-y-2">
-              <Label>Consumption (%)</Label>
+              <Label className="text-sm">Consumption (%)</Label>
               <Input
                 type="number"
                 value={formData.feedingConsumption}
                 onChange={(e) => setFormData({ ...formData, feedingConsumption: parseFloat(e.target.value) })}
                 min={0}
                 max={100}
+                className="h-10 text-base"
               />
             </div>
           </div>
         </div>
 
         {/* Observations */}
-        <div className="space-y-4 pt-4 border-t">
-          <h3 className="font-semibold text-lg">Observations</h3>
+        <div className="space-y-3 md:space-y-4 pt-4 border-t">
+          <h3 className="font-semibold text-base md:text-lg">Observations</h3>
           <Textarea
             placeholder="Record observations: swimming activity, algae, color, behavior, etc."
             value={formData.observations}
             onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-            className="min-h-24"
+            className="min-h-24 text-base"
           />
         </div>
 
         {/* AI Assist */}
-        <div className="space-y-4 pt-4 border-t bg-blue-50 p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold flex items-center gap-2">
+        <div className="space-y-3 md:space-y-4 pt-4 border-t bg-blue-50 p-3 md:p-4 rounded-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex-1">
+              <h3 className="font-semibold flex items-center gap-2 text-sm md:text-base">
                 <Wand2 className="h-4 w-4" />
                 AI Assistant
               </h3>
-              <p className="text-sm text-muted-foreground">Generate recommendations based on parameters</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Generate recommendations based on parameters</p>
             </div>
             <Button
               onClick={handleAIAssist}
               disabled={isLoading}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto text-sm"
+              size="sm"
             >
-              {isLoading ? 'Analyzing...' : 'Generate Suggestions'}
+              {isLoading ? 'Analyzing...' : 'Generate'}
             </Button>
           </div>
         </div>
 
         {/* Recommended Actions */}
         {formData.actions && (
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
+          <div className="space-y-3 md:space-y-4 pt-4 border-t">
+            <h3 className="font-semibold text-base md:text-lg flex items-center gap-2">
               <Zap className="h-4 w-4 text-yellow-500" />
               AI Recommended Actions
             </h3>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm space-y-2">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 md:p-4 text-xs md:text-sm space-y-2">
               {formData.actions.split('\n').map((action: string, i: number) => (
-                action.trim() && <p key={i}>• {action.trim()}</p>
+                action.trim() && <p key={i} className="break-words">• {action.trim()}</p>
               ))}
             </div>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-2 pt-4 border-t">
-          <Button className="flex-1">Save Log</Button>
-          <Button variant="outline" className="flex-1">Submit to Manager</Button>
+        <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+          <Button className="flex-1 h-10 text-sm">Save Log</Button>
+          <Button variant="outline" className="flex-1 h-10 text-sm">Submit to Manager</Button>
         </div>
       </CardContent>
       </Card>

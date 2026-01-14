@@ -49,24 +49,24 @@ export function ShrimpDashboard({ ponds, currentPhase, alerts, onPondSelect, onD
       </Card>
 
       {/* Key Metrics Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-2">
         <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Ponds</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">Total Ponds</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{ponds.length}</div>
+            <div className="text-xl md:text-2xl font-bold">{ponds.length}</div>
             <p className="text-xs text-muted-foreground mt-1">{ponds.filter((p: any) => p.status === 'active').length} active</p>
           </CardContent>
         </Card>
 
         <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '50ms' }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Stock</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">Total Stock</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{ponds.reduce((sum: number, p: any) => sum + (p.currentStock || 0), 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">shrimp across all ponds</p>
+            <div className="text-xl md:text-2xl font-bold">{ponds.reduce((sum: number, p: any) => sum + (p.currentStock || 0), 0).toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">across all ponds</p>
           </CardContent>
         </Card>
       </div>
@@ -114,8 +114,9 @@ export function ShrimpDashboard({ ponds, currentPhase, alerts, onPondSelect, onD
               </div>
 
               {deleteConfirming === pond.id && (
-                <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                  Click delete again to confirm (3 sec timeout)
+                <div className="mb-3 p-2 sm:p-3 bg-red-50 border border-red-200 rounded text-xs sm:text-sm text-red-700 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  <span>Tap delete again to confirm (3s timeout)</span>
                 </div>
               )}
 

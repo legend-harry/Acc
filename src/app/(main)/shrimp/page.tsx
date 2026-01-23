@@ -20,6 +20,7 @@ import { FarmStatusForm } from "@/components/shrimp/farm-status-form";
 import { DocumentUploadComponent } from "@/components/shrimp/document-upload";
 import { HistoricalMineralGraphs } from "@/components/shrimp/historical-minerals";
 import { InventoryManager } from "@/components/shrimp/inventory-manager";
+import { AIAnalyticsDashboard } from "@/components/shrimp/ai-analytics-dashboard";
 import { usePonds, useAlerts } from '@/hooks/use-shrimp';
 import { useUser } from '@/context/user-context';
 
@@ -39,10 +40,12 @@ export default function ShrimpFarmingPage() {
     }
   }, [ponds, activePond]);
 
+  // Get current phase from active pond
+  const activePondData = ponds.find(p => p.id === activePond);
   const currentPhase = {
-    name: 'First Cycle Operation',
-    day: ponds.find(p => p.id === activePond)?.cycleDay || 0,
-    nextMilestone: 'Harvest Planning - Due in 15 days',
+    name: activePondData?.currentPhase ? `${activePondData.currentPhase.charAt(0).toUpperCase() + activePondData.currentPhase.slice(1)} Cycle` : 'First Cycle Operation',
+    day: activePondData?.cycleDay || 0,
+    nextMilestone: activePondData?.currentStage === 'harvest' ? 'Harvest - Due Soon' : 'Harvest Planning - Due in 15 days',
   };
 
   if (pondsLoading || alertsLoading) {
@@ -124,7 +127,7 @@ export default function ShrimpFarmingPage() {
               <TabsTrigger value="dashboard" className="text-xs md:text-sm">Dashboard</TabsTrigger>
               <TabsTrigger value="journey" className="text-xs md:text-sm">Journey</TabsTrigger>
               <TabsTrigger value="operations" className="text-xs md:text-sm">Operations</TabsTrigger>
-              <TabsTrigger value="status" className="text-xs md:text-sm">Status</TabsTrigger>
+              <TabsTrigger value="status" className="text-xs md:text-sm">Feed Chart</TabsTrigger>
               <TabsTrigger value="documents" className="text-xs md:text-sm">Documents</TabsTrigger>
               <TabsTrigger value="minerals" className="text-xs md:text-sm">Minerals</TabsTrigger>
               <TabsTrigger value="reports" className="text-xs md:text-sm">Reports</TabsTrigger>
@@ -137,6 +140,7 @@ export default function ShrimpFarmingPage() {
               ponds={ponds} 
               currentPhase={currentPhase}
               alerts={alerts}
+              activePond={activePond}
               onPondSelect={setActivePond}
               onDeletePond={deletePond}
             />
@@ -146,7 +150,8 @@ export default function ShrimpFarmingPage() {
           <TabsContent value="journey" className="space-y-4 animate-in fade-in duration-300">
             <ProjectJourneyMap 
               projectPhase={currentPhase.name}
-              currentStage={ponds.find(p => p.id === activePond)?.currentStage || 'operation'}
+              currentStage={ponds.find(p => p.id === activePond)?.currentStage || 'operation'}              pondName={ponds.find(p => p.id === activePond)?.name || ''}              cycleDay={ponds.find(p => p.id === activePond)?.cycleDay || 0}
+              totalCycleDays={120}
             />
           </TabsContent>
 
@@ -193,17 +198,21 @@ export default function ShrimpFarmingPage() {
             </div>
           </TabsContent>
 
-          {/* Farm Status Tab */}
+          {/* Feed Chart Tab (formerly Status) */}
           <TabsContent value="status" className="space-y-4 animate-in fade-in duration-300">
-            {activePond ? (
-              <FarmStatusForm 
+            {activePond && activePondData ? (
+              <AIAnalyticsDashboard 
                 pondId={activePond}
-                pondName={ponds.find(p => p.id === activePond)?.name || ''}
+                pondName={activePondData.name}
+                currentStock={activePondData.currentStock}
+                pondArea={activePondData.area}
+                farmingType={activePondData.farmingType}
+                cycleDay={activePondData.cycleDay || 0}
               />
             ) : (
               <Card>
                 <CardContent className="pt-6 text-center text-gray-600">
-                  Please select a pond to view status
+                  Please select a pond to view AI analytics
                 </CardContent>
               </Card>
             )}
@@ -243,8 +252,11 @@ export default function ShrimpFarmingPage() {
 
           {/* Financial/Reports Tab */}
           <TabsContent value="reports" className="space-y-4 animate-in fade-in duration-300">
-            {activePond ? (
-              <FinancialDashboard pondId={activePond} />
+            {activePond && activePondData ? (
+              <FinancialDashboard 
+                pondId={activePond}
+                linkedProjectId={activePondData.linkedProjectId}
+              />
             ) : (
               <Card>
                 <CardContent className="pt-6 text-center text-gray-600">

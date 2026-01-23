@@ -8,10 +8,13 @@ import { Download } from "lucide-react";
 export function InstallPwaButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+    
     // Check if the app is running in standalone mode
-    if (window.matchMedia("(display-mode: standalone)").matches) {
+    if (typeof window !== 'undefined' && window.matchMedia("(display-mode: standalone)").matches) {
       setIsStandalone(true);
     }
 
@@ -42,7 +45,7 @@ export function InstallPwaButton() {
     }
   };
 
-  if (isStandalone || !deferredPrompt) {
+  if (!isMounted || isStandalone || !deferredPrompt) {
     return null;
   }
 

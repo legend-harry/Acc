@@ -42,26 +42,27 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
 
   const [formData, setFormData] = useState({
     pondName: '',
-    area: 1,
-    length: 50,
-    width: 40,
-    depth: 1.5,
+    area: '' as any,
+    length: '' as any,
+    width: '' as any,
+    depth: '' as any,
     species: 'vannamei',
     shrimpType: 'white' as 'white' | 'tiger' | 'giant',
     farmingType: 'intensive' as 'extensive' | 'semi-intensive' | 'intensive',
-    targetDensity: 80,
-    seedAmount: 50000,
-    expectedCount: 42500,
+    targetDensity: '' as any,
+    seedAmount: '' as any,
+    expectedCount: '' as any,
     waterSource: 'well',
     linkedProjectId: 'none',
     // Progress Assessment fields
     currentStage: 'planning' as 'planning' | 'preparation' | 'stocking' | 'operation' | 'harvest',
-    daysInCycle: 0,
+    daysInCycle: '' as any,
     currentStockHealth: 'good' as 'excellent' | 'good' | 'fair' | 'poor',
     waterQuality: 'good' as 'excellent' | 'good' | 'fair' | 'poor',
     feedingStatus: 'optimal' as 'optimal' | 'normal' | 'reduced' | 'ceased',
     observations: '',
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const productionModels = [
     { id: 'extensive', label: 'Extensive', density: '10-15/m²', description: 'Low input, natural systems' },
@@ -183,8 +184,9 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
   // Auto-detect farming type based on density calculation
   useEffect(() => {
     const area = calculateArea();
-    if (area > 0 && formData.seedAmount > 0) {
-      const densityPerM2 = formData.seedAmount / (area * 10000);
+    const seedAmount = Number(formData.seedAmount) || 0;
+    if (area > 0 && seedAmount > 0) {
+      const densityPerM2 = seedAmount / (area * 10000);
       
       let detectedType: 'extensive' | 'semi-intensive' | 'intensive';
       if (densityPerM2 <= 20) {
@@ -199,7 +201,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         setFormData(prev => ({ ...prev, farmingType: detectedType, targetDensity: Math.round(densityPerM2) }));
       }
     }
-  }, [formData.length, formData.width, formData.seedAmount]);
+  }, [formData.length, formData.width, formData.seedAmount, formData.farmingType]);
 
   const calculateExpectedCount = () => {
     // Calculate expected harvest based on seed amount and survival rate
@@ -208,12 +210,15 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
       'semi-intensive': 0.80,
       'intensive': 0.85,
     };
-    return Math.round(formData.seedAmount * survivalRates[formData.farmingType]);
+    const seedAmount = Number(formData.seedAmount) || 0;
+    return Math.round(seedAmount * survivalRates[formData.farmingType]);
   };
 
   const calculateArea = () => {
     // Calculate area from dimensions (length × width in meters → hectares)
-    return (formData.length * formData.width) / 10000;
+    const length = Number(formData.length) || 0;
+    const width = Number(formData.width) || 0;
+    return (length * width) / 10000;
   };
 
   const createProjectWithName = async (name: string) => {
@@ -258,16 +263,43 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
     }
   };
 
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!formData.pondName.trim()) {
+      errors.pondName = "Pond name is required";
+    }
+    if (!formData.length || Number(formData.length) <= 0) {
+      errors.length = "Length is required and must be greater than 0";
+    }
+    if (!formData.width || Number(formData.width) <= 0) {
+      errors.width = "Width is required and must be greater than 0";
+    }
+    if (!formData.depth || Number(formData.depth) <= 0) {
+      errors.depth = "Depth is required and must be greater than 0";
+    }
+    if (!formData.seedAmount || Number(formData.seedAmount) <= 0) {
+      errors.seedAmount = "Seed amount is required and must be greater than 0";
+    }
+    
+    return errors;
+  };
+
   const handleAddPond = async () => {
-    if (!formData.pondName) {
+    const errors = validateForm();
+    
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      const errorMessages = Object.values(errors).join(', ');
       toast({
         variant: "destructive",
-        title: "Missing Information",
-        description: "Please enter a pond name",
+        title: "Missing Required Information",
+        description: errorMessages,
       });
       return;
     }
 
+    setValidationErrors({});
     setIsSaving(true);
     try {
       // Ensure a project is linked: if user left as standalone, auto-create a project with pond name
@@ -281,19 +313,19 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
       const newId = await addPond({
         name: formData.pondName,
         area,
-        length: formData.length,
-        width: formData.width,
-        depth: formData.depth,
+        length: Number(formData.length) || 0,
+        width: Number(formData.width) || 0,
+        depth: Number(formData.depth) || 0,
         shrimpType: formData.shrimpType,
         farmingType: formData.farmingType,
-        targetDensity: formData.targetDensity,
-        seedAmount: formData.seedAmount,
+        targetDensity: Number(formData.targetDensity) || 0,
+        seedAmount: Number(formData.seedAmount) || 0,
         expectedCount: expected,
         waterSource: formData.waterSource,
-        currentStock: formData.seedAmount,
+        currentStock: Number(formData.seedAmount) || 0,
         status: 'preparing',
         currentStage: formData.currentStage,
-        cycleDay: formData.daysInCycle || 0,
+        cycleDay: Number(formData.daysInCycle) || 0,
         linkedProjectId: projectId || null,
       });
 
@@ -381,9 +413,18 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                 id="pond-name"
                 placeholder="e.g., Pond A1, Main Pond"
                 value={formData.pondName}
-                onChange={(e) => setFormData({ ...formData, pondName: e.target.value })}
-                className="text-gray-900"
+                onChange={(e) => {
+                  setFormData({ ...formData, pondName: e.target.value });
+                  setValidationErrors({ ...validationErrors, pondName: '' });
+                }}
+                className={`text-gray-900 ${validationErrors.pondName ? 'border-red-500' : ''}`}
               />
+              {validationErrors.pondName && (
+                <p className="text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {validationErrors.pondName}
+                </p>
+              )}
             </div>
 
             {/* Pond Dimensions */}
@@ -398,20 +439,40 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                     <Input
                       id="length"
                       type="number"
+                      placeholder="50"
                       value={formData.length}
-                      onChange={(e) => setFormData({ ...formData, length: parseFloat(e.target.value) || 0 })}
-                      className="text-gray-900"
+                      onChange={(e) => {
+                        setFormData({ ...formData, length: e.target.value });
+                        setValidationErrors({ ...validationErrors, length: '' });
+                      }}
+                      className={`text-gray-900 ${validationErrors.length ? 'border-red-500' : ''}`}
                     />
+                    {validationErrors.length && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {validationErrors.length}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="width" className="text-gray-900 font-medium">Width (m)</Label>
                     <Input
                       id="width"
                       type="number"
+                      placeholder="40"
                       value={formData.width}
-                      onChange={(e) => setFormData({ ...formData, width: parseFloat(e.target.value) || 0 })}
-                      className="text-gray-900"
+                      onChange={(e) => {
+                        setFormData({ ...formData, width: e.target.value });
+                        setValidationErrors({ ...validationErrors, width: '' });
+                      }}
+                      className={`text-gray-900 ${validationErrors.width ? 'border-red-500' : ''}`}
                     />
+                    {validationErrors.width && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {validationErrors.width}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="depth" className="text-gray-900 font-medium">Depth (m)</Label>
@@ -419,10 +480,20 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                       id="depth"
                       type="number"
                       step="0.1"
+                      placeholder="1.5"
                       value={formData.depth}
-                      onChange={(e) => setFormData({ ...formData, depth: parseFloat(e.target.value) || 0 })}
-                      className="text-gray-900"
+                      onChange={(e) => {
+                        setFormData({ ...formData, depth: e.target.value });
+                        setValidationErrors({ ...validationErrors, depth: '' });
+                      }}
+                      className={`text-gray-900 ${validationErrors.depth ? 'border-red-500' : ''}`}
                     />
+                    {validationErrors.depth && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {validationErrors.depth}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="bg-blue-50 border border-blue-200 rounded p-3">
@@ -430,7 +501,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                     Calculated Area: {(calculateArea() * 2.471).toFixed(2)} acres ({(calculateArea() * 10000).toFixed(0)} m²)
                   </p>
                   <p className="text-xs text-gray-600 mt-1">
-                    Volume: {(formData.length * formData.width * formData.depth).toFixed(0)} m³
+                    Volume: {((Number(formData.length) || 0) * (Number(formData.width) || 0) * (Number(formData.depth) || 0)).toFixed(0)} m³
                   </p>
                 </div>
               </CardContent>
@@ -448,23 +519,31 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                     <Input
                       id="seed-amount"
                       type="number"
+                      placeholder="50000"
                       value={formData.seedAmount}
                       onChange={(e) => {
-                        const seedAmount = parseInt(e.target.value) || 0;
+                        const seedAmount = e.target.value;
                         const survivalRates: Record<string, number> = {
                           'extensive': 0.70,
                           'semi-intensive': 0.80,
                           'intensive': 0.85,
                         };
-                        const expectedCount = Math.round(seedAmount * survivalRates[formData.farmingType]);
+                        const expectedCount = seedAmount ? Math.round(Number(seedAmount) * survivalRates[formData.farmingType]) : '';
                         setFormData({ 
                           ...formData, 
                           seedAmount,
                           expectedCount
                         });
+                        setValidationErrors({ ...validationErrors, seedAmount: '' });
                       }}
-                      className="text-gray-900"
+                      className={`text-gray-900 ${validationErrors.seedAmount ? 'border-red-500' : ''}`}
                     />
+                    {validationErrors.seedAmount && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {validationErrors.seedAmount}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="expected-count" className="text-gray-900 font-medium">Expected Harvest</Label>
@@ -472,8 +551,9 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                       id="expected-count"
                       type="number"
                       value={formData.expectedCount}
-                      onChange={(e) => setFormData({ ...formData, expectedCount: parseInt(e.target.value) || 0 })}
-                      className="text-gray-900"
+                      onChange={(e) => setFormData({ ...formData, expectedCount: e.target.value })}
+                      className="text-gray-900 bg-gray-50"
+                      readOnly
                     />
                   </div>
                 </div>
@@ -486,7 +566,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                       }
                     </p>
                   </div>
-                  {calculateArea() > 0 && formData.seedAmount > 0 && (
+                  {calculateArea() > 0 && Number(formData.seedAmount) > 0 && formData.targetDensity && (
                     <div className={`rounded p-2 text-xs font-medium ${
                       formData.farmingType === 'extensive' ? 'bg-green-100 text-green-900' :
                       formData.farmingType === 'semi-intensive' ? 'bg-blue-100 text-blue-900' :

@@ -20,10 +20,16 @@ interface Phase {
 
 export function ProjectJourneyMap({ 
   projectPhase = 'operation',
-  currentStage = 'operation' 
+  currentStage = 'operation',
+  pondName = '',
+  cycleDay = 0,
+  totalCycleDays = 120
 }: { 
   projectPhase?: string;
   currentStage?: 'planning' | 'preparation' | 'stocking' | 'operation' | 'harvest';
+  pondName?: string;
+  cycleDay?: number;
+  totalCycleDays?: number;
 }) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -39,6 +45,14 @@ export function ProjectJourneyMap({
   };
 
   const activePhaseId = stageToPhaseMap[currentStage] || 'operation';
+  
+  // Calculate progress based on cycle day for operation phase
+  const getPhaseProgress = (phaseId: string) => {
+    if (phaseId === 'operation' && activePhaseId === 'operation') {
+      return Math.min(100, Math.round((cycleDay / totalCycleDays) * 100));
+    }
+    return phaseId === activePhaseId ? 50 : (activePhaseId === 'harvest' || activePhaseId === 'operation' ? 100 : 0);
+  };
 
   const phases: Phase[] = [
     {
@@ -99,8 +113,8 @@ export function ProjectJourneyMap({
       id: 'operation',
       name: '📊 Phase 4: Operation & Maintenance',
       status: activePhaseId === 'operation' ? 'current' : (activePhaseId === 'harvest' ? 'completed' : 'upcoming'),
-      progress: activePhaseId === 'operation' ? 45 : (activePhaseId === 'harvest' ? 100 : 0),
-      description: 'Daily farming operations: monitoring, feeding, maintenance (10-16 weeks)',
+      progress: getPhaseProgress('operation'),
+      description: `Daily farming operations: monitoring, feeding, maintenance (Day ${cycleDay}/${totalCycleDays})`,
       checklist: [
         { item: 'Daily water quality testing (pH, DO, ammonia, temp)', completed: true },
         { item: 'Feeding schedule optimization based on growth', completed: true },
@@ -185,10 +199,22 @@ export function ProjectJourneyMap({
 
   return (
     <div className="space-y-4">
+      {/* Pond Identifier */}
+      {pondName && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-600">📍 Project Timeline for:</span>
+              <Badge className="bg-blue-600">{pondName}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Journey Timeline */}
       <Card>
         <CardHeader>
-          <CardTitle>Project Journey Timeline</CardTitle>
+          <CardTitle>🗓️ Project Journey Timeline {pondName && `- ${pondName}`}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -329,14 +355,14 @@ export function ProjectJourneyMap({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-blue-600" />
-            Current Phase: Operation
+            Current Phase {pondName && `- ${pondName}`}: Operation
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-3">
-            You're in the Operation & Maintenance phase (Day 45 of 120). Focus on maintaining optimal water quality and feeding efficiency.
+            {pondName} is in the Operation & Maintenance phase (Day {cycleDay} of {totalCycleDays}). Focus on maintaining optimal water quality and feeding efficiency for this pond.
           </p>
-          <Badge className="bg-blue-600">Phase 4 of 6</Badge>
+          <Badge className="bg-blue-600">Phase 4 of 6 - Pond Specific</Badge>
         </CardContent>
       </Card>
     </div>

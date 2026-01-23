@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { ReactNode } from "react";
@@ -15,11 +14,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <SubscriptionProvider>
         <CurrencyProvider>
           <ProjectFilterProvider>
-            <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-1 p-4 md:p-6 lg:p-8">
-                    {children}
-                </main>
+            <div className="flex min-h-screen flex-col bg-background">
+              <Header />
+              <main className="flex-1 p-4 md:p-6 lg:p-8">
+                {children}
+              </main>
             </div>
             <UpgradeDialog />
           </ProjectFilterProvider>

@@ -134,6 +134,33 @@
   }
   body {
     @apply bg-background text-foreground;
+    min-height: 100vh;
+    font-family: "Inter", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    background-image: radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.25), transparent 35%),
+      radial-gradient(circle at 90% 0%, rgba(59, 130, 246, 0.15), transparent 40%);
+  }
+
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  span,
+  label,
+  button,
+  input,
+  textarea,
+  select {
+    color: hsl(var(--foreground));
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--primary) 60%, transparent);
+    color: hsl(var(--primary-foreground));
   }
   .day-today {
     @apply bg-accent text-accent-foreground;

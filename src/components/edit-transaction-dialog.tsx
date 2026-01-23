@@ -54,13 +54,17 @@ export function EditTransactionDialog({
   const { categories, loading: categoriesLoading } = useCategories(selectedProjectId);
 
   const { user } = useUser();
-  const [transactionType, setTransactionType] = useState<'expense' | 'income' | undefined>();
+  const [transactionType, setTransactionType] = useState<'expense' | 'income' | undefined>(undefined);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && transaction) {
         setReceiptPreview(transaction.receiptUrl || null);
         setTransactionType(transaction.type);
         setSelectedProjectId(transaction.projectId);
+        setIsInitialized(true);
+    } else if (!isOpen) {
+        setIsInitialized(false);
     }
   }, [isOpen, transaction]);
 
@@ -145,6 +149,11 @@ export function EditTransactionDialog({
             Update the details of your transaction. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
+        {!isInitialized ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit}>
           <ScrollArea className="max-h-[70vh] p-1">
             <div className="grid gap-4 py-4 pr-4">
@@ -376,6 +385,7 @@ export function EditTransactionDialog({
             </Button>
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );

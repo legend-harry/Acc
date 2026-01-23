@@ -4,19 +4,21 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { FileDown, Wand2, Loader2, CheckCircle2 } from 'lucide-react';
+import { FileDown, Wand2, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/context/user-context';
 
 type ReportType = 'daily' | 'weekly' | 'cycle-end' | 'custom';
 
 export function ReportGenerator({ pondId }: { pondId: string }) {
   const { toast } = useToast();
+  const { selectedProfile } = useUser();
   const [reportType, setReportType] = useState<ReportType>('daily');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [generatedReport, setGeneratedReport] = useState<{
     title: string;
     narrative: string;
@@ -53,13 +55,20 @@ export function ReportGenerator({ pondId }: { pondId: string }) {
   };
 
   const handleGenerateReport = async () => {
+    if (!selectedProfile) {
+      setError('No profile selected');
+      return;
+    }
+
     setIsGenerating(true);
+    setError(null);
     try {
       const response = await fetch('/api/ai/generate-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pondId,
+          profile: selectedProfile,
           reportType,
           selectedMetrics,
           includeAIAnalysis: true,
@@ -67,6 +76,16 @@ export function ReportGenerator({ pondId }: { pondId: string }) {
       });
 
       const data = await response.json();
+      
+      if (!response.ok) {
+        setError(data.error || 'Failed to generate report');
+        toast({
+          variant: "destructive",
+          title: "Report Generation Failed",
+          description: data.error || 'Could not generate the report.',
+        });
+        return;
+      }
       
       if (data.narrative) {
         setGeneratedReport({
@@ -78,11 +97,12 @@ export function ReportGenerator({ pondId }: { pondId: string }) {
 
         toast({
           title: "Report Generated",
-          description: "AI analysis and recommendations included",
+          description: "Analysis from database completed",
         });
       }
     } catch (error) {
       console.error('Report generation error:', error);
+      setError('Unable to generate report');
       toast({
         variant: "destructive",
         title: "Report Generation Failed",
@@ -268,30 +288,26 @@ export function ReportGenerator({ pondId }: { pondId: string }) {
         </Card>
       )}
 
-      {/* Recent Reports */}
-      {!generatedReport && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recent Reports</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {[
-                { date: 'Jan 14, 2024', type: 'Daily Report', status: 'completed' },
-                { date: 'Jan 8-14, 2024', type: 'Weekly Report', status: 'completed' },
-                { date: 'Dec 28-Jan 14, 2024', type: 'Cycle Analysis', status: 'draft' },
-              ].map((report, i) => (
-                <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-semibold text-sm">{report.type}</p>
-                    <p className="text-xs text-muted-foreground">{report.date}</p>
-                  </div>
-                  <Badge variant={report.status === 'completed' ? 'default' : 'secondary'}>
-                    {report.status}
-                  </Badge>
-                </div>
-              ))}
+      {/* Error Message */}
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6 flex gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-red-900">Unable to Generate Report</p>
+              <p className="text-sm text-red-800">{error}</p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Explanation */}
+      {!generatedReport && !error && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <p className="text-sm text-blue-900">
+              📊 Reports are generated from your recorded daily logs. The more logs you record, the more comprehensive and accurate the reports will be.
+            </p>
           </CardContent>
         </Card>
       )}

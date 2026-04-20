@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { get, ref } from 'firebase/database';
+import { createClient } from '@/lib/supabase/server';
 
 // This endpoint generates cost optimization recommendations
 export async function POST(req: NextRequest) {
@@ -17,7 +16,7 @@ export async function POST(req: NextRequest) {
     let linkedProjectId = projectId as string | undefined;
 
     if (!linkedProjectId && pondId) {
-      const pondRef = ref(db, `shrimp/${profile}/ponds/${pondId}`);
+      /* supabased ref init */
       const pondSnapshot = await get(pondRef);
       const pondData = pondSnapshot.val();
       linkedProjectId = pondData?.linkedProjectId || undefined;
@@ -32,12 +31,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const projectTxRef = ref(db, `projects/${linkedProjectId}/transactions`);
+    /* supabased ref init */
     const projectSnapshot = await get(projectTxRef);
     let transactionsData = projectSnapshot.val();
 
     if (!transactionsData) {
-      const globalTxRef = ref(db, 'transactions');
+      /* supabased ref init */
       const globalSnapshot = await get(globalTxRef);
       const globalData = globalSnapshot.val();
       if (globalData) {

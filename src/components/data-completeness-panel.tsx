@@ -10,8 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useProjects, useTransactions, useBudgets, useEmployees, useAttendanceForDates } from '@/hooks/use-database';
 import { usePonds, useDocuments, useImageAnalysis, useInventory } from '@/hooks/use-shrimp';
 import { useUser } from '@/context/user-context';
-import { db } from '@/lib/firebase';
-import { onValue, ref } from 'firebase/database';
+import { createClient } from '@/lib/supabase/client';
 
 export function DataCompletenessPanel({
   activePondId,

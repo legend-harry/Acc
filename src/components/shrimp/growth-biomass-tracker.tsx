@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { createClient } from '@/lib/supabase/client';
 import {
   ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ReferenceLine, Scatter
@@ -18,8 +19,6 @@ import {
   Calendar, ArrowUpRight, ArrowDownRight, BarChart3
 } from 'lucide-react';
 import { useUser } from '@/context/user-context';
-import { db } from '@/lib/firebase';
-import { ref, onValue, push, set, remove } from 'firebase/database';
 
 interface SamplingEntry {
   id?: string;
@@ -91,7 +90,7 @@ export function GrowthBiomassTracker({
   // Load sampling data from Firebase
   useEffect(() => {
     if (!selectedProfile || !pondId) return;
-    const samplingRef = ref(db, `shrimp/${selectedProfile}/sampling/${pondId}`);
+    /* supabased ref init */
     const unsubscribe = onValue(samplingRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -177,7 +176,7 @@ export function GrowthBiomassTracker({
     if (!selectedProfile || !pondId) return;
     if (!newEntry.avgWeightG || newEntry.avgWeightG <= 0) return;
 
-    const samplingRef = ref(db, `shrimp/${selectedProfile}/sampling/${pondId}`);
+    /* supabased ref init */
     const newRef = push(samplingRef);
     await set(newRef, {
       week: newEntry.week || Math.ceil(cycleDay / 7),
@@ -201,7 +200,7 @@ export function GrowthBiomassTracker({
 
   const handleDeleteSample = useCallback(async (sampleId: string) => {
     if (!selectedProfile || !pondId) return;
-    const sampleRef = ref(db, `shrimp/${selectedProfile}/sampling/${pondId}/${sampleId}`);
+    /* supabased ref init */
     await remove(sampleRef);
   }, [selectedProfile, pondId]);
 

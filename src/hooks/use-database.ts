@@ -1,111 +1,128 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { ref, onValue, off, get, query, orderByChild, equalTo } from 'firebase/database';
-import { db, getDbForClient } from '@/lib/firebase';
 import type { Transaction, BudgetSummary, Project, Employee, AttendanceRecord, AttendanceStatus } from '@/types';
 import { useClient } from '@/context/client-context';
+import { useUser } from '@/context/user-context';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { createClient } from '@/lib/supabase/client';
 
 export function useProjects() {
     const { clientId } = useClient();
+    const { selectedProfile } = useUser();
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
+    const supabase = createClient();
 
     useEffect(() => {
-        const projectsRef = ref(getDbForClient(clientId), `clients/${clientId}/projects`);
-        const listener = onValue(projectsRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                const projectList: Project[] = Object.keys(data).map(key => ({
-                    id: key,
-                    name: data[key].name
-                }));
-                setProjects(projectList);
-            } else {
-                setProjects([]);
-            }
+        if (!clientId || !selectedProfile) {
+            setProjects([]);
             setLoading(false);
-        }, (error) => {
-            console.error("Firebase read failed: " + error.name);
-            setLoading(false);
-        });
+            return;
+        }
 
-        return () => {
-            off(projectsRef, 'value', listener);
+        const fetchProjects = async () => {
+            const { data } = await supabase
+                .from('projects')
+                .select('*')
+                .eq('client_id', clientId)
+                .eq('profile_id', selectedProfile);
+            if (data) setProjects(data as Project[]);
+            setLoading(false);
         };
-    }, []);
+
+        fetchProjects();
+
+        const channel = supabase.channel('projects_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'projects', filter: `client_id=eq.${clientId}` }, fetchProjects)
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [clientId, selectedProfile]);
 
     return { projects, loading };
 }
 
-
 export function useTransactions() {
     const { clientId } = useClient();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+    const { selectedProfile } = useUser();
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [loading, setLoading] = useState(true);
+    const supabase = createClient();
 
-  useEffect(() => {
-    const transactionsRef = ref(getDbForClient(clientId), `clients/${clientId}/transactions`);
-    
-    const listener = onValue(transactionsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const transactionsList: Transaction[] = Object.keys(data).map(key => ({
-          ...data[key],
-          id: key,
-          date: new Date(data[key].date), // Ensure date is a Date object
-          createdAt: new Date(data[key].createdAt), // Ensure createdAt is a Date object
-        }));
-        setTransactions(transactionsList);
-      } else {
-        setTransactions([]);
-      }
-      setLoading(false);
-    }, (error) => {
-        console.error("Firebase read failed: " + error.name);
-        setLoading(false);
-    });
+    useEffect(() => {
+        if (!clientId || !selectedProfile) {
+            setTransactions([]);
+            setLoading(false);
+            return;
+        }
 
-    return () => {
-      off(transactionsRef, 'value', listener);
-    };
-  }, []);
+        const fetchTx = async () => {
+            const { data } = await supabase
+                .from('transactions')
+                .select('*')
+                .eq('client_id', clientId)
+                .eq('profile_id', selectedProfile)
+                .order('date', { ascending: false });
+                
+            if (data) {
+                 setTransactions(data.map(d => ({
+                     ...d,
+                     date: new Date(d.date),
+                     createdAt: new Date(d.created_at)
+                 })) as unknown as Transaction[]);
+            }
+            setLoading(false);
+        };
 
-  return { transactions, loading };
+        fetchTx();
+
+        const channel = supabase.channel('tx_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `client_id=eq.${clientId}` }, fetchTx)
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [clientId, selectedProfile]);
+
+    return { transactions, loading };
 }
-
 
 export function useBudgets() {
     const { clientId } = useClient();
+    const { selectedProfile } = useUser();
     const [budgets, setBudgets] = useState<BudgetSummary[]>([]);
     const [loading, setLoading] = useState(true);
+    const supabase = createClient();
 
     useEffect(() => {
-        const budgetsRef = ref(getDbForClient(clientId), `clients/${clientId}/budgets`);
+        if (!clientId || !selectedProfile) {
+            setBudgets([]);
+            setLoading(false);
+            return;
+        }
 
-        const listener = onValue(budgetsRef, (snapshot) => {
-            const data = snapshot.val();
+        const fetchBudgets = async () => {
+            const { data } = await supabase
+                .from('budgets')
+                .select('*')
+                .eq('client_id', clientId)
+                .eq('profile_id', selectedProfile);
+            
             if (data) {
-                const budgetList: BudgetSummary[] = Object.keys(data).map(key => ({
-                    ...data[key],
-                    id: key
-                }));
-                setBudgets(budgetList.sort((a, b) => a.category.localeCompare(b.category)));
-            } else {
-                setBudgets([]);
+                const sorted = data.sort((a, b) => a.category.localeCompare(b.category));
+                setBudgets(sorted as BudgetSummary[]);
             }
             setLoading(false);
-        }, (error) => {
-            console.error("Firebase read failed: " + error.name);
-            setLoading(false);
-        });
-
-        return () => {
-            off(budgetsRef, 'value', listener);
         };
-    }, []);
+
+        fetchBudgets();
+
+        const channel = supabase.channel('budget_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'budgets', filter: `client_id=eq.${clientId}` }, fetchBudgets)
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [clientId, selectedProfile]);
 
     return { budgets, loading };
 }
@@ -122,113 +139,132 @@ export function useCategories(projectId?: string) {
 
 export function useEmployees() {
     const { clientId } = useClient();
+    const { selectedProfile } = useUser();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
+    const supabase = createClient();
 
     useEffect(() => {
-        const employeesRef = ref(getDbForClient(clientId), `clients/${clientId}/employees`);
-        const listener = onValue(employeesRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                const employeeList: Employee[] = Object.keys(data).map(key => ({
-                    ...data[key],
-                    id: key,
-                }));
-                setEmployees(employeeList);
-            } else {
-                setEmployees([]);
-            }
+        if (!clientId || !selectedProfile) {
+            setEmployees([]);
             setLoading(false);
-        }, (error) => {
-            console.error("Firebase read failed for employees: " + error.message);
-            setLoading(false);
-        });
+            return;
+        }
 
-        return () => {
-            off(employeesRef, 'value', listener);
+        const fetchEmployees = async () => {
+            const { data } = await supabase
+                .from('employees')
+                .select('*')
+                .eq('client_id', clientId)
+                .eq('profile_id', selectedProfile);
+            
+            if (data) setEmployees(data as Employee[]);
+            setLoading(false);
         };
-    }, []);
+
+        fetchEmployees();
+
+        const channel = supabase.channel('emp_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'employees', filter: `client_id=eq.${clientId}` }, fetchEmployees)
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [clientId, selectedProfile]);
 
     return { employees, loading };
 }
 
-type DailySummary = {
-  status: 'present' | 'absent' | 'half-day';
-};
-
 export function useAttendanceForDates() {
     const { clientId } = useClient();
-    const [dailySummaries, setDailySummaries] = useState<Record<string, DailySummary>>({});
+    const { selectedProfile } = useUser();
+    const [dailySummaries, setDailySummaries] = useState<Record<string, { status: 'present' | 'absent' | 'half-day' }>>({});
     const [loading, setLoading] = useState(true);
+    const supabase = createClient();
 
     useEffect(() => {
-        const attendanceRef = ref(getDbForClient(clientId), `clients/${clientId}/attendance`);
-        const listener = onValue(attendanceRef, (snapshot) => {
-            const data = snapshot.val();
-            const summaries: Record<string, DailySummary> = {};
-
-            if (data) {
-                Object.keys(data).forEach(dateString => {
-                    const dailyRecords: Record<string, AttendanceRecord> = data[dateString];
-                    const statuses = Object.values(dailyRecords).map(rec => rec.status);
-                    
-                    if (statuses.includes('absent')) {
-                        summaries[dateString] = { status: 'absent' };
-                    } else if (statuses.includes('half-day')) {
-                        summaries[dateString] = { status: 'half-day' };
-                    } else if (statuses.every(s => s === 'full-day')) {
-                        summaries[dateString] = { status: 'present' };
-                    }
-                });
-            }
-            
-            setDailySummaries(summaries);
-            setLoading(false);
-        }, (error) => {
-            console.error("Firebase read failed for attendance dates: " + error.message);
+        if (!clientId || !selectedProfile) {
             setDailySummaries({});
             setLoading(false);
-        });
+            return;
+        }
 
-        return () => {
-            off(attendanceRef, 'value', listener);
+        const fetchAttendance = async () => {
+            const { data } = await supabase
+                .from('attendance')
+                .select('*')
+                .eq('client_id', clientId)
+                .eq('profile_id', selectedProfile);
+            
+            if (data) {
+                // Group by date
+                const grouped: Record<string, Record<string, any>> = {};
+                data.forEach(r => {
+                     if (!grouped[r.date]) grouped[r.date] = {};
+                     grouped[r.date][r.employee_id] = r;
+                });
+                
+                const summaries: Record<string, any> = {};
+                Object.keys(grouped).forEach(dateString => {
+                    const dailyRecords = grouped[dateString];
+                    const statuses = Object.values(dailyRecords).map(rec => rec.status);
+                    if (statuses.includes('absent')) summaries[dateString] = { status: 'absent' };
+                    else if (statuses.includes('half-day')) summaries[dateString] = { status: 'half-day' };
+                    else if (statuses.every(s => s === 'full-day')) summaries[dateString] = { status: 'present' };
+                });
+                setDailySummaries(summaries);
+            }
+            setLoading(false);
         };
-    }, []);
+
+        fetchAttendance();
+
+        const channel = supabase.channel('att_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance', filter: `client_id=eq.${clientId}` }, fetchAttendance)
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [clientId, selectedProfile]);
 
     return { dailySummaries, loading };
 }
 
 export function useEmployeeAttendance(employeeId: string) {
     const { clientId } = useClient();
+    const { selectedProfile } = useUser();
     const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
     const [loading, setLoading] = useState(true);
+    const supabase = createClient();
 
     useEffect(() => {
-        if (!employeeId) {
+        if (!clientId || !selectedProfile || !employeeId) {
             setLoading(false);
             return;
         }
 
-        const attendanceRef = ref(getDbForClient(clientId), `clients/${clientId}/attendance`);
-        const listener = onValue(attendanceRef, (snapshot) => {
-            const allAttendance = snapshot.val();
-            const employeeAttendance: Record<string, AttendanceRecord> = {};
-            if (allAttendance) {
-                Object.keys(allAttendance).forEach(dateString => {
-                    if (allAttendance[dateString][employeeId]) {
-                        employeeAttendance[dateString] = allAttendance[dateString][employeeId];
-                    }
-                });
+        const fetchAtt = async () => {
+            const { data } = await supabase
+                .from('attendance')
+                .select('*')
+                .eq('client_id', clientId)
+                .eq('profile_id', selectedProfile)
+                .eq('employee_id', employeeId);
+            
+            if (data) {
+                const mapped: Record<string, AttendanceRecord> = {};
+                data.forEach(r => mapped[r.date] = r as AttendanceRecord);
+                setAttendanceRecords(mapped);
             }
-            setAttendanceRecords(employeeAttendance);
             setLoading(false);
-        }, (error) => {
-            console.error("Firebase read failed for employee attendance: " + error.message);
-            setLoading(false);
-        });
+        };
 
-        return () => off(attendanceRef, 'value', listener);
-    }, [employeeId]);
+        fetchAtt();
+
+        const channel = supabase.channel(`att_emp_${employeeId}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance', filter: `client_id=eq.${clientId}` }, fetchAtt)
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [clientId, selectedProfile, employeeId]);
 
     return { attendanceRecords, loading };
 }
@@ -242,7 +278,6 @@ export function useEmployeeMonthlyAttendance(employeeId: string, monthDate: Date
         
         const recordsInMonth = Object.values(attendanceRecords).filter(record => {
             const recordDate = new Date(record.date);
-            // Adjust for timezone offset by comparing year, month, and day
             const recordUTC = new Date(Date.UTC(recordDate.getFullYear(), recordDate.getMonth(), recordDate.getDate()));
             return isWithinInterval(recordUTC, { start, end });
         });
@@ -258,5 +293,3 @@ export function useEmployeeMonthlyAttendance(employeeId: string, monthDate: Date
     
     return { attendanceForMonth, summary, loading };
 }
-
-    

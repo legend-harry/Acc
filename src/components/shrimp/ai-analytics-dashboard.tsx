@@ -6,10 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter } from 'recharts';
 import { TrendingUp, TrendingDown, AlertTriangle, Zap, CheckCircle, Info, Lightbulb } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
 import { useUser } from '@/context/user-context';
 import { FeedChartQuestionnaire } from './feed-chart-questionnaire';
+import { createClient } from '@/lib/supabase/client';
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
@@ -77,7 +76,7 @@ export function AIAnalyticsDashboard({
     }
 
     // Fetch daily logs for this specific pond
-    const dailyLogsRef = ref(db, `shrimp/${selectedProfile}/daily-logs/${pondId}`);
+    /* supabased ref init */
     
     const unsubscribe = onValue(dailyLogsRef, (snapshot) => {
       try {

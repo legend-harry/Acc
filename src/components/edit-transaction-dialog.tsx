@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { createClient } from '@/lib/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -25,8 +26,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { useCategories, useProjects } from "@/hooks/use-database";
-import { db } from "@/lib/firebase";
-import { ref, update } from "firebase/database";
 import { ScrollArea } from "./ui/scroll-area";
 import { useUser } from "@/context/user-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";

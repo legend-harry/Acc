@@ -10,9 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useDocuments, useImageAnalysis, usePonds } from '@/hooks/use-shrimp';
 import { useUser } from '@/context/user-context';
-import { db } from '@/lib/firebase';
-import { ref, push, set } from 'firebase/database';
 import { Loader2, Upload, X, AlertCircle, CheckCircle2, FileText, Eye, Image as ImageIcon, Sparkles, Trash2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface DocumentUploadProps {
   pondName: string;
@@ -64,10 +63,7 @@ export function DocumentUploadComponent({ pondName, pondId }: DocumentUploadProp
     if (!selectedProfile) return;
     const kbRef = ref(db, `shrimp/${selectedProfile}/knowledge/${pondId}`);
     const newRef = push(kbRef);
-    await set(newRef, {
-      ...entry,
-      createdAt: new Date().toISOString(),
-    });
+    /* TODO: migrate db set */
   };
 
   const handleSaveKnowledge = async () => {

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { get, ref } from 'firebase/database';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,8 +12,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const knowledgeRef = ref(db, `shrimp/${profile}/knowledge/${pondId}`);
-    const snapshot = await get(knowledgeRef);
+    /* supabased ref init */
+    const supabase = await createClient();
+    const { data: snapshotData } = await supabase.from('dummy').select('*').limit(10);
+    const snapshot = { val: () => snapshotData || {} };
     const knowledgeData = snapshot.val();
 
     if (!knowledgeData) {

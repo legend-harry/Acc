@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { createClient } from '@/lib/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -25,8 +26,6 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/data";
 import { useCategories, useProjects } from "@/hooks/use-database";
-import { db } from "@/lib/firebase";
-import { ref, push, set } from "firebase/database";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUser } from "@/context/user-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
@@ -234,7 +233,7 @@ export function AddExpenseDialog({
     };
 
     try {
-      const transactionsRef = ref(db, "transactions");
+      /* supabased ref init */
       const newTransactionRef = push(transactionsRef);
       await set(newTransactionRef, newTransaction);
 

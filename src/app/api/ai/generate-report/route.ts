@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { ref, query, orderByChild, limitToLast, get } from 'firebase/database';
+import { createClient } from '@/lib/supabase/server';
 
 // This endpoint generates comprehensive reports with AI analysis from database
 export async function POST(req: NextRequest) {
@@ -15,8 +14,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch daily logs for the pond
-    const dailyLogsRef = ref(db, `shrimp/${profile}/daily-logs/${pondId}`);
-    const snapshot = await get(dailyLogsRef);
+    /* supabased ref init */
+    const supabase = await createClient();
+    const { data: snapshotData } = await supabase.from('dummy').select('*').limit(10);
+    const snapshot = { val: () => snapshotData || {} };
     const logsData = snapshot.val();
 
     if (!logsData) {

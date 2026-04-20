@@ -15,8 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from '@/hooks/use-toast';
 import { usePonds } from '@/hooks/use-shrimp';
 import { useProjects } from '@/hooks/use-database';
-import { ref, push } from 'firebase/database';
-import { db } from '@/lib/firebase';
+import { createClient } from '@/lib/supabase/client';
 
 interface AddPondDialogProps {
   open: boolean;

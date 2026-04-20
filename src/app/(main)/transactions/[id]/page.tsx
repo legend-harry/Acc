@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle } from "lucide-react";
+import { createClient } from '@/lib/supabase/client';
 import {
   Card,
   CardContent,
@@ -29,8 +30,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { db } from "@/lib/firebase";
-import { ref, update } from "firebase/database";
 import { useToast } from "@/hooks/use-toast";
 import { getCategoryBadgeColorClass } from "@/lib/utils";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, XAxis, YAxis } from "recharts";

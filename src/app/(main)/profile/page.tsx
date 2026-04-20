@@ -2,6 +2,7 @@
 "use client";
 
 import { PageHeader } from "@/components/page-header";
+import { createClient } from '@/lib/supabase/client';
 import {
   Card,
   CardContent,
@@ -46,8 +47,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Edit, Trash2, Archive, ArchiveRestore, ArchiveX } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
-import { ref, update, remove } from "firebase/database";
-import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, Employee } from "@/types";
 import { Separator } from "@/components/ui/separator";

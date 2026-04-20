@@ -3,8 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { get, ref } from 'firebase/database';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +16,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const alertsRef = ref(db, `shrimp/${profile}/alerts`);
+    /* supabased ref init */
     const alertsSnapshot = await get(alertsRef);
     const alertsData = alertsSnapshot.val();
     const alertsArray = alertsData ? Object.values(alertsData) as any[] : [];

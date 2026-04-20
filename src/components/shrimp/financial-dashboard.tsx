@@ -7,12 +7,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, TrendingDown, PieChart as PieChartIcon, AlertTriangle, Plus, Link as LinkIcon } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
 import { useUser } from '@/context/user-context';
 import { useProjects } from '@/hooks/use-database';
 import { usePonds } from '@/hooks/use-shrimp';
 import { AddExpenseDialog } from '@/components/add-expense-dialog';
+import { createClient } from '@/lib/supabase/client';
 
 interface FinancialMetrics {
   totalRevenue: number;
@@ -48,7 +47,7 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
     }
 
     // Read from the root transactions node, filtered by projectId
-    const transactionsRef = ref(db, 'transactions');
+    /* supabased ref init */
     
     const unsubscribe = onValue(transactionsRef, (snapshot) => {
       try {

@@ -1,6 +1,6 @@
 
 import { db } from '../src/lib/firebase';
-import { ref, set } from 'firebase/database';
+import { createClient } from '@/lib/supabase/client';
 
 console.log(`
 This is a destructive script that will overwrite the data in your Firebase Realtime Database.
@@ -980,7 +980,7 @@ const budgets = [
 
 async function seedDatabase() {
     try {
-        const projectsRef = ref(db, 'projects');
+        /* supabased ref init */
         const projectsData: Record<string, any> = {};
         projects.forEach(p => {
             const { id, ...rest } = p;
@@ -989,7 +989,7 @@ async function seedDatabase() {
         await set(projectsRef, projectsData);
         console.log('Projects seeded successfully.');
 
-        const transactionsRef = ref(db, 'transactions');
+        /* supabased ref init */
         const transactionsData: Record<string, any> = {};
         transactions.forEach(t => {
             const { id, ...rest } = t;
@@ -998,7 +998,7 @@ async function seedDatabase() {
         await set(transactionsRef, transactionsData);
         console.log('Transactions seeded successfully.');
 
-        const budgetsRef = ref(db, 'budgets');
+        /* supabased ref init */
         const budgetsData: Record<string, any> = {};
         budgets.forEach(b => {
             const { id, ...rest } = b;

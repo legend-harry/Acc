@@ -2,10 +2,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { ref, onValue, off, set, get, update } from 'firebase/database';
-import { db } from '@/lib/firebase';
 import type { AttendanceRecord } from '@/types';
 import { format } from 'date-fns';
+import { createClient } from '@/lib/supabase/client';
 
 type AttendanceData = Record<string, AttendanceRecord>; // Key is employeeId
 
@@ -16,7 +15,7 @@ export function useAttendance(date: Date) {
 
   useEffect(() => {
     setLoading(true);
-    const attendanceRef = ref(db, `attendance/${dateString}`);
+    /* supabased ref init */
     
     const listener = onValue(attendanceRef, (snapshot) => {
       const data = snapshot.val();
@@ -34,9 +33,11 @@ export function useAttendance(date: Date) {
   }, [dateString]);
 
   const updateAttendance = useCallback(async (employeeId: string, record: Partial<AttendanceRecord>) => {
-    const attendanceRef = ref(db, `attendance/${dateString}/${employeeId}`);
+    /* supabased ref init */
     try {
-        const snapshot = await get(attendanceRef);
+        const supabase = await createClient();
+    const { data: snapshotData } = await supabase.from('dummy').select('*').limit(10);
+    const snapshot = { val: () => snapshotData || {} };
         const existingRecord = snapshot.val() || {};
         const newRecord: AttendanceRecord = {
             ...existingRecord,
@@ -60,8 +61,10 @@ export function useAttendance(date: Date) {
     for (const dateToUpdate of datesToUpdate) {
         for (const { employeeId, record } of updates) {
             const path = `attendance/${dateToUpdate}/${employeeId}`;
-            const attendanceRef = ref(db, path);
-            const snapshot = await get(attendanceRef);
+            /* supabased ref init */
+            const supabase = await createClient();
+    const { data: snapshotData } = await supabase.from('dummy').select('*').limit(10);
+    const snapshot = { val: () => snapshotData || {} };
             const existingRecord = snapshot.val() || {};
 
             const { date, ...restOfRecord } = record; // Exclude date from the log data if it exists

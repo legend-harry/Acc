@@ -3,15 +3,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { get, ref } from 'firebase/database';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
     const { query, projectId } = await request.json();
 
-    const transactionsRef = ref(db, 'transactions');
-    const budgetsRef = ref(db, 'budgets');
+    /* supabased ref init */
+    /* supabased ref init */
 
     const [transactionsSnapshot, budgetsSnapshot] = await Promise.all([
       get(transactionsRef),

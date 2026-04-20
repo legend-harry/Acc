@@ -29,8 +29,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { remove, ref } from 'firebase/database';
-import { db } from '@/lib/firebase';
+import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { EditTransactionDialog } from '@/components/edit-transaction-dialog';
 import {
@@ -279,7 +278,11 @@ function TransactionsPageContent() {
       if (!deletingTransaction) return;
 
       try {
-        await remove(ref(db, `transactions/${deletingTransaction.id}`));
+        const supabase = createClient();
+        // Fallback to ensuring clientId logic (ideally we grab it from context via useClient)
+        // But since this is global transaction scope, their table has it
+        await supabase.from('transactions').delete().eq('id', deletingTransaction.id);
+        
         toast({
           title: "Transaction Deleted",
           description: `${deletingTransaction.title} has been successfully deleted.`,

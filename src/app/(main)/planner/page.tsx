@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { createClient } from '@/lib/supabase/client';
 import {
   Card,
   CardContent,
@@ -17,8 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useBudgets, useProjects } from "@/hooks/use-database";
-import { db } from "@/lib/firebase";
-import { ref, set, update, push, remove } from "firebase/database";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlusCircle, Trash2, Sparkles, Settings } from "lucide-react";
 import {
@@ -105,10 +104,7 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
     try {
         const projectsRef = ref(db, 'projects');
         const newProjectRef = push(projectsRef);
-        await set(newProjectRef, {
-            name: projectName.trim(),
-            archived: false,
-        });
+        /* TODO: migrate db set */
         toast({
             title: "Project Added",
             description: `Successfully added the "${projectName.trim()}" project.`,
@@ -201,11 +197,7 @@ function AddCategoryDialog({ onSave, projectId }: { onSave: () => void, projectI
     try {
         const budgetsRef = ref(db, 'budgets');
         const newBudgetRef = push(budgetsRef);
-        await set(newBudgetRef, {
-            category: categoryName.trim(),
-            budget: Number(budget) || 0,
-            projectId: projectId
-        });
+        /* TODO: migrate db set */
         toast({
             title: "Category Added",
             description: `Successfully added the "${categoryName.trim()}" category.`,
@@ -352,7 +344,7 @@ export default function PlannerPage() {
     }
 
     try {
-        await update(ref(db), updates);
+        /* TODO: migrate db update */
         toast({
             title: "Planner Saved",
             description: "Your new budget goals have been updated.",

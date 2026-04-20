@@ -1,31 +1,50 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 type ClientContextType = {
     clientId: string;
     setClientId: (id: string) => void;
+    isLoading: boolean;
 };
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 export function ClientProvider({ children }: { children: ReactNode }) {
     const [clientId, setClientIdState] = useState("default-client");
+    const [isLoading, setIsLoading] = useState(true);
+    const supabase = createClient();
 
     useEffect(() => {
-        const stored = localStorage.getItem("activeClientId");
-        if (stored) {
-            setClientIdState(stored);
-        }
+        const initClient = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                setClientIdState(session.user.id);
+            }
+            setIsLoading(false);
+        };
+        initClient();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            (event, session) => {
+                if (session?.user) {
+                    setClientIdState(session.user.id);
+                } else {
+                    setClientIdState("default-client");
+                }
+            }
+        );
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const setClientId = (id: string) => {
         setClientIdState(id);
-        localStorage.setItem("activeClientId", id);
     };
 
     return (
-        <ClientContext.Provider value={{ clientId, setClientId }}>
+        <ClientContext.Provider value={{ clientId, setClientId, isLoading }}>
             {children}
         </ClientContext.Provider>
     );

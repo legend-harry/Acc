@@ -11,9 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase';
-import { ref, update } from 'firebase/database';
 import { useUser } from '@/context/user-context';
+import { createClient } from '@/lib/supabase/client';
 
 interface Pond {
   id: string;

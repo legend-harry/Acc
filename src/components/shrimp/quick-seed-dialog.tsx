@@ -8,9 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, CheckCircle2, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePonds } from '@/hooks/use-shrimp';
-import { ref, push, set } from 'firebase/database';
-import { db } from '@/lib/firebase';
 import { useUser } from '@/context/user-context';
+import { createClient } from '@/lib/supabase/client';
 
 interface QuickSeedDialogProps {
   open: boolean;

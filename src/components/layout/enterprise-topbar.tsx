@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { NotificationBell } from "@/components/notification-bell";
 import { useUser } from "@/context/user-context";
+import { createClient } from '@/lib/supabase/client';
 
 interface EnterpriseTopbarProps {
   onMobileMenuToggle?: () => void;

@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from '@/lib/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -24,8 +25,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useProjects } from "@/hooks/use-database";
-import { db } from "@/lib/firebase";
-import { ref, push, set } from "firebase/database";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "./ui/checkbox";
 import type { Project } from "@/types";

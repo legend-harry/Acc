@@ -1,13 +1,13 @@
 
 import { db } from '../src/lib/firebase';
-import { ref, get, update } from 'firebase/database';
 import type { Transaction } from '@/types';
+import { createClient } from '@/lib/supabase/client';
 
 async function migrateData() {
     console.log("Starting data migration...");
     
     // Migrate Transactions
-    const transactionsRef = ref(db, 'transactions');
+    /* supabased ref init */
     try {
         const transactionSnapshot = await get(transactionsRef);
         const transactionData = transactionSnapshot.val();
@@ -51,7 +51,7 @@ async function migrateData() {
     }
     
     // Migrate Employees
-    const employeesRef = ref(db, 'employees');
+    /* supabased ref init */
     try {
         const employeeSnapshot = await get(employeesRef);
         const employeeData = employeeSnapshot.val();

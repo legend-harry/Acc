@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { createClient } from '@/lib/supabase/client';
 import {
   Sparkles, Loader2, AlertTriangle, CheckCircle2, Clock,
   Droplets, Thermometer, Wind, CloudRain, Sun, Cloud,
@@ -16,8 +17,6 @@ import {
   Info
 } from 'lucide-react';
 import { useUser } from '@/context/user-context';
-import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
 
 interface MealSchedule {
   time: string;

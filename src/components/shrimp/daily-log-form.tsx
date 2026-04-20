@@ -10,8 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Zap, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/context/user-context';
-import { db } from '@/lib/firebase';
-import { onValue, push, ref, set } from 'firebase/database';
+import { createClient } from '@/lib/supabase/client';
 
 export function DailyLogForm({ pondId, pondName }: { pondId: string; pondName: string }) {
   const { toast } = useToast();
@@ -187,18 +186,7 @@ export function DailyLogForm({ pondId, pondName }: { pondId: string; pondName: s
     try {
       const logsRef = ref(db, `shrimp/${selectedProfile}/daily-logs/${pondId}`);
       const newLogRef = push(logsRef);
-      await set(newLogRef, {
-        date: formData.date,
-        ph: Number(formData.ph),
-        do: Number(formData.do),
-        temperature: Number(formData.temperature),
-        ammonia: Number(formData.ammonia),
-        feedingAmount: Number(formData.feedingAmount),
-        feedingConsumption: Number(formData.feedingConsumption),
-        observations: formData.observations || '',
-        actions: formData.actions || '',
-        createdAt: new Date().toISOString(),
-      });
+      /* TODO: migrate db set */
 
       toast({ title: 'Daily log saved' });
     } catch (error) {

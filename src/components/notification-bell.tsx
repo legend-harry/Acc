@@ -5,8 +5,7 @@ import { Bell } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
-import { db } from '@/lib/firebase';
-import { get, ref } from 'firebase/database';
+import { createClient } from '@/lib/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +18,7 @@ import {
 export function NotificationBell() {
     const { toast } = useToast();
     const [hasPermission, setHasPermission] = useState(false);
+    const supabase = createClient();
     
     useEffect(() => {
         if ('Notification' in window) {
@@ -47,10 +47,10 @@ export function NotificationBell() {
         }
 
         try {
-            const employeeSnap = await get(ref(db, `employees/${primaryEmployeeId}`));
-            const employee = employeeSnap.val();
+            const { data: employeeData, error } = await supabase.from('employees').select('*').eq('id', primaryEmployeeId).single();
+            const employee = employeeData;
             
-            if (!employee) {
+            if (!employee || error) {
                 toast({ title: "Employee not found", variant: 'destructive' });
                 return;
             }

@@ -193,8 +193,9 @@ export default function TransactionDetailPage() {
     if (!transaction) return;
     setIsUpdating(true);
     try {
-      const transactionRef = ref(db, `transactions/${transaction.id}`);
-      await update(transactionRef, { status: "completed" });
+      const supabase = (await import('@/lib/supabase/client')).createClient();
+      const { error } = await supabase.from('transactions').update({ status: 'completed' }).eq('id', transaction.id);
+      if (error) throw error;
       toast({
         title: "Transaction Updated",
         description: `"${transaction.title}" has been marked as completed.`,

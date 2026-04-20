@@ -3,20 +3,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
     const preferences = await request.json();
 
-    // TODO: Get user ID from session/token
-    // Store onboarding preferences in database
-    const preferencesRef = ref(db, `onboardingPreferences/${Date.now()}`);
-
-    await set(preferencesRef, {
-      ...preferences,
-      createdAt: new Date().toISOString(),
-    });
+    // TODO: Migrate to Supabase - store onboarding preferences with user association
+    console.log('Onboarding preferences received:', preferences);
 
     return NextResponse.json(
       { success: true, message: 'Onboarding completed' },

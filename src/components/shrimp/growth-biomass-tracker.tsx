@@ -90,21 +90,12 @@ export function GrowthBiomassTracker({
   // Load sampling data from Firebase
   useEffect(() => {
     if (!selectedProfile || !pondId) return;
-    /* supabased ref init */
-    const unsubscribe = onValue(samplingRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const entries = Object.entries(data).map(([id, entry]: [string, any]) => ({
-          id,
-          ...entry,
-        }));
-        entries.sort((a: any, b: any) => a.week - b.week);
-        setSamplingData(entries);
-      } else {
-        setSamplingData([]);
-      }
-    });
-    return () => unsubscribe();
+    // /* supabased ref init */
+    // const unsubscribe = onValue(samplingRef, (snapshot) => {
+    //  ...
+    // });
+    // return () => unsubscribe();
+    setSamplingData([]);
   }, [selectedProfile, pondId]);
 
   // Generate ideal growth curve locally

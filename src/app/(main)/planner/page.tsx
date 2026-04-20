@@ -102,9 +102,9 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
     
     setIsLoading(true);
     try {
-        const projectsRef = ref(db, 'projects');
-        const newProjectRef = push(projectsRef);
-        /* TODO: migrate db set */
+        const supabase = (await import('@/lib/supabase/client')).createClient();
+        const { error } = await supabase.from('projects').insert({ name: projectName.trim() });
+        if (error) throw error;
         toast({
             title: "Project Added",
             description: `Successfully added the "${projectName.trim()}" project.`,
@@ -195,9 +195,13 @@ function AddCategoryDialog({ onSave, projectId }: { onSave: () => void, projectI
     
     setIsLoading(true);
     try {
-        const budgetsRef = ref(db, 'budgets');
-        const newBudgetRef = push(budgetsRef);
-        /* TODO: migrate db set */
+        const supabase = (await import('@/lib/supabase/client')).createClient();
+        const { error } = await supabase.from('budgets').insert({
+            category: categoryName.trim(),
+            amount: parseFloat(budget) || 0,
+            project_id: selectedProjectId !== 'all' ? selectedProjectId : null,
+        });
+        if (error) throw error;
         toast({
             title: "Category Added",
             description: `Successfully added the "${categoryName.trim()}" category.`,
@@ -364,7 +368,9 @@ export default function PlannerPage() {
   const handleDeleteCategory = async () => {
     if (!deletingCategory) return;
     try {
-        await remove(ref(db, `budgets/${deletingCategory.id}`));
+        const supabase = (await import('@/lib/supabase/client')).createClient();
+        const { error } = await supabase.from('budgets').delete().eq('id', deletingCategory.id);
+        if (error) throw error;
         toast({
             title: "Category Deleted",
             description: `The "${deletingCategory.category}" category has been deleted.`,

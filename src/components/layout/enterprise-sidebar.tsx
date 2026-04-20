@@ -20,12 +20,12 @@ import { useSubscription } from "@/context/subscription-context";
 import { useUser } from "@/context/user-context";
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Home" },
   { href: "/transactions", icon: ArrowLeftRight, label: "Cash Flow" },
-  { href: "/planner", icon: Target, label: "Budgeting" },
-  { href: "/employees", icon: Users, label: "Employees" },
+  { href: "/planner", icon: Target, label: "Budget" },
+  { href: "/employees", icon: Users, label: "Manage" },
   { href: "/reports", icon: PieChart, label: "Reports" },
-  { href: "/shrimp", icon: Fish, label: "Aquaculture" },
+  { href: "/shrimp", icon: Fish, label: "Aqua" },
 ];
 
 interface EnterpriseSidebarProps {
@@ -78,21 +78,7 @@ export function EnterpriseSidebar({ mobileOpen, onMobileClose }: EnterpriseSideb
 
       {/* Bottom Section */}
       <div className="px-8 mt-auto space-y-6">
-        {/* Upgrade CTA */}
-        {!isPremium && (
-          <div className="bg-[hsl(var(--primary))]/10 p-4 rounded-xl border border-[hsl(var(--primary))]/20">
-            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">PRO PLAN</p>
-            <p className="text-xs text-slate-500 mb-3 leading-relaxed">
-              Access advanced analytics & premium features.
-            </p>
-            <Button asChild size="sm" className="w-full bg-slate-800 text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300 text-xs font-bold">
-              <Link href="/upgrade">
-                <Crown className="h-3.5 w-3.5 mr-1.5" />
-                Upgrade to Pro
-              </Link>
-            </Button>
-          </div>
-        )}
+
 
         {/* Profile & Settings Links */}
         <div className="space-y-1">

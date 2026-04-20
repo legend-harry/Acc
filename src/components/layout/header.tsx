@@ -49,12 +49,12 @@ import { useProjectFilter } from "@/context/project-filter-context";
 import { NotificationBell } from "../notification-bell";
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Home" },
   { href: "/transactions", icon: ArrowLeftRight, label: "Cash Flow" },
-  { href: "/planner", icon: Wallet, label: "Budgeting" },
-  { href: "/employees", icon: Users, label: "Employees" },
+  { href: "/planner", icon: Wallet, label: "Budget" },
+  { href: "/employees", icon: Users, label: "Manage" },
   { href: "/reports", icon: PieChart, label: "Reports" },
-  { href: "/shrimp", icon: Fish, label: "Aquaculture" },
+  { href: "/shrimp", icon: Fish, label: "Aqua" },
 ];
 
 const profiles = ["Ammu", "Vijay", "Divyesh", "Anvika", "Guest"];
@@ -316,14 +316,6 @@ export function Header() {
           <ThemeSwitcher />
           <GlobalProjectSwitcher />
 
-          {!isPremium && (
-            <Button asChild size="sm" className="hidden xl:inline-flex bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg shadow-orange-500/20">
-              <Link href="/upgrade">
-                <Crown className="mr-1.5 h-3.5 w-3.5" />
-                Upgrade
-              </Link>
-            </Button>
-          )}
 
           <AddExpenseDialog>
             <button className="hidden md:flex items-center bg-primary text-primary-foreground px-4 lg:px-5 py-2 lg:py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-primary/10 active:scale-95 transition-all duration-200">
@@ -370,24 +362,7 @@ export function Header() {
                 );
               })}
             </nav>
-            {!isPremium && (
-              <div className="mx-3 mt-4">
-                <Button asChild className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
-                  <Link href="/upgrade" onClick={handleLinkClick}>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Upgrade to Premium
-                  </Link>
-                </Button>
-              </div>
-            )}
-            <div className="mx-3 mt-4">
-              <AddExpenseDialog>
-                <Button className="w-full" onClick={handleLinkClick}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Transaction
-                </Button>
-              </AddExpenseDialog>
-            </div>
+
           </div>
         </div>
       )}

@@ -226,72 +226,30 @@ function ProjectSettings() {
             return;
         }
 
-        try {
-            const projectRef = ref(db, `projects/${editingProject.id}`);
-            await update(projectRef, { name: newProjectName.trim() });
-            toast({
-                title: "Project Updated",
-                description: `Successfully renamed to "${newProjectName.trim()}".`
-            });
-        } catch (error) {
-            console.error("Failed to update project", error);
-            toast({ variant: "destructive", title: "Update Failed"});
-        } finally {
-            setEditingProject(null);
-            setNewProjectName("");
-        }
+        // TODO: Migrate to Supabase update
+        toast({ title: "Coming Soon", description: "Project rename will be available after full Supabase migration." });
+        setEditingProject(null);
+        setNewProjectName("");
     }
     
     const handleArchiveProject = async () => {
         if (!archivingProject) return;
-        try {
-            const projectRef = ref(db, `projects/${archivingProject.id}`);
-            await update(projectRef, { archived: true });
-            toast({
-                title: "Project Archived",
-                description: `Project "${archivingProject.name}" has been moved to archives.`
-            });
-        } catch (error) {
-            console.error("Failed to archive project", error);
-            toast({ variant: "destructive", title: "Archive Failed"});
-        } finally {
-            setArchivingProject(null);
-        }
+        // TODO: Migrate to Supabase update
+        toast({ title: "Coming Soon", description: "Project archiving will be available after full Supabase migration." });
+        setArchivingProject(null);
     }
     
     const handleRestoreProject = async (project: Project) => {
-        try {
-            const projectRef = ref(db, `projects/${project.id}`);
-            await update(projectRef, { archived: false });
-            toast({
-                title: "Project Restored",
-                description: `Project "${project.name}" has been restored.`
-            });
-        } catch (error) {
-            console.error("Failed to restore project", error);
-            toast({ variant: "destructive", title: "Restore Failed"});
-        }
+        // TODO: Migrate to Supabase update
+        toast({ title: "Coming Soon", description: "Project restore will be available after full Supabase migration." });
     }
 
 
     const handleDeleteProject = async () => {
         if (!deletingProject) return;
-
-        try {
-            // Note: This permanently deletes the project.
-            // You might want to also delete associated transactions/budgets in a real app.
-            await remove(ref(db, `projects/${deletingProject.id}`));
-            
-            toast({
-                title: "Project Deleted Permanently",
-                description: `Project "${deletingProject.name}" has been permanently deleted.`
-            });
-        } catch (error) {
-             console.error("Failed to delete project", error);
-            toast({ variant: "destructive", title: "Deletion Failed"});
-        } finally {
-            setDeletingProject(null);
-        }
+        // TODO: Migrate to Supabase delete
+        toast({ title: "Coming Soon", description: "Project deletion will be available after full Supabase migration." });
+        setDeletingProject(null);
     }
 
 

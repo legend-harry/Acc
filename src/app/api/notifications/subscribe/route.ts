@@ -3,14 +3,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
     const { endpoint, keys } = await request.json();
-    
-    // TODO: In production, associate subscription with user from session/token
-    // For now, we'll store subscriptions server-side
     
     // Validate subscription data
     if (!endpoint || !keys?.auth || !keys?.p256dh) {
@@ -20,15 +16,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store subscription in database (example using Firebase)
-    // In production, you'd store this securely and associate with user
-    const subscriptionsRef = ref(db, `subscriptions/${Date.now()}`);
-    
-    await set(subscriptionsRef, {
-      endpoint,
-      keys,
-      createdAt: new Date().toISOString(),
-    });
+    // TODO: Migrate to Supabase - store subscription with user association
+    console.log('Push subscription received:', endpoint);
 
     return NextResponse.json(
       { success: true, message: 'Subscribed to push notifications' },

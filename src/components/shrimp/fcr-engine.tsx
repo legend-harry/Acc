@@ -104,28 +104,12 @@ export function FCREngine({
   // Load recent daily logs
   useEffect(() => {
     if (!selectedProfile || !pondId) return;
-    const logsRef = ref(db, `shrimp/${selectedProfile}/daily-logs/${pondId}`);
-    const unsubscribe = onValue(logsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const logsArray = Object.values(data) as any[];
-        const sorted = logsArray.sort(
-          (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
-        );
-        setRecentLogs(sorted.slice(0, 7));
-
-        // Auto-fill from latest log
-        if (sorted.length > 0) {
-          const latest = sorted[0];
-          if (latest.temperature) setWaterTemp(String(latest.temperature));
-          if (latest.ammonia) setAmmonia(String(latest.ammonia));
-          if (latest.ph) setPh(String(latest.ph));
-          if (latest.do) setDissolvedOxygen(String(latest.do));
-          if (latest.feedingAmount) setPreviousFeedKg(String(latest.feedingAmount));
-        }
-      }
-    });
-    return () => unsubscribe();
+    // const logsRef = ref(db, `shrimp/${selectedProfile}/daily-logs/${pondId}`);
+    // const unsubscribe = onValue(logsRef, (snapshot) => {
+    //  ...
+    // });
+    // return () => unsubscribe();
+    setRecentLogs([]);
   }, [selectedProfile, pondId]);
 
   const handleOptimize = async () => {

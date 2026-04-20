@@ -115,8 +115,24 @@ export function EditTransactionDialog({
     };
     
     try {
-        const transactionRef = ref(db, `transactions/${transaction.id}`);
-        await update(transactionRef, updatedTransaction);
+        const supabase = createClient();
+        const { error } = await supabase.from('transactions').update({
+            title: updatedTransaction.title,
+            amount: updatedTransaction.amount,
+            type: updatedTransaction.type,
+            category: updatedTransaction.category,
+            date: updatedTransaction.date,
+            description: updatedTransaction.description,
+            vendor: updatedTransaction.vendor,
+            invoice_no: updatedTransaction.invoiceNo,
+            quantity: updatedTransaction.quantity,
+            unit: updatedTransaction.unit,
+            notes: updatedTransaction.notes,
+            status: updatedTransaction.status,
+            project_id: updatedTransaction.projectId,
+            receipt_url: updatedTransaction.receiptUrl,
+        }).eq('id', transaction.id);
+        if (error) throw error;
         
         setIsLoading(false);
         onOpenChange(false);

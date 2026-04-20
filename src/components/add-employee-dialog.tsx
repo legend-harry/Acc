@@ -85,9 +85,18 @@ export function AddEmployeeDialog({
     };
     
     try {
-        const employeesRef = ref(db, 'employees');
-        const newEmployeeRef = push(employeesRef);
-        await set(newEmployeeRef, newEmployee);
+        const supabase = createClient();
+        const { error } = await supabase.from('employees').insert({
+            name: newEmployee.name,
+            wage: newEmployee.wage,
+            wage_type: newEmployee.wageType,
+            project_ids: newEmployee.projectIds,
+            overtime_rate_multiplier: newEmployee.overtimeRateMultiplier,
+            notes: newEmployee.notes,
+            employment_type: newEmployee.employmentType,
+            employment_end_date: newEmployee.employmentEndDate || null,
+        });
+        if (error) throw error;
         
         setIsLoading(false);
         setOpen(false);

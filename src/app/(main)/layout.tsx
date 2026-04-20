@@ -73,7 +73,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <ProjectFilterProvider>
               <LayoutProvider>
                 <LayoutShell>{children}</LayoutShell>
-                <UpgradeDialog />
               </LayoutProvider>
             </ProjectFilterProvider>
           </CurrencyProvider>

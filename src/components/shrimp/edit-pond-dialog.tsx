@@ -94,21 +94,20 @@ export function EditPondDialog({ open, onOpenChange, pond, onSaved }: EditPondDi
 
     setIsSaving(true);
     try {
-      const pondRef = ref(db, `shrimp/${selectedProfile}/ponds/${pond.id}`);
-      
-      await update(pondRef, {
+      const supabase = createClient();
+      const { error } = await supabase.from('ponds').update({
         name: formData.name,
         area: parseFloat(formData.area),
-        currentStock: parseInt(formData.currentStock),
-        targetDensity: parseInt(formData.targetDensity),
-        shrimpType: formData.shrimpType,
-        farmingType: formData.farmingType,
+        current_stock: parseInt(formData.currentStock),
+        target_density: parseInt(formData.targetDensity),
+        shrimp_type: formData.shrimpType,
+        farming_type: formData.farmingType,
         status: formData.status,
-        cycleDay: parseInt(formData.cycleDay),
-        totalCycleDays: parseInt(formData.totalCycleDays),
-        waterSource: formData.waterSource,
-        lastUpdated: new Date().toISOString(),
-      });
+        cycle_day: parseInt(formData.cycleDay),
+        total_cycle_days: parseInt(formData.totalCycleDays),
+        water_source: formData.waterSource,
+      }).eq('id', pond.id);
+      if (error) throw error;
 
       toast({
         title: "Pond Updated",

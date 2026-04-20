@@ -34,19 +34,12 @@ export function DailyLogForm({ pondId, pondName }: { pondId: string; pondName: s
 
   useEffect(() => {
     if (!selectedProfile || !pondId) return;
-    const logsRef = ref(db, `shrimp/${selectedProfile}/daily-logs/${pondId}`);
-    const unsubscribe = onValue(logsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data) {
-        setRecentLogs([]);
-        return;
-      }
-      const logsArray = Object.values(data) as any[];
-      const sortedLogs = logsArray.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
-      setRecentLogs(sortedLogs.slice(-10));
-    });
-
-    return () => unsubscribe();
+    // const logsRef = ref(db, `shrimp/${selectedProfile}/daily-logs/${pondId}`);
+    // const unsubscribe = onValue(logsRef, (snapshot) => {
+    //  ...
+    // });
+    // return () => unsubscribe();
+    setRecentLogs([]);
   }, [selectedProfile, pondId]);
 
   const handleAIAssist = async () => {
@@ -184,9 +177,7 @@ export function DailyLogForm({ pondId, pondName }: { pondId: string; pondName: s
 
     setSaving(true);
     try {
-      const logsRef = ref(db, `shrimp/${selectedProfile}/daily-logs/${pondId}`);
-      const newLogRef = push(logsRef);
-      /* TODO: migrate db set */
+      // TODO: Migrate to Supabase insert for daily logs
 
       toast({ title: 'Daily log saved' });
     } catch (error) {

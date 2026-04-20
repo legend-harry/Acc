@@ -52,6 +52,7 @@ export function EnterpriseTopbar({ onMobileMenuToggle }: EnterpriseTopbarProps) 
           </Button>
         </Link>
 
+
         <AddExpenseDialog>
           <Button className="bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-300 px-4 sm:px-6 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-slate-900/10 active:scale-95 transition-all duration-200">
             <PlusCircle className="h-4 w-4 mr-0 sm:mr-2" />

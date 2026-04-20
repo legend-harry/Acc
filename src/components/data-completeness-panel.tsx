@@ -45,17 +45,11 @@ export function DataCompletenessPanel({
       return;
     }
 
-    const logsRef = ref(db, `shrimp/${selectedProfile}/daily-logs/${pondId}`);
-    const unsubscribe = onValue(logsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data) {
-        setDailyLogCount(0);
-        return;
-      }
-      setDailyLogCount(Object.keys(data).length);
-    });
-
-    return () => unsubscribe();
+    // const logsRef = ref(db, `shrimp/${selectedProfile}/daily-logs/${pondId}`);
+    // const unsubscribe = onValue(logsRef, (snapshot) => {
+    //   setDailyLogCount(Object.keys(data).length);
+    // });
+    setDailyLogCount(0); // TODO: implement Supabase logs count
   }, [selectedProfile, pondId]);
 
   const financeMissing = useMemo(() => {

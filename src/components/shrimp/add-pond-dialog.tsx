@@ -216,12 +216,10 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
   };
 
   const createProjectWithName = async (name: string) => {
-    const projectsRef = ref(db, 'projects');
-    const newProjectRef = await push(projectsRef, {
-      name,
-      archived: false,
-    });
-    return newProjectRef.key || '';
+    const supabase = (await import('@/lib/supabase/client')).createClient();
+    const { data, error } = await supabase.from('projects').insert({ name, archived: false }).select('id').single();
+    if (error) throw error;
+    return data?.id || '';
   };
 
   const handleCreateProject = async () => {

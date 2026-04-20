@@ -61,9 +61,7 @@ export function DocumentUploadComponent({ pondName, pondId }: DocumentUploadProp
 
   const addKnowledgeEntry = async (entry: { title: string; content: string; source: string; documentId?: string }) => {
     if (!selectedProfile) return;
-    const kbRef = ref(db, `shrimp/${selectedProfile}/knowledge/${pondId}`);
-    const newRef = push(kbRef);
-    /* TODO: migrate db set */
+    // TODO: Migrate to Supabase insert for knowledge base
   };
 
   const handleSaveKnowledge = async () => {

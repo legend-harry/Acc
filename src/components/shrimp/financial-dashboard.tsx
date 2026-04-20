@@ -49,89 +49,12 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
     // Read from the root transactions node, filtered by projectId
     /* supabased ref init */
     
-    const unsubscribe = onValue(transactionsRef, (snapshot) => {
-      try {
-        const allData = snapshot.val();
-        
-        if (!allData) {
-          setMetrics(null);
-          setLoading(false);
-          return;
-        }
-
-        // Filter transactions for this pond's linked project
-        const allTransactions = Object.values(allData) as any[];
-        const transactions = allTransactions.filter(tx => tx.projectId === linkedProjectId);
-
-        // Calculate metrics from database
-        let totalRevenue = 0;
-        let totalExpenses = 0;
-        const costByCategory: Record<string, number> = {};
-
-        transactions.forEach((tx) => {
-          const amount = tx.amount || 0;
-          if (tx.type === 'income') {
-            totalRevenue += amount;
-          } else if (tx.type === 'expense') {
-            totalExpenses += amount;
-            const category = tx.category || 'Other';
-            costByCategory[category] = (costByCategory[category] || 0) + amount;
-          }
-        });
-
-        const totalProfit = totalRevenue - totalExpenses;
-
-        // Group transactions by month for trends
-        const monthlyMap: Record<string, { revenue: number; expenses: number }> = {};
-        transactions.forEach((tx) => {
-          const date = new Date(tx.date || tx.createdAt || new Date());
-          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-          
-          if (!monthlyMap[monthKey]) {
-            monthlyMap[monthKey] = { revenue: 0, expenses: 0 };
-          }
-
-          if (tx.type === 'income') {
-            monthlyMap[monthKey].revenue += tx.amount || 0;
-          } else {
-            monthlyMap[monthKey].expenses += tx.amount || 0;
-          }
-        });
-
-        // Convert to array and format
-        const monthlyTrends = Object.entries(monthlyMap)
-          .sort((a, b) => a[0].localeCompare(b[0]))
-          .map(([month, data]) => ({
-            month: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' }),
-            revenue: data.revenue,
-            expenses: data.expenses,
-            profit: data.revenue - data.expenses,
-          }));
-
-        // Calculate FCR (simplified - based on expense to revenue ratio)
-        const fcr = totalRevenue > 0 ? (totalExpenses / totalRevenue) : 0;
-
-        setMetrics({
-          totalRevenue,
-          totalExpenses,
-          totalProfit,
-          costByCategory,
-          monthlyTrends,
-          fcr,
-        });
-        setLoading(false);
-      } catch (err) {
-        console.error('Error processing financial data:', err);
-        setError('Error processing transaction data');
-        setLoading(false);
-      }
-    }, (error) => {
-      console.error('Database error:', error);
-      setError('Unable to fetch financial data');
-      setLoading(false);
-    });
-
-    return unsubscribe;
+    // const unsubscribe = onValue(transactionsRef, (snapshot) => {
+    //  ...
+    // });
+    // return unsubscribe;
+    setMetrics(null);
+    setLoading(false);
   }, [linkedProjectId, selectedProfile]);
 
   if (loading) {

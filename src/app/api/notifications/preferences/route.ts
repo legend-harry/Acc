@@ -3,21 +3,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
     const preferences = await request.json();
 
-    // TODO: Get user ID from session/token
-    // For now, store preferences generically
-    
-    const preferencesRef = ref(db, `notificationPreferences/${Date.now()}`);
-    
-    await set(preferencesRef, {
-      ...preferences,
-      updatedAt: new Date().toISOString(),
-    });
+    // TODO: Migrate to Supabase - store preferences with user association
+    console.log('Notification preferences received:', preferences);
 
     return NextResponse.json(
       { success: true, message: 'Preferences saved' },

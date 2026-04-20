@@ -111,7 +111,7 @@ export function usePonds() {
     };
 
     fetchPonds();
-    const ch = supabase.channel('ponds_channel').on('postgres_changes', { event: '*', schema: 'public', table: 'ponds', filter: `client_id=eq.${clientId}` }, fetchPonds).subscribe();
+    const ch = supabase.channel(`_${Math.random()}`).on('postgres_changes', { event: '*', schema: 'public', table: 'ponds', filter: `client_id=eq.${clientId}` }, fetchPonds).subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [clientId, selectedProfile]);
 
@@ -155,7 +155,7 @@ export function useAlerts() {
     };
 
     fetchAlerts();
-    const ch = supabase.channel('alerts_channel').on('postgres_changes', { event: '*', schema: 'public', table: 'alerts', filter: `client_id=eq.${clientId}` }, fetchAlerts).subscribe();
+    const ch = supabase.channel(`_${Math.random()}`).on('postgres_changes', { event: '*', schema: 'public', table: 'alerts', filter: `client_id=eq.${clientId}` }, fetchAlerts).subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [clientId, selectedProfile]);
 

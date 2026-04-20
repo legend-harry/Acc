@@ -33,7 +33,7 @@ export function useProjects() {
 
         fetchProjects();
 
-        const channel = supabase.channel('projects_changes')
+        const channel = supabase.channel(`_${Math.random()}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'projects', filter: `client_id=eq.${clientId}` }, fetchProjects)
             .subscribe();
 
@@ -77,7 +77,7 @@ export function useTransactions() {
 
         fetchTx();
 
-        const channel = supabase.channel('tx_changes')
+        const channel = supabase.channel(`_${Math.random()}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `client_id=eq.${clientId}` }, fetchTx)
             .subscribe();
 
@@ -117,7 +117,7 @@ export function useBudgets() {
 
         fetchBudgets();
 
-        const channel = supabase.channel('budget_changes')
+        const channel = supabase.channel(`_${Math.random()}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'budgets', filter: `client_id=eq.${clientId}` }, fetchBudgets)
             .subscribe();
 
@@ -164,7 +164,7 @@ export function useEmployees() {
 
         fetchEmployees();
 
-        const channel = supabase.channel('emp_changes')
+        const channel = supabase.channel(`_${Math.random()}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'employees', filter: `client_id=eq.${clientId}` }, fetchEmployees)
             .subscribe();
 
@@ -218,7 +218,7 @@ export function useAttendanceForDates() {
 
         fetchAttendance();
 
-        const channel = supabase.channel('att_changes')
+        const channel = supabase.channel(`_${Math.random()}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance', filter: `client_id=eq.${clientId}` }, fetchAttendance)
             .subscribe();
 

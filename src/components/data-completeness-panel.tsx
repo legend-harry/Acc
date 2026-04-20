@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useProjects, useTransactions, useBudgets, useEmployees, useAttendanceForDates } from '@/hooks/use-database';
-import { usePonds, useDocuments, useImageAnalysis, useInventory } from '@/hooks/use-shrimp';
+import { usePonds, useDocuments, useImageAnalyses, useInventory } from '@/hooks/use-shrimp';
 import { useUser } from '@/context/user-context';
 import { createClient } from '@/lib/supabase/client';
 
@@ -36,7 +36,7 @@ export function DataCompletenessPanel({
 
   const pondId = activePondId ?? '';
   const { documents, loading: documentsLoading } = useDocuments(pondId);
-  const { images, loading: imagesLoading } = useImageAnalysis(pondId);
+  const { imageAnalyses: images, loading: imagesLoading } = useImageAnalyses(pondId);
   const [dailyLogCount, setDailyLogCount] = useState<number | null>(null);
 
   useEffect(() => {

@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { useDocuments, useImageAnalysis, usePonds } from '@/hooks/use-shrimp';
+import { useDocuments, useImageAnalyses, usePonds } from '@/hooks/use-shrimp';
 import { useUser } from '@/context/user-context';
 import { Loader2, Upload, X, AlertCircle, CheckCircle2, FileText, Eye, Image as ImageIcon, Sparkles, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -42,7 +42,7 @@ const fileToDataUrl = (file: File) =>
 export function DocumentUploadComponent({ pondName, pondId }: DocumentUploadProps) {
   const { toast } = useToast();
   const { documents, loading: docsLoading, addDocument, deleteDocument } = useDocuments(pondId);
-  const { images, loading: imagesLoading, addImage, deleteImage } = useImageAnalysis(pondId);
+  const { imageAnalyses: images, loading: imagesLoading, addImageAnalysis: addImage, deleteImageAnalysis: deleteImage } = useImageAnalyses(pondId);
   const { ponds } = usePonds();
   const { selectedProfile } = useUser();
   

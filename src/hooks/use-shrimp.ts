@@ -1,7 +1,9 @@
 'use client';
+import { useClient } from '@/context/client-context';
 
 import { useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
+import { differenceInDays } from 'date-fns';
+import { db, getDbForClient } from '@/lib/firebase';
 import { ref, onValue, push, set, remove, update } from 'firebase/database';
 import { useUser } from '@/context/user-context';
 
@@ -21,10 +23,18 @@ export interface Pond {
   currentStock: number;
   status: 'active' | 'preparing' | 'harvesting' | 'resting';
   createdAt: string;
+  stockingDate?: string;  // ISO date — when shrimp were seeded; used to compute cycleDay dynamically
   currentPhase?: string;
   currentStage?: 'planning' | 'preparation' | 'stocking' | 'operation' | 'harvest';
   cycleDay?: number;
   linkedProjectId?: string | null;
+  // Metrics are calculated from daily logs - may not exist for new ponds
+  metrics?: {
+    fcr: number;
+    survivalRate: number;
+    avgWeight: number;
+    feeding?: number;
+  };
 }
 
 export interface Alert {
@@ -78,6 +88,7 @@ export interface ImageAnalysis {
 }
 
 export function usePonds() {
+    const { clientId } = useClient();
   const [ponds, setPonds] = useState<Pond[]>([]);
   const [loading, setLoading] = useState(true);
   const { selectedProfile } = useUser();
@@ -93,17 +104,36 @@ export function usePonds() {
       return;
     }
 
-    const pondsRef = ref(db, `shrimp/${selectedProfile}/ponds`);
+    const pondsRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/ponds`);
     console.log('usePonds: Setting up listener at', `shrimp/${selectedProfile}/ponds`);
     
     const unsubscribe = onValue(pondsRef, (snapshot) => {
       const data = snapshot.val();
       console.log('usePonds: Firebase snapshot received, data =', data);
       if (data) {
-        const pondsArray = Object.entries(data).map(([id, pond]: [string, any]) => ({
-          id,
-          ...pond,
-        }));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const pondsArray = Object.entries(data).map(([id, pond]: [string, any]) => {
+          // Compute cycleDay dynamically so it increments with each passing day
+          const refDate = pond.stockingDate || pond.createdAt;
+          const dynamicCycleDay = refDate
+            ? Math.max(0, differenceInDays(today, new Date(refDate)))
+            : (pond.cycleDay || 0);
+          return {
+            id,
+            ...pond,
+            // Sanitize numeric fields — Firebase may return them as undefined or string
+            currentStock: Number(pond.currentStock) || 0,
+            seedAmount:   Number(pond.seedAmount)   || 0,
+            expectedCount: Number(pond.expectedCount) || 0,
+            area:         Number(pond.area)         || 0,
+            length:       Number(pond.length)       || 0,
+            width:        Number(pond.width)        || 0,
+            depth:        Number(pond.depth)        || 0,
+            targetDensity: Number(pond.targetDensity) || 0,
+            cycleDay: dynamicCycleDay,
+          };
+        });
         console.log('usePonds: Setting ponds array:', pondsArray);
         setPonds(pondsArray);
       } else {
@@ -131,7 +161,7 @@ export function usePonds() {
     console.log('addPond: Creating pond with profile:', selectedProfile);
     console.log('addPond: Pond data:', pondData);
 
-    const pondsRef = ref(db, `shrimp/${selectedProfile}/ponds`);
+    const pondsRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/ponds`);
     const newPondRef = push(pondsRef);
     
     try {
@@ -151,14 +181,14 @@ export function usePonds() {
   const updatePond = async (pondId: string, updates: Partial<Pond>) => {
     if (!selectedProfile) return;
 
-    const pondRef = ref(db, `shrimp/${selectedProfile}/ponds/${pondId}`);
+    const pondRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/ponds/${pondId}`);
     await update(pondRef, updates);
   };
 
   const deletePond = async (pondId: string) => {
     if (!selectedProfile) return;
 
-    const pondRef = ref(db, `shrimp/${selectedProfile}/ponds/${pondId}`);
+    const pondRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/ponds/${pondId}`);
     await remove(pondRef);
   };
 
@@ -166,6 +196,7 @@ export function usePonds() {
 }
 
 export function useAlerts() {
+    const { clientId } = useClient();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const { selectedProfile } = useUser();
@@ -177,7 +208,7 @@ export function useAlerts() {
       return;
     }
 
-    const alertsRef = ref(db, `shrimp/${selectedProfile}/alerts`);
+    const alertsRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/alerts`);
     
     const unsubscribe = onValue(alertsRef, (snapshot) => {
       const data = snapshot.val();
@@ -201,7 +232,7 @@ export function useAlerts() {
   const addAlert = async (alertData: Omit<Alert, 'id' | 'createdAt'>) => {
     if (!selectedProfile) return;
 
-    const alertsRef = ref(db, `shrimp/${selectedProfile}/alerts`);
+    const alertsRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/alerts`);
     const newAlertRef = push(alertsRef);
     
     await set(newAlertRef, {
@@ -215,7 +246,7 @@ export function useAlerts() {
   const deleteAlert = async (alertId: string) => {
     if (!selectedProfile) return;
 
-    const alertRef = ref(db, `shrimp/${selectedProfile}/alerts/${alertId}`);
+    const alertRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/alerts/${alertId}`);
     await remove(alertRef);
   };
 
@@ -223,6 +254,7 @@ export function useAlerts() {
 }
 
 export function useInventory() {
+    const { clientId } = useClient();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { selectedProfile } = useUser();
@@ -234,7 +266,7 @@ export function useInventory() {
       return;
     }
 
-    const invRef = ref(db, `shrimp/${selectedProfile}/inventory`);
+    const invRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/inventory`);
     const unsubscribe = onValue(invRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -253,7 +285,7 @@ export function useInventory() {
 
   const addItem = async (item: Omit<InventoryItem, 'id' | 'updatedAt'>) => {
     if (!selectedProfile) return;
-    const invRef = ref(db, `shrimp/${selectedProfile}/inventory`);
+    const invRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/inventory`);
     const newRef = push(invRef);
     await set(newRef, { ...item, updatedAt: new Date().toISOString() });
     return newRef.key;
@@ -261,13 +293,13 @@ export function useInventory() {
 
   const updateItem = async (id: string, updates: Partial<InventoryItem>) => {
     if (!selectedProfile) return;
-    const itemRef = ref(db, `shrimp/${selectedProfile}/inventory/${id}`);
+    const itemRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/inventory/${id}`);
     await update(itemRef, { ...updates, updatedAt: new Date().toISOString() });
   };
 
   const deleteItem = async (id: string) => {
     if (!selectedProfile) return;
-    const itemRef = ref(db, `shrimp/${selectedProfile}/inventory/${id}`);
+    const itemRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/inventory/${id}`);
     await remove(itemRef);
   };
 
@@ -275,6 +307,7 @@ export function useInventory() {
 }
 
 export function useDocuments(pondId: string) {
+    const { clientId } = useClient();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const { selectedProfile } = useUser();
@@ -286,7 +319,7 @@ export function useDocuments(pondId: string) {
       return;
     }
 
-    const docsRef = ref(db, `shrimp/${selectedProfile}/documents/${pondId}`);
+    const docsRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/documents/${pondId}`);
     const unsubscribe = onValue(docsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -304,7 +337,7 @@ export function useDocuments(pondId: string) {
 
   const addDocument = async (doc: Omit<Document, 'id'>) => {
     if (!selectedProfile || !pondId) return;
-    const docsRef = ref(db, `shrimp/${selectedProfile}/documents/${pondId}`);
+    const docsRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/documents/${pondId}`);
     const newRef = push(docsRef);
     await set(newRef, doc);
     return newRef.key;
@@ -312,7 +345,7 @@ export function useDocuments(pondId: string) {
 
   const deleteDocument = async (id: string) => {
     if (!selectedProfile || !pondId) return;
-    const docRef = ref(db, `shrimp/${selectedProfile}/documents/${pondId}/${id}`);
+    const docRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/documents/${pondId}/${id}`);
     await remove(docRef);
   };
 
@@ -320,6 +353,7 @@ export function useDocuments(pondId: string) {
 }
 
 export function useImageAnalysis(pondId: string) {
+    const { clientId } = useClient();
   const [images, setImages] = useState<ImageAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const { selectedProfile } = useUser();
@@ -331,7 +365,7 @@ export function useImageAnalysis(pondId: string) {
       return;
     }
 
-    const imagesRef = ref(db, `shrimp/${selectedProfile}/images/${pondId}`);
+    const imagesRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/images/${pondId}`);
     const unsubscribe = onValue(imagesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -349,7 +383,7 @@ export function useImageAnalysis(pondId: string) {
 
   const addImage = async (img: Omit<ImageAnalysis, 'id'>) => {
     if (!selectedProfile || !pondId) return;
-    const imagesRef = ref(db, `shrimp/${selectedProfile}/images/${pondId}`);
+    const imagesRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/images/${pondId}`);
     const newRef = push(imagesRef);
     await set(newRef, img);
     return newRef.key;
@@ -357,7 +391,7 @@ export function useImageAnalysis(pondId: string) {
 
   const deleteImage = async (id: string) => {
     if (!selectedProfile || !pondId) return;
-    const imgRef = ref(db, `shrimp/${selectedProfile}/images/${pondId}/${id}`);
+    const imgRef = ref(getDbForClient(clientId), `clients/${clientId}/shrimp/${selectedProfile}/images/${pondId}/${id}`);
     await remove(imgRef);
   };
 

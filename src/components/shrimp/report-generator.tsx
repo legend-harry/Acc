@@ -306,7 +306,7 @@ export function ReportGenerator({ pondId }: { pondId: string }) {
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="pt-6">
             <p className="text-sm text-blue-900">
-              📊 Reports are generated from your recorded daily logs. The more logs you record, the more comprehensive and accurate the reports will be.
+              Reports are generated from your recorded daily logs. The more logs you record, the more comprehensive and accurate the reports will be.
             </p>
           </CardContent>
         </Card>

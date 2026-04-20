@@ -1,19 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/firebase';
+import { get, ref } from 'firebase/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const { pondId, pondName, status, symptoms } = await request.json();
+    const { pondId, pondName, status, symptoms, profile } = await request.json();
 
-    // Mock AI response based on status and symptoms
-    const mockRecommendations: Record<string, string> = {
-      excellent: `✅ Excellent farm status for ${pondName}! Continue current management practices. Monitor parameters weekly as preventive measure.`,
-      good: `👍 Good farm status for ${pondName}. ${symptoms.length > 0 ? `Address these issues: ${symptoms.join(', ')}.` : 'No critical issues detected.'} Implement corrective measures within 48 hours.`,
-      fair: `⚠️ Fair farm status for ${pondName}. Issues detected: ${symptoms.join(', ')}. Immediate intervention required. Increase monitoring to 2x daily. Consider partial water exchange.`,
-      poor: `🚨 CRITICAL STATUS for ${pondName}! Issues: ${symptoms.join(', ')}. EMERGENCY: Reduce stocking density, increase aeration, and perform immediate water quality tests. Contact veterinarian if mass mortality observed.`,
+    if (!pondId || !profile) {
+      return NextResponse.json(
+        { error: 'Missing pondId or profile' },
+        { status: 400 }
+      );
+    }
+
+    const logsRef = ref(db, `shrimp/${profile}/daily-logs/${pondId}`);
+    const snapshot = await get(logsRef);
+    const logsData = snapshot.val();
+
+    if (!logsData) {
+      return NextResponse.json({
+        recommendations: `No daily logs found for ${pondName}. Add logs to enable farm status analysis.`,
+        missingFields: ['dailyLogs'],
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const logsArray = Object.values(logsData) as any[];
+    const sortedLogs = logsArray.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
+    const latestLog = sortedLogs[sortedLogs.length - 1] || {};
+    const missingFields: string[] = [];
+
+    const toNumber = (value: unknown) => {
+      const numeric = typeof value === 'string' ? Number(value) : Number(value);
+      return Number.isFinite(numeric) ? numeric : null;
     };
 
+    const ph = toNumber(latestLog.ph);
+    const dissolvedOxygen = toNumber(latestLog.do);
+    const ammonia = toNumber(latestLog.ammonia);
+    const temperature = toNumber(latestLog.temperature);
+
+    if (ph === null) missingFields.push('pH');
+    if (dissolvedOxygen === null) missingFields.push('Dissolved oxygen');
+    if (ammonia === null) missingFields.push('Ammonia');
+    if (temperature === null) missingFields.push('Temperature');
+
+    const responseLines: string[] = [];
+    responseLines.push(`Farm status: ${status}.`);
+
+    if (symptoms && symptoms.length > 0) {
+      responseLines.push(`Reported symptoms: ${symptoms.join(', ')}.`);
+    }
+
+    if (ph !== null || dissolvedOxygen !== null || ammonia !== null || temperature !== null) {
+      responseLines.push('Latest water readings:');
+      if (ph !== null) responseLines.push(`- pH: ${ph}`);
+      if (dissolvedOxygen !== null) responseLines.push(`- DO: ${dissolvedOxygen} ppm`);
+      if (ammonia !== null) responseLines.push(`- Ammonia: ${ammonia} ppm`);
+      if (temperature !== null) responseLines.push(`- Temperature: ${temperature}C`);
+    }
+
+    if (status === 'poor' || status === 'fair') {
+      responseLines.push('Priority actions:');
+      responseLines.push('- Increase monitoring frequency and record changes.');
+      responseLines.push('- Review feeding schedule and aeration settings.');
+      if (symptoms && symptoms.length > 0) {
+        responseLines.push('- Address reported symptoms with targeted checks.');
+      }
+    } else {
+      responseLines.push('Continue current management and monitor daily logs.');
+    }
+
     return NextResponse.json({
-      recommendations: mockRecommendations[status] || 'Unable to analyze farm status',
+      recommendations: responseLines.join('\n'),
+      missingFields,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

@@ -3,16 +3,18 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { ref, onValue, off, get, query, orderByChild, equalTo } from 'firebase/database';
-import { db } from '@/lib/firebase';
+import { db, getDbForClient } from '@/lib/firebase';
 import type { Transaction, BudgetSummary, Project, Employee, AttendanceRecord, AttendanceStatus } from '@/types';
+import { useClient } from '@/context/client-context';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 export function useProjects() {
+    const { clientId } = useClient();
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const projectsRef = ref(db, 'projects');
+        const projectsRef = ref(getDbForClient(clientId), `clients/${clientId}/projects`);
         const listener = onValue(projectsRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -40,11 +42,12 @@ export function useProjects() {
 
 
 export function useTransactions() {
+    const { clientId } = useClient();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const transactionsRef = ref(db, 'transactions');
+    const transactionsRef = ref(getDbForClient(clientId), `clients/${clientId}/transactions`);
     
     const listener = onValue(transactionsRef, (snapshot) => {
       const data = snapshot.val();
@@ -75,11 +78,12 @@ export function useTransactions() {
 
 
 export function useBudgets() {
+    const { clientId } = useClient();
     const [budgets, setBudgets] = useState<BudgetSummary[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const budgetsRef = ref(db, 'budgets');
+        const budgetsRef = ref(getDbForClient(clientId), `clients/${clientId}/budgets`);
 
         const listener = onValue(budgetsRef, (snapshot) => {
             const data = snapshot.val();
@@ -117,11 +121,12 @@ export function useCategories(projectId?: string) {
 }
 
 export function useEmployees() {
+    const { clientId } = useClient();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const employeesRef = ref(db, 'employees');
+        const employeesRef = ref(getDbForClient(clientId), `clients/${clientId}/employees`);
         const listener = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -152,11 +157,12 @@ type DailySummary = {
 };
 
 export function useAttendanceForDates() {
+    const { clientId } = useClient();
     const [dailySummaries, setDailySummaries] = useState<Record<string, DailySummary>>({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const attendanceRef = ref(db, `attendance`);
+        const attendanceRef = ref(getDbForClient(clientId), `clients/${clientId}/attendance`);
         const listener = onValue(attendanceRef, (snapshot) => {
             const data = snapshot.val();
             const summaries: Record<string, DailySummary> = {};
@@ -193,6 +199,7 @@ export function useAttendanceForDates() {
 }
 
 export function useEmployeeAttendance(employeeId: string) {
+    const { clientId } = useClient();
     const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
     const [loading, setLoading] = useState(true);
 
@@ -202,7 +209,7 @@ export function useEmployeeAttendance(employeeId: string) {
             return;
         }
 
-        const attendanceRef = ref(db, 'attendance');
+        const attendanceRef = ref(getDbForClient(clientId), `clients/${clientId}/attendance`);
         const listener = onValue(attendanceRef, (snapshot) => {
             const allAttendance = snapshot.val();
             const employeeAttendance: Record<string, AttendanceRecord> = {};

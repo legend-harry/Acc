@@ -3,15 +3,29 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/firebase';
+import { get, ref } from 'firebase/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const { currentPhase, timeOfDay, alertCount } = await request.json();
+    const { currentPhase, timeOfDay, profile, pondId } = await request.json();
 
-    // TODO: Integrate with actual user role and preferences
-    // Use ML to determine optimal dashboard ordering
+    if (!profile) {
+      return NextResponse.json(
+        { error: 'Missing profile' },
+        { status: 400 }
+      );
+    }
 
-    const mockPriorities = [
+    const alertsRef = ref(db, `shrimp/${profile}/alerts`);
+    const alertsSnapshot = await get(alertsRef);
+    const alertsData = alertsSnapshot.val();
+    const alertsArray = alertsData ? Object.values(alertsData) as any[] : [];
+    const alertCount = pondId
+      ? alertsArray.filter((alert) => alert.pondId === pondId).length
+      : alertsArray.length;
+
+    const priorities = [
       {
         componentId: 'water-quality',
         title: 'Water Quality Monitor',
@@ -38,37 +52,38 @@ export async function POST(request: NextRequest) {
       },
     ];
 
-    const mockFocusMode =
+    const focusMode =
       currentPhase === 'operation' && alertCount > 0
         ? {
-            title: 'Water Quality Crisis Mode',
+            title: 'Water Quality Focus',
             description: 'Elevated alerts detected. Focus on immediate water management.',
             topPriorities: [
-              'Check all aerators and DO levels',
-              'Reduce feeding to 50%',
-              'Prepare emergency water change',
+              'Review latest alerts and water logs',
+              'Verify aeration schedule',
+              'Prepare corrective actions',
             ],
             estimatedTime: '15-30 minutes',
-            icon: '⚠️',
+            icon: 'alert',
           }
         : timeOfDay === 'morning'
           ? {
               title: 'Morning Setup',
               description: 'Complete daily startup tasks to ensure smooth operations.',
               topPriorities: [
-                'Test water parameters (pH, DO, Ammonia)',
-                'Verify all equipment is operating normally',
-                'Review overnight alerts and prepare action plan',
+                'Record water parameters',
+                'Verify equipment status',
+                'Review alerts and plan actions',
               ],
               estimatedTime: '20-30 minutes',
-              icon: '☀️',
+              icon: 'sun',
             }
           : null;
 
     return NextResponse.json(
       {
-        priorities: mockPriorities,
-        focusMode: mockFocusMode,
+        priorities,
+        focusMode,
+        missingFields: alertsData ? [] : ['alerts'],
       },
       { status: 200 }
     );

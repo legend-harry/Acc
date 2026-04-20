@@ -43,3 +43,8 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+/graphify-out
+frontend-spec.json
+.agent/rules/graphify.md
+.gitignore

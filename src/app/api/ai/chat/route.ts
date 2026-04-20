@@ -3,43 +3,84 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/firebase';
+import { get, ref } from 'firebase/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, conversationHistory } = await request.json();
+    const { query, projectId } = await request.json();
 
-    // TODO: Integrate with Genkit/Claude for actual AI responses
-    // Build prompt from conversation history
+    const transactionsRef = ref(db, 'transactions');
+    const budgetsRef = ref(db, 'budgets');
 
-    const mockResponses: Record<string, string> = {
-      'high': 'A high FCR (Feed Conversion Ratio) typically indicates that your shrimp are not efficiently converting feed to biomass. Common causes include: 1) Poor water quality (check ammonia and DO levels), 2) Incorrect feeding schedule or amount, 3) Health issues in the shrimp population, 4) Temperature fluctuations. I recommend checking your water parameters first, then adjusting your feeding protocol.',
-      'dead': 'Finding dead shrimp is concerning. First, check your water quality parameters immediately - look for ammonia spikes, low dissolved oxygen, or pH changes. Examine the dead shrimp for signs of disease. Consider: 1) Increase aeration, 2) Perform a 20-30% water change, 3) Reduce feeding to 50%, 4) Monitor closely for the next 24 hours. Would you like specific guidance on disease diagnosis?',
-      'attention': 'Based on your current data, ponds A1 and C3 need immediate attention. Pond A1 has rising ammonia levels, and Pond C3 shows low DO. I recommend: Morning - Check aeration in C3, reduce feeding in both. Afternoon - Water parameter testing. Would you like detailed action plans?',
-      'reduce': 'To reduce production costs, focus on these high-impact areas: 1) Optimize feeding (20-30% of costs) - adjust based on consumption rates, 2) Improve FCR through water quality management, 3) Preventive maintenance to avoid equipment failures, 4) Energy efficiency - check aerator efficiency. Small changes in these areas can save 5-15% on costs. Which area interests you most?',
-      'best practices': 'For your farm size, focus on: 1) Consistent daily monitoring - establish morning and evening routines, 2) Preventive health management - regular water testing, 3) Optimal stocking density - avoid overcrowding, 4) Feed quality - use trusted suppliers. I can provide a customized checklist based on your specific pond sizes and farming type. Would that help?',
-      'degrading': 'Water quality degradation is critical. Take these immediate actions: 1) Check all readings (pH, DO, ammonia, temperature), 2) Increase aeration if DO is low, 3) Perform 20-30% water change if ammonia is high, 4) Reduce feeding by 50%, 5) Monitor every 4-6 hours for next 48 hours. Which parameter is most concerning?',
-    };
+    const [transactionsSnapshot, budgetsSnapshot] = await Promise.all([
+      get(transactionsRef),
+      get(budgetsRef),
+    ]);
 
-    // Find best matching response
-    let response = 'I understand. Let me help you with that. Could you provide more details about your specific situation? For example, which ponds are affected, what are your current water parameters, or what symptoms are you observing?';
+    const transactionsData = transactionsSnapshot.val();
+    const budgetsData = budgetsSnapshot.val();
+    const transactions = transactionsData ? Object.values(transactionsData) as any[] : [];
+    const budgets = budgetsData ? Object.values(budgetsData) as any[] : [];
 
-    for (const [key, value] of Object.entries(mockResponses)) {
-      if (query.toLowerCase().includes(key)) {
-        response = value;
-        break;
-      }
+    const filteredTransactions = projectId
+      ? transactions.filter((tx) => tx.projectId === projectId)
+      : transactions;
+
+    if (filteredTransactions.length === 0) {
+      return NextResponse.json(
+        {
+          response: 'No transactions found in the database. Add transactions to enable financial insights.',
+          suggestedNextQuestions: ['How do I add transactions?', 'Where can I upload receipts?'],
+          missingFields: ['transactions'],
+        },
+        { status: 200 }
+      );
+    }
+
+    const totalIncome = filteredTransactions
+      .filter((tx) => tx.type === 'income')
+      .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+    const totalExpense = filteredTransactions
+      .filter((tx) => tx.type === 'expense')
+      .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+
+    const expenseByCategory: Record<string, number> = {};
+    filteredTransactions
+      .filter((tx) => tx.type === 'expense')
+      .forEach((tx) => {
+        const amount = Number(tx.amount || 0);
+        const category = tx.category || 'Uncategorized';
+        expenseByCategory[category] = (expenseByCategory[category] || 0) + amount;
+      });
+
+    const topCategory = Object.entries(expenseByCategory).sort((a, b) => b[1] - a[1])[0];
+    const queryLower = query.toLowerCase();
+
+    let response = '';
+    if (queryLower.includes('expense') || queryLower.includes('cost')) {
+      response = `Your recorded expenses total ${totalExpense.toFixed(2)}. Top expense category: ${topCategory ? `${topCategory[0]} (${topCategory[1].toFixed(2)})` : 'none'}.`;
+    } else if (queryLower.includes('income') || queryLower.includes('revenue')) {
+      response = `Your recorded income totals ${totalIncome.toFixed(2)} across ${filteredTransactions.filter((tx) => tx.type === 'income').length} entries.`;
+    } else if (queryLower.includes('budget')) {
+      response = budgets.length === 0
+        ? 'No budgets found in the database. Add budgets to track plan vs actual.'
+        : `There are ${budgets.length} budget entries recorded. Review budget vs actual in the dashboard.`;
+    } else {
+      response = `You have ${filteredTransactions.length} transactions recorded. Total income: ${totalIncome.toFixed(2)}. Total expenses: ${totalExpense.toFixed(2)}.`;
     }
 
     const suggestedNextQuestions = [
-      'Show me my current water quality readings',
-      'What should I do next?',
-      'How do I prevent this in the future?',
+      'Show my top expense categories',
+      'Do I have budgets set up?',
+      'Which project has the highest spend?',
     ];
 
     return NextResponse.json(
       {
         response,
         suggestedNextQuestions,
+        missingFields: budgets.length === 0 ? ['budgets'] : [],
       },
       { status: 200 }
     );

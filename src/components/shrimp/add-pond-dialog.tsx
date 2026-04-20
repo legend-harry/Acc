@@ -57,8 +57,8 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
     // Progress Assessment fields
     currentStage: 'planning' as 'planning' | 'preparation' | 'stocking' | 'operation' | 'harvest',
     daysInCycle: '' as any,
-    currentStockHealth: 'good' as 'excellent' | 'good' | 'fair' | 'poor',
-    waterQuality: 'good' as 'excellent' | 'good' | 'fair' | 'poor',
+    currentStockHealth: null as 'excellent' | 'good' | 'fair' | 'poor' | null,
+    waterQuality: null as 'excellent' | 'good' | 'fair' | 'poor' | null,
     feedingStatus: 'optimal' as 'optimal' | 'normal' | 'reduced' | 'ceased',
     observations: '',
   });
@@ -204,14 +204,9 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
   }, [formData.length, formData.width, formData.seedAmount, formData.farmingType]);
 
   const calculateExpectedCount = () => {
-    // Calculate expected harvest based on seed amount and survival rate
-    const survivalRates: Record<string, number> = {
-      'extensive': 0.70,
-      'semi-intensive': 0.80,
-      'intensive': 0.85,
-    };
-    const seedAmount = Number(formData.seedAmount) || 0;
-    return Math.round(seedAmount * survivalRates[formData.farmingType]);
+    // Expected harvest will be calculated from actual survival data during the cycle
+    // Don't assume survival rates upfront
+    return 0;
   };
 
   const calculateArea = () => {
@@ -245,7 +240,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
       const newId = await createProjectWithName(newProjectName);
       
       toast({
-        title: "✅ Project Created",
+        title: "Project Created",
         description: `${newProjectName} has been created successfully`,
       });
 
@@ -310,6 +305,11 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
 
       const area = calculateArea();
       const expected = calculateExpectedCount();
+
+      // Compute stockingDate by back-calculating from daysInCycle so cycleDay stays current
+      const stockingDate = new Date();
+      stockingDate.setDate(stockingDate.getDate() - (Number(formData.daysInCycle) || 0));
+
       const newId = await addPond({
         name: formData.pondName,
         area,
@@ -325,6 +325,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         currentStock: Number(formData.seedAmount) || 0,
         status: 'preparing',
         currentStage: formData.currentStage,
+        stockingDate: stockingDate.toISOString(),
         cycleDay: Number(formData.daysInCycle) || 0,
         linkedProjectId: projectId || null,
       });
@@ -335,7 +336,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
       }
 
       toast({
-        title: "✅ Pond Created",
+        title: "Pond Created",
         description: `${formData.pondName} has been added to your farm`,
       });
 
@@ -523,16 +524,11 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                       value={formData.seedAmount}
                       onChange={(e) => {
                         const seedAmount = e.target.value;
-                        const survivalRates: Record<string, number> = {
-                          'extensive': 0.70,
-                          'semi-intensive': 0.80,
-                          'intensive': 0.85,
-                        };
-                        const expectedCount = seedAmount ? Math.round(Number(seedAmount) * survivalRates[formData.farmingType]) : '';
+                        // Don't pre-calculate expectedCount - it will be based on actual survival data
                         setFormData({ 
                           ...formData, 
                           seedAmount,
-                          expectedCount
+                          expectedCount: 0
                         });
                         setValidationErrors({ ...validationErrors, seedAmount: '' });
                       }}
@@ -646,11 +642,11 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="planning">📋 Phase 1: Planning & Design - Site assessment, budget prep, pond design</SelectItem>
-                        <SelectItem value="preparation">🔨 Phase 2: Pond Preparation - Excavation, water system, equipment setup</SelectItem>
-                        <SelectItem value="stocking">🦐 Phase 3: Stocking & Acclimation - Water prep, PL acclimation, seed release</SelectItem>
-                        <SelectItem value="operation">📊 Phase 4: Operation & Maintenance - Daily farming, monitoring, feeding (10-16 weeks)</SelectItem>
-                        <SelectItem value="harvest">🎯 Phase 5: Harvest & Processing - Harvest, grading, quality checks</SelectItem>
+                        <SelectItem value="planning">Phase 1: Planning & Design - Site assessment, budget prep, pond design</SelectItem>
+                        <SelectItem value="preparation">Phase 2: Pond Preparation - Excavation, water system, equipment setup</SelectItem>
+                        <SelectItem value="stocking">Phase 3: Stocking & Acclimation - Water prep, PL acclimation, seed release</SelectItem>
+                        <SelectItem value="operation">Phase 4: Operation & Maintenance - Daily farming, monitoring, feeding (10-16 weeks)</SelectItem>
+                        <SelectItem value="harvest">Phase 5: Harvest & Processing - Harvest, grading, quality checks</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-600 mt-1">
@@ -686,30 +682,30 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
 
                       <div className="space-y-2">
                         <Label className="text-gray-900 font-medium">Stock Health Status</Label>
-                        <Select value={formData.currentStockHealth} onValueChange={(value) => setFormData({ ...formData, currentStockHealth: value as any })}>
+                        <Select value={formData.currentStockHealth || undefined} onValueChange={(value) => setFormData({ ...formData, currentStockHealth: value as any })}>
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select health status" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="excellent">✨ Excellent</SelectItem>
-                            <SelectItem value="good">✅ Good</SelectItem>
-                            <SelectItem value="fair">⚠️ Fair</SelectItem>
-                            <SelectItem value="poor">❌ Poor</SelectItem>
+                            <SelectItem value="excellent">Excellent</SelectItem>
+                            <SelectItem value="good">Good</SelectItem>
+                            <SelectItem value="fair">Fair</SelectItem>
+                            <SelectItem value="poor">Poor</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div className="space-y-2">
                         <Label className="text-gray-900 font-medium">Water Quality</Label>
-                        <Select value={formData.waterQuality} onValueChange={(value) => setFormData({ ...formData, waterQuality: value as any })}>
+                        <Select value={formData.waterQuality || undefined} onValueChange={(value) => setFormData({ ...formData, waterQuality: value as any })}>
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select water quality" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="excellent">✨ Excellent</SelectItem>
-                            <SelectItem value="good">✅ Good</SelectItem>
-                            <SelectItem value="fair">⚠️ Fair</SelectItem>
-                            <SelectItem value="poor">❌ Poor</SelectItem>
+                            <SelectItem value="excellent">Excellent</SelectItem>
+                            <SelectItem value="good">Good</SelectItem>
+                            <SelectItem value="fair">Fair</SelectItem>
+                            <SelectItem value="poor">Poor</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -721,10 +717,10 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="optimal">🎯 Optimal</SelectItem>
-                            <SelectItem value="normal">📌 Normal</SelectItem>
-                            <SelectItem value="reduced">📉 Reduced</SelectItem>
-                            <SelectItem value="ceased">⏸️ Ceased</SelectItem>
+                            <SelectItem value="optimal">Optimal</SelectItem>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="reduced">Reduced</SelectItem>
+                            <SelectItem value="ceased">Ceased</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -774,11 +770,11 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                           <div>
                             <p className="text-xs text-gray-600 uppercase">Current Phase</p>
                             <p className="font-bold text-gray-900">
-                              {formData.currentStage === 'planning' && '📋 Phase 1: Planning & Design'}
-                              {formData.currentStage === 'preparation' && '🔨 Phase 2: Pond Preparation'}
-                              {formData.currentStage === 'stocking' && '🦐 Phase 3: Stocking & Acclimation'}
-                              {formData.currentStage === 'operation' && '📊 Phase 4: Operation & Maintenance'}
-                              {formData.currentStage === 'harvest' && '🎯 Phase 5: Harvest & Processing'}
+                              {formData.currentStage === 'planning' && 'Phase 1: Planning & Design'}
+                              {formData.currentStage === 'preparation' && 'Phase 2: Pond Preparation'}
+                              {formData.currentStage === 'stocking' && 'Phase 3: Stocking & Acclimation'}
+                              {formData.currentStage === 'operation' && 'Phase 4: Operation & Maintenance'}
+                              {formData.currentStage === 'harvest' && 'Phase 5: Harvest & Processing'}
                             </p>
                           </div>
                           {formData.daysInCycle > 0 && (
@@ -1115,11 +1111,11 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Seed Amount</p>
-                    <p className="font-semibold text-lg text-gray-900">{formData.seedAmount.toLocaleString()} PL</p>
+                    <p className="font-semibold text-lg text-gray-900">{(Number(formData.seedAmount) || 0).toLocaleString()} PL</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Expected Harvest</p>
-                    <p className="font-semibold text-lg text-gray-900">{formData.expectedCount.toLocaleString()} shrimp</p>
+                    <p className="font-semibold text-lg text-gray-900">{(Number(formData.expectedCount) || 0).toLocaleString()} shrimp</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Stocking Density</p>

@@ -116,9 +116,9 @@ export function HistoricalMineralGraphs({ pondName, pondId }: MineralGraphProps)
 
   const getMineralStatus = (key: string, value: number) => {
     const range = optimalRanges[key];
-    if (value < range.min) return { status: 'Deficient', color: 'bg-red-100 border-red-500 text-red-900', icon: '📉' };
-    if (value > range.max) return { status: 'Excess', color: 'bg-orange-100 border-orange-500 text-orange-900', icon: '📈' };
-    return { status: 'Optimal', color: 'bg-green-100 border-green-500 text-green-900', icon: '✅' };
+    if (value < range.min) return { status: 'Deficient', color: 'bg-red-100 border-red-500 text-red-900', icon: 'low' };
+    if (value > range.max) return { status: 'Excess', color: 'bg-orange-100 border-orange-500 text-orange-900', icon: 'high' };
+    return { status: 'Optimal', color: 'bg-green-100 border-green-500 text-green-900', icon: 'ok' };
   };
 
   return (
@@ -153,7 +153,7 @@ export function HistoricalMineralGraphs({ pondName, pondId }: MineralGraphProps)
       {/* Macronutrients Trend */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">📊 Macronutrients Trend</CardTitle>
+          <CardTitle className="text-lg">Macronutrients Trend</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={350}>
@@ -211,7 +211,7 @@ export function HistoricalMineralGraphs({ pondName, pondId }: MineralGraphProps)
       {/* Secondary Nutrients Trend */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">⚗️ Secondary Nutrients Trend</CardTitle>
+          <CardTitle className="text-lg">Secondary Nutrients Trend</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={350}>
@@ -269,7 +269,7 @@ export function HistoricalMineralGraphs({ pondName, pondId }: MineralGraphProps)
       {/* Micronutrients Trend */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">🔬 Micronutrients Trend</CardTitle>
+          <CardTitle className="text-lg">Micronutrients Trend</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>

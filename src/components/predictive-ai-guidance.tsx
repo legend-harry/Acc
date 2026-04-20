@@ -20,13 +20,14 @@ import {
   Zap,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/context/user-context';
 
 interface PredictiveAlert {
   id: string;
   type: 'critical' | 'warning' | 'info' | 'success';
   title: string;
   description: string;
-  daysUntilIssue: number;
+  daysUntilIssue: number | null;
   recommendedAction: string;
   priority: 'high' | 'medium' | 'low';
   affectedPonds: string[];
@@ -56,10 +57,12 @@ interface SmartReminder {
 
 export function PredictiveAIGuidance({ pondId }: { pondId?: string }) {
   const { toast } = useToast();
+  const { selectedProfile } = useUser();
   const [alerts, setAlerts] = useState<PredictiveAlert[]>([]);
   const [checklist, setChecklist] = useState<DailyChecklist[]>([]);
   const [reminders, setReminders] = useState<SmartReminder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
   useEffect(() => {
     loadPredictiveGuidance();
@@ -71,7 +74,7 @@ export function PredictiveAIGuidance({ pondId }: { pondId?: string }) {
       const response = await fetch('/api/ai/predictive-guidance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pondId }),
+        body: JSON.stringify({ pondId, profile: selectedProfile }),
       });
 
       if (!response.ok) throw new Error('Failed to load guidance');
@@ -80,6 +83,7 @@ export function PredictiveAIGuidance({ pondId }: { pondId?: string }) {
       setAlerts(data.alerts || []);
       setChecklist(data.checklist || []);
       setReminders(data.reminders || []);
+      setMissingFields(data.missingFields || []);
     } catch (error) {
       console.error('Error loading predictive guidance:', error);
       toast({
@@ -152,6 +156,14 @@ export function PredictiveAIGuidance({ pondId }: { pondId?: string }) {
 
   return (
     <div className="space-y-6">
+      {missingFields.length > 0 && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Missing data: {missingFields.join(', ')}. Add daily logs to generate predictive guidance.
+          </AlertDescription>
+        </Alert>
+      )}
       {/* Anticipatory Alerts */}
       {alerts.length > 0 && (
         <Card>
@@ -175,7 +187,7 @@ export function PredictiveAIGuidance({ pondId }: { pondId?: string }) {
                       <div className="flex flex-wrap gap-2 mb-2">
                         <Badge variant="outline" className="text-xs">
                           <Clock className="h-3 w-3 mr-1" />
-                          {alert.daysUntilIssue} days
+                          {alert.daysUntilIssue === null ? 'N/A' : `${alert.daysUntilIssue} days`}
                         </Badge>
                         <Badge variant="outline" className="text-xs">
                           {alert.metric}: {alert.currentValue} → {alert.predictedValue}

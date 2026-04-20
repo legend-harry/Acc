@@ -21,6 +21,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useProjectFilter } from '@/context/project-filter-context';
 
 interface Message {
   id: string;
@@ -38,6 +39,7 @@ interface SuggestedQuery {
 
 export function ConversationalAIChatbot({ isOpen = false, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const { toast } = useToast();
+  const { selectedProjectId } = useProjectFilter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -80,17 +82,21 @@ export function ConversationalAIChatbot({ isOpen = false, onClose }: { isOpen?: 
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, conversationHistory: messages }),
+        body: JSON.stringify({ query, conversationHistory: messages, projectId: selectedProjectId === 'all' ? null : selectedProjectId }),
       });
 
       if (!response.ok) throw new Error('Failed to get response');
 
       const data = await response.json();
 
+      const missingNote = data.missingFields && data.missingFields.length > 0
+        ? `\n\nMissing data: ${data.missingFields.join(', ')}.`
+        : '';
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: data.response,
+        content: `${data.response}${missingNote}`,
         timestamp: new Date(),
         suggestions: data.suggestedNextQuestions,
       };

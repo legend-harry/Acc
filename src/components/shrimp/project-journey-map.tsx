@@ -57,7 +57,7 @@ export function ProjectJourneyMap({
   const phases: Phase[] = [
     {
       id: 'planning',
-      name: '📋 Phase 1: Planning & Design',
+      name: 'Phase 1: Planning & Design',
       status: activePhaseId === 'planning' ? 'current' : (['setup', 'stocking', 'operation', 'harvest'].includes(activePhaseId) ? 'completed' : 'upcoming'),
       progress: activePhaseId === 'planning' ? 50 : (['setup', 'stocking', 'operation', 'harvest'].includes(activePhaseId) ? 100 : 0),
       description: 'Assess location, calculate requirements, design pond layout and budget',
@@ -75,7 +75,7 @@ export function ProjectJourneyMap({
     },
     {
       id: 'setup',
-      name: '🔨 Phase 2: Pond Preparation',
+      name: 'Phase 2: Pond Preparation',
       status: activePhaseId === 'setup' ? 'current' : (['stocking', 'operation', 'harvest'].includes(activePhaseId) ? 'completed' : 'upcoming'),
       progress: activePhaseId === 'setup' ? 50 : (['stocking', 'operation', 'harvest'].includes(activePhaseId) ? 100 : 0),
       description: 'Construct pond, install aeration & water systems, test equipment',
@@ -93,7 +93,7 @@ export function ProjectJourneyMap({
     },
     {
       id: 'stocking',
-      name: '🦐 Phase 3: Stocking & Acclimation',
+      name: 'Phase 3: Stocking & Acclimation',
       status: activePhaseId === 'stocking' ? 'current' : (['operation', 'harvest'].includes(activePhaseId) ? 'completed' : 'upcoming'),
       progress: activePhaseId === 'stocking' ? 50 : (['operation', 'harvest'].includes(activePhaseId) ? 100 : 0),
       description: 'Prepare water, acclimate post-larvae (PL), release into pond',
@@ -111,7 +111,7 @@ export function ProjectJourneyMap({
     },
     {
       id: 'operation',
-      name: '📊 Phase 4: Operation & Maintenance',
+      name: 'Phase 4: Operation & Maintenance',
       status: activePhaseId === 'operation' ? 'current' : (activePhaseId === 'harvest' ? 'completed' : 'upcoming'),
       progress: getPhaseProgress('operation'),
       description: `Daily farming operations: monitoring, feeding, maintenance (Day ${cycleDay}/${totalCycleDays})`,
@@ -131,7 +131,7 @@ export function ProjectJourneyMap({
     },
     {
       id: 'harvest',
-      name: '🎯 Phase 5: Harvest & Processing',
+      name: 'Phase 5: Harvest & Processing',
       status: activePhaseId === 'harvest' ? 'current' : 'upcoming',
       progress: activePhaseId === 'harvest' ? 50 : 0,
       description: 'Harvest shrimp, grade by size, process, and perform quality control',
@@ -149,7 +149,7 @@ export function ProjectJourneyMap({
     },
     {
       id: 'analysis',
-      name: '📈 Phase 6: Analysis & Planning',
+      name: 'Phase 6: Analysis & Planning',
       status: 'upcoming',
       progress: 0,
       description: 'Analyze production, calculate ROI, plan improvements for next cycle',
@@ -204,7 +204,7 @@ export function ProjectJourneyMap({
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-600">📍 Project Timeline for:</span>
+              <span className="text-sm font-medium text-gray-600">Project Timeline for:</span>
               <Badge className="bg-blue-600">{pondName}</Badge>
             </div>
           </CardContent>
@@ -214,7 +214,7 @@ export function ProjectJourneyMap({
       {/* Journey Timeline */}
       <Card>
         <CardHeader>
-          <CardTitle>🗓️ Project Journey Timeline {pondName && `- ${pondName}`}</CardTitle>
+          <CardTitle>Project Journey Timeline {pondName && `- ${pondName}`}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

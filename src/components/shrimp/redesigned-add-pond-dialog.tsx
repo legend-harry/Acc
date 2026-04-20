@@ -463,7 +463,7 @@ export function AddPondDialog({ open, onOpenChange, onAddPond }: AddPondDialogPr
                     setFormData({
                       ...formData,
                       seedAmount: value,
-                      expectedCount: Math.round(value * 0.85), // 85% expected survival
+                      expectedCount: 0, // Will be calculated from actual survival data
                     });
                   }}
                 />
@@ -494,17 +494,12 @@ export function AddPondDialog({ open, onOpenChange, onAddPond }: AddPondDialogPr
               </div>
 
               {formData.seedAmount > 0 && (
-                <Card className="bg-green-50 border-green-200">
-                  <CardContent className="pt-4 space-y-2">
-                    <p className="text-sm text-muted-foreground">Expected Harvest</p>
-                    <p className="text-2xl font-bold text-green-900">
-                      {(formData.expectedCount / 1000).toFixed(1)}K shrimp
-                    </p>
-                    <p className="text-xs text-green-800">
-                      Based on 85% survival rate assumption
-                    </p>
-                  </CardContent>
-                </Card>
+                <Alert className="border-amber-200 bg-amber-50">
+                  <Info className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="ml-2 text-sm text-amber-900">
+                    Expected harvest count will be calculated from actual daily log data and survival rates tracked during the cycle.
+                  </AlertDescription>
+                </Alert>
               )}
             </div>
           )}

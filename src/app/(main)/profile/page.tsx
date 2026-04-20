@@ -51,6 +51,7 @@ import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, Employee } from "@/types";
 import { Separator } from "@/components/ui/separator";
+import { useLayout } from "@/context/layout-context";
 
 const currencies: { value: Currency; label: string }[] = [
   { value: "INR", label: "INR (Indian Rupee)" },
@@ -64,6 +65,7 @@ function SettingsTab() {
   const { projects } = useProjects();
   const { employees } = useEmployees();
   const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
+  const { layout, setLayout } = useLayout();
   const [defaultProject, setDefaultProject] = useState<string>("all");
   const [primaryEmployee, setPrimaryEmployee] = useState<string>("none");
 
@@ -105,6 +107,27 @@ function SettingsTab() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+          <Label htmlFor="layout-select">UI Layout</Label>
+          <div className="md:col-span-2">
+            <Select
+              value={layout}
+              onValueChange={(value) => setLayout(value as "default" | "enterprise")}
+            >
+              <SelectTrigger id="layout-select" className="w-full">
+                <SelectValue placeholder="Select a layout" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Classic (Top Navigation)</SelectItem>
+                <SelectItem value="enterprise">Enterprise (Sidebar Navigation)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Switch between the classic header bar and the enterprise sidebar layout.
+            </p>
+          </div>
+        </div>
+        <Separator />
         <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
           <Label htmlFor="currency-select">Currency</Label>
           <div className="md:col-span-2">
@@ -290,12 +313,15 @@ function ProjectSettings() {
                                         <span className="text-xs text-muted-foreground">(default)</span>
                                     )}
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-1">
                                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(project)}>
                                         <Edit className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setArchivingProject(project)}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-muted-foreground" onClick={() => setArchivingProject(project)}>
                                         <Archive className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingProject(project)}>
+                                        <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </div>
                             </li>

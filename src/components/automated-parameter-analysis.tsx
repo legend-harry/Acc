@@ -22,6 +22,7 @@ import {
   Legend,
 } from 'recharts';
 import { AlertTriangle, TrendingUp, TrendingDown, Zap, Lightbulb } from 'lucide-react';
+import { useUser } from '@/context/user-context';
 
 interface ParameterData {
   timestamp: string;
@@ -32,8 +33,8 @@ interface ParameterData {
 
 interface ParameterAnalysis {
   parameter: string;
-  currentValue: number;
-  optimalRange: [number, number];
+  currentValue: number | null;
+  optimalRange: [number, number] | null;
   trend: 'rising' | 'falling' | 'stable';
   trendPercentage: number;
   anomalies: ParameterData[];
@@ -47,9 +48,11 @@ interface ParameterAnalysis {
 }
 
 export function AutomatedParameterAnalysis({ pondId }: { pondId?: string }) {
+  const { selectedProfile } = useUser();
   const [analyses, setAnalyses] = useState<ParameterAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
   useEffect(() => {
     loadParameterAnalysis();
@@ -58,10 +61,16 @@ export function AutomatedParameterAnalysis({ pondId }: { pondId?: string }) {
   const loadParameterAnalysis = async () => {
     setLoading(true);
     try {
+      if (!selectedProfile || !pondId) {
+        setAnalyses([]);
+        setHistoricalData([]);
+        setMissingFields(['profile', 'pondId']);
+        return;
+      }
       const response = await fetch('/api/ai/parameter-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pondId }),
+        body: JSON.stringify({ pondId, profile: selectedProfile }),
       });
 
       if (!response.ok) throw new Error('Failed to load analysis');
@@ -69,6 +78,7 @@ export function AutomatedParameterAnalysis({ pondId }: { pondId?: string }) {
       const data = await response.json();
       setAnalyses(data.analyses || []);
       setHistoricalData(data.historicalData || []);
+      setMissingFields(data.missingFields || []);
     } catch (error) {
       console.error('Error loading parameter analysis:', error);
     } finally {
@@ -77,9 +87,12 @@ export function AutomatedParameterAnalysis({ pondId }: { pondId?: string }) {
   };
 
   const getStatusColor = (
-    value: number,
-    optimal: [number, number]
+    value: number | null,
+    optimal: [number, number] | null
   ): 'default' | 'destructive' | 'secondary' => {
+    if (value === null || !optimal) {
+      return 'secondary';
+    }
     if (value < optimal[0] - optimal[0] * 0.1 || value > optimal[1] + optimal[1] * 0.1) {
       return 'destructive';
     }
@@ -146,6 +159,21 @@ export function AutomatedParameterAnalysis({ pondId }: { pondId?: string }) {
       )}
 
       {/* Parameter Analyses */}
+      {missingFields.length > 0 && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Missing data for: {missingFields.join(', ')}. Add daily logs or upload reports to populate these fields.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {analyses.length === 0 && (
+        <Alert>
+          <AlertDescription>No parameter analysis available yet.</AlertDescription>
+        </Alert>
+      )}
+
       {analyses.map((analysis) => (
         <Card key={analysis.parameter}>
           <CardHeader>
@@ -153,7 +181,7 @@ export function AutomatedParameterAnalysis({ pondId }: { pondId?: string }) {
               <div className="flex items-center gap-3">
                 <CardTitle className="text-lg">{analysis.parameter}</CardTitle>
                 <Badge variant={getStatusColor(analysis.currentValue, analysis.optimalRange)}>
-                  {analysis.currentValue.toFixed(2)}
+                  {analysis.currentValue === null ? '--' : analysis.currentValue.toFixed(2)}
                 </Badge>
                 {getTrendIcon(analysis.trend)}
               </div>
@@ -166,7 +194,7 @@ export function AutomatedParameterAnalysis({ pondId }: { pondId?: string }) {
               <div className="p-3 rounded-lg bg-muted">
                 <p className="text-xs text-muted-foreground mb-1">Optimal Range</p>
                 <p className="font-semibold">
-                  {analysis.optimalRange[0].toFixed(1)} - {analysis.optimalRange[1].toFixed(1)}
+                  {analysis.optimalRange ? `${analysis.optimalRange[0].toFixed(1)} - ${analysis.optimalRange[1].toFixed(1)}` : '--'}
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-muted">

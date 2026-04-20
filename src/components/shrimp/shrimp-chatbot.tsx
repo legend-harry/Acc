@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Send, X, ExternalLink } from 'lucide-react';
+import { useUser } from '@/context/user-context';
 
-export function ShrimpChatBot() {
+export function ShrimpChatBot({ pondId }: { pondId?: string }) {
+  const { selectedProfile } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
@@ -30,7 +32,7 @@ export function ShrimpChatBot() {
       const response = await fetch('/api/ai/chat-assist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage }),
+        body: JSON.stringify({ message: userMessage, profile: selectedProfile, pondId }),
       });
 
       const data = await response.json();

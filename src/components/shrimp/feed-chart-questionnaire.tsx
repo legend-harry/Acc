@@ -143,7 +143,7 @@ export function FeedChartQuestionnaire({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              🐟 Pond Information for {pondName}
+              Pond Information for {pondName}
             </CardTitle>
             <CardDescription>Confirm your pond details to design an optimal feed chart</CardDescription>
           </CardHeader>
@@ -228,7 +228,7 @@ export function FeedChartQuestionnaire({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              ⚙️ Feed Parameters for {pondName}
+              Feed Parameters for {pondName}
             </CardTitle>
             <CardDescription>Set your target feed consumption rate</CardDescription>
           </CardHeader>
@@ -277,10 +277,10 @@ export function FeedChartQuestionnaire({
             <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4 space-y-2">
               <p className="text-sm font-semibold text-gray-900">Summary</p>
               <ul className="text-sm space-y-1 text-gray-700">
-                <li>✓ Stocking: {calculateDensity()} shrimp/m²</li>
-                <li>✓ Base Daily Feed: {calculateBaseFeedQuantity()} kg</li>
-                <li>✓ Target Consumption: {formData.targetConsumption}%</li>
-                <li>✓ Starting From: Day {formData.cycleDay}</li>
+                <li>Stocking: {calculateDensity()} shrimp/m²</li>
+                <li>Base Daily Feed: {calculateBaseFeedQuantity()} kg</li>
+                <li>Target Consumption: {formData.targetConsumption}%</li>
+                <li>Starting From: Day {formData.cycleDay}</li>
               </ul>
             </div>
 
@@ -301,7 +301,7 @@ export function FeedChartQuestionnaire({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              📊 Optimized Feed Chart for {pondName}
+              Optimized Feed Chart for {pondName}
             </CardTitle>
             <CardDescription>Review and save your customized feeding schedule</CardDescription>
           </CardHeader>

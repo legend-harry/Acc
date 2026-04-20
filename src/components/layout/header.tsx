@@ -23,6 +23,11 @@ import {
   Archive,
   Fish,
   Menu,
+  Search,
+  ChevronDown,
+  TrendingUp,
+  Wallet,
+  X,
 } from "lucide-react";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { Button } from "@/components/ui/button";
@@ -44,12 +49,12 @@ import { useProjectFilter } from "@/context/project-filter-context";
 import { NotificationBell } from "../notification-bell";
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
-  { href: "/planner", icon: Target, label: "Planner" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
+  { href: "/transactions", icon: ArrowLeftRight, label: "Cash Flow" },
+  { href: "/planner", icon: Wallet, label: "Budgeting" },
   { href: "/employees", icon: Users, label: "Employees" },
   { href: "/reports", icon: PieChart, label: "Reports" },
-  { href: "/shrimp", icon: Fish, label: "Fish Farm" },
+  { href: "/shrimp", icon: Fish, label: "Aquaculture" },
 ];
 
 const profiles = ["Ammu", "Vijay", "Divyesh", "Anvika", "Guest"];
@@ -128,10 +133,9 @@ function ProfileSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <User className="h-4 w-4" />
-          <span className="hidden md:inline">{user}</span>
-        </Button>
+        <button className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold border-2 border-slate-200 dark:border-slate-700 shadow-sm hover:scale-105 transition-transform">
+          {user?.charAt(0) || "U"}
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Switch Profile</DropdownMenuLabel>
@@ -198,20 +202,19 @@ function ThemeSwitcher() {
 
   if (!isMounted) {
     return (
-      <Button variant="outline" size="icon" disabled>
-        <Palette className="h-[1.2rem] w-[1.2rem]" />
-        <span className="sr-only">Toggle theme</span>
-      </Button>
+      <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors" disabled>
+        <Palette className="h-5 w-5" />
+      </button>
     );
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Palette className="h-[1.2rem] w-[1.2rem]" />
+        <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+          <Palette className="h-5 w-5" />
           <span className="sr-only">Toggle theme</span>
-        </Button>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={toggleMode}>
@@ -243,89 +246,149 @@ export function Header() {
 
   const handleLinkClick = () => setMobileMenuOpen(false);
 
-  const renderNavLinks = (variant: "desktop" | "mobile" = "desktop") =>
-    navItems.map((item) => {
-      const isActive = currentPath.startsWith(item.href);
-      const variantClasses =
-        variant === "mobile"
-          ? "w-full justify-start rounded-lg px-4 py-3 text-base font-semibold"
-          : "rounded-md px-3 py-1 text-sm";
-      const activeClasses = isActive ? "bg-blue-600 text-white shadow" : "text-muted-foreground hover:bg-muted hover:text-foreground";
-
-      return (
-        <Link
-          key={item.label}
-          href={item.href}
-          onClick={handleLinkClick}
-          className={`flex items-center gap-2 transition ${variantClasses} ${activeClasses}`}
-          aria-current={isActive ? "page" : undefined}
-        >
-          <item.icon className="h-4 w-4" />
-          <span>{item.label}</span>
-        </Link>
-      );
-    });
-
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-muted/30 bg-background/90 px-4 backdrop-blur-md backdrop-saturate-[1.2] shadow-sm md:px-6">
-        <div className="flex items-center gap-3">
+      {/* Glass-panel top navigation */}
+      <nav className="sticky top-0 z-30 h-16 lg:h-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 px-4 lg:px-8 flex items-center justify-between shadow-sm">
+        {/* Left: Logo + Nav */}
+        <div className="flex items-center gap-6 lg:gap-10">
+          {/* Mobile menu toggle */}
           <Button
             variant="ghost"
             size="icon"
-            className="text-foreground md:hidden"
+            className="lg:hidden text-slate-600 dark:text-slate-400"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
             aria-label="Toggle navigation"
             aria-expanded={mobileMenuOpen}
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
+
+          {/* Logo */}
+          <Link href="/dashboard" className="flex items-center gap-2.5 flex-shrink-0">
             <Image src="/Fintrack(logo).png" alt="ExpenseWise Logo" width={28} height={28} />
-            <span className="text-base font-semibold tracking-wide md:text-lg">ExpenseWise</span>
+            <div>
+              <h1 className="font-black text-lg text-slate-900 dark:text-slate-50 tracking-tight leading-none">ExpenseWise</h1>
+              <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-[0.15em] leading-none mt-0.5" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                Wealth Management
+              </p>
+            </div>
+          </Link>
+
+          {/* Desktop nav links */}
+          <div className="hidden lg:flex items-center gap-1">
+            {navItems.map((item) => {
+              const isActive = currentPath.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center px-3 xl:px-4 py-2 rounded-lg transition-all duration-200 ${
+                    isActive
+                      ? "bg-slate-200/60 dark:bg-slate-800/60 text-slate-900 dark:text-slate-50"
+                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <item.icon className="h-[1.15rem] w-[1.15rem] mr-2 flex-shrink-0" />
+                  <span className="text-sm font-semibold whitespace-nowrap" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
-        <nav className="hidden flex-1 items-center justify-center gap-2 md:flex">
-          {renderNavLinks()}
-        </nav>
+        {/* Right: Search + Actions */}
+        <div className="flex items-center gap-2 lg:gap-4">
+          {/* Search */}
+          <div className="hidden xl:block relative w-52">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search data..."
+              className="w-full bg-slate-100 dark:bg-slate-900 border-none ring-1 ring-slate-200/50 dark:ring-slate-700/50 focus:ring-2 focus:ring-primary/30 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 transition-all outline-none"
+            />
+          </div>
 
-        <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
           <NotificationBell />
-          <InstallPwaButton />
           <ThemeSwitcher />
           <GlobalProjectSwitcher />
-          <ProfileSwitcher />
+
           {!isPremium && (
-            <Button asChild size="sm" className="hidden md:inline-flex bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+            <Button asChild size="sm" className="hidden xl:inline-flex bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg shadow-orange-500/20">
               <Link href="/upgrade">
-                <Crown className="mr-2 h-4 w-4" />
+                <Crown className="mr-1.5 h-3.5 w-3.5" />
                 Upgrade
               </Link>
             </Button>
           )}
-          <AddExpenseDialog>
-            <Button className="min-w-[150px] whitespace-nowrap md:min-w-0" size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Transaction
-            </Button>
-          </AddExpenseDialog>
-        </div>
-      </header>
 
+          <AddExpenseDialog>
+            <button className="hidden md:flex items-center bg-primary text-primary-foreground px-4 lg:px-5 py-2 lg:py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-primary/10 active:scale-95 transition-all duration-200">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Transaction
+            </button>
+          </AddExpenseDialog>
+
+          <ProfileSwitcher />
+        </div>
+      </nav>
+
+      {/* Mobile menu drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-muted/20 bg-background/95 px-4 py-3 shadow-sm">
-          <nav className="flex flex-col gap-2">{renderNavLinks("mobile")}</nav>
-          {!isPremium && (
-            <div className="mt-3">
-              <Button asChild className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
-                <Link href="/upgrade">
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Upgrade to Premium
-                </Link>
+        <div className="lg:hidden fixed inset-0 z-[50]">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+          <div className="relative w-72 h-full bg-white dark:bg-slate-950 shadow-2xl animate-slide-in">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Image src="/Fintrack(logo).png" alt="Logo" width={24} height={24} />
+                <span className="font-bold text-slate-900 dark:text-slate-50">ExpenseWise</span>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
+                <X className="h-5 w-5" />
               </Button>
             </div>
-          )}
+            <nav className="flex flex-col gap-1 p-3">
+              {navItems.map((item) => {
+                const isActive = currentPath.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={handleLinkClick}
+                    className={`flex items-center px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
+                      isActive
+                        ? "bg-slate-200/60 dark:bg-slate-800/60 text-slate-900 dark:text-slate-50"
+                        : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <item.icon className="h-5 w-5 mr-3" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            {!isPremium && (
+              <div className="mx-3 mt-4">
+                <Button asChild className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+                  <Link href="/upgrade" onClick={handleLinkClick}>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Upgrade to Premium
+                  </Link>
+                </Button>
+              </div>
+            )}
+            <div className="mx-3 mt-4">
+              <AddExpenseDialog>
+                <Button className="w-full" onClick={handleLinkClick}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Transaction
+                </Button>
+              </AddExpenseDialog>
+            </div>
+          </div>
         </div>
       )}
     </>

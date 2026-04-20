@@ -11,29 +11,31 @@ import { ref, onValue } from 'firebase/database';
 import { useUser } from '@/context/user-context';
 import { FeedChartQuestionnaire } from './feed-chart-questionnaire';
 
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 interface AnalyticsData {
   pondId: string;
   pondName: string;
   daysCycle: number;
-  avgFeedQuantity: number;
-  avgConsumption: number;
-  avgWastage: number;
+  avgFeedQuantity: number | null;
+  avgConsumption: number | null;
+  avgWastage: number | null;
   avgWaterQuality: {
-    ph: number;
-    do: number;
-    ammonia: number;
-    temp: number;
+    ph: number | null;
+    do: number | null;
+    ammonia: number | null;
+    temp: number | null;
   };
   trends: Array<{
     day: string;
-    feedQty: number;
-    consumption: number;
-    wastage: number;
-    growth: number;
+    feedQty: number | null;
+    consumption: number | null;
+    wastage: number | null;
+    growth: number | null;
   }>;
   healthIndicators: {
-    score: number;
-    status: 'excellent' | 'good' | 'fair' | 'poor';
+    score: number | null;
+    status: 'excellent' | 'good' | 'fair' | 'poor' | 'unknown';
     issues: string[];
   };
   recommendations: Array<{
@@ -42,8 +44,8 @@ interface AnalyticsData {
     description: string;
     impact: 'high' | 'medium' | 'low';
   }>;
-  predictedYield: number;
-  currentRoi: number;
+  predictedYield: number | null;
+  currentRoi: number | null;
 }
 
 export function AIAnalyticsDashboard({ 
@@ -65,6 +67,7 @@ export function AIAnalyticsDashboard({
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
   useEffect(() => {
     if (!selectedProfile || !pondId) {
@@ -83,6 +86,7 @@ export function AIAnalyticsDashboard({
         if (!logsData || Object.keys(logsData).length === 0) {
           // No data available yet
           setAnalytics(null);
+          setMissingFields([]);
           setLoading(false);
           return;
         }
@@ -91,67 +95,97 @@ export function AIAnalyticsDashboard({
         const logsArray = Object.values(logsData) as any[];
         const sortedLogs = logsArray.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
 
-        // Calculate aggregated metrics from database
         const totalLogs = sortedLogs.length;
-        const avgFeedQuantity = sortedLogs.reduce((sum, log) => sum + (log.feedingAmount || 0), 0) / totalLogs;
-        const avgConsumption = sortedLogs.reduce((sum, log) => sum + (log.feedingConsumption || 0), 0) / totalLogs;
-        const avgWastage = 100 - avgConsumption;
-        
-        // Water quality averages from real database
+        const toNumber = (value: unknown) => {
+          const numeric = typeof value === 'string' ? Number(value) : Number(value);
+          return Number.isFinite(numeric) ? numeric : null;
+        };
+
+        const averageOf = (field: string) => {
+          const values = sortedLogs
+            .map((log) => toNumber(log[field]))
+            .filter((value): value is number => value !== null);
+          if (values.length === 0) return null;
+          return values.reduce((sum, value) => sum + value, 0) / values.length;
+        };
+
+        const avgFeedQuantity = averageOf('feedingAmount');
+        const avgConsumption = averageOf('feedingConsumption');
+        const avgWastage = avgConsumption === null ? null : 100 - avgConsumption;
         const avgWaterQuality = {
-          ph: sortedLogs.reduce((sum, log) => sum + (log.ph || 7.5), 0) / totalLogs,
-          do: sortedLogs.reduce((sum, log) => sum + (log.do || 5), 0) / totalLogs,
-          ammonia: sortedLogs.reduce((sum, log) => sum + (log.ammonia || 0), 0) / totalLogs,
-          temp: sortedLogs.reduce((sum, log) => sum + (log.temperature || 28), 0) / totalLogs,
+          ph: averageOf('ph'),
+          do: averageOf('do'),
+          ammonia: averageOf('ammonia'),
+          temp: averageOf('temperature'),
         };
 
         // Create trends from actual database data (last 10 logs)
-        const trends = sortedLogs.slice(-10).map((log, index) => ({
-          day: `D${index + 1}`,
-          feedQty: log.feedingAmount || 0,
-          consumption: log.feedingConsumption || 0,
-          wastage: 100 - (log.feedingConsumption || 0),
-          growth: (log.feedingConsumption || 0) * 0.03, // Simple calculation based on consumption
-        }));
+        const trends = sortedLogs.slice(-10).map((log, index) => {
+          const feedQty = toNumber(log.feedingAmount);
+          const consumption = toNumber(log.feedingConsumption);
+          const wastage = consumption === null ? null : 100 - consumption;
+          const growth = toNumber(log.avgWeight ?? log.growthWeight);
+
+          return {
+            day: `D${index + 1}`,
+            feedQty,
+            consumption,
+            wastage,
+            growth,
+          };
+        });
 
         // Calculate health score based on actual parameters
-        let healthScore = 100;
+        let healthScore: number | null = 100;
         let issues: string[] = [];
 
-        if (avgWaterQuality.ph < 7.0 || avgWaterQuality.ph > 8.5) {
-          healthScore -= 15;
-          issues.push('pH levels outside optimal range');
-        }
-        if (avgWaterQuality.do < 4) {
-          healthScore -= 20;
-          issues.push('Dissolved oxygen critically low');
-        }
-        if (avgWaterQuality.ammonia > 0.5) {
-          healthScore -= 15;
-          issues.push('Ammonia levels elevated');
-        }
-        if (avgWaterQuality.temp < 27 || avgWaterQuality.temp > 31) {
-          healthScore -= 10;
-          issues.push('Temperature outside optimal range');
-        }
-        if (avgConsumption < 85) {
-          healthScore -= 10;
-          issues.push('Feed consumption below target');
-        }
+        if (
+          avgWaterQuality.ph === null ||
+          avgWaterQuality.do === null ||
+          avgWaterQuality.ammonia === null ||
+          avgWaterQuality.temp === null ||
+          avgConsumption === null
+        ) {
+          healthScore = null;
+          issues.push('Insufficient water quality or feeding data');
+        } else {
+          if (avgWaterQuality.ph < 7.0 || avgWaterQuality.ph > 8.5) {
+            healthScore -= 15;
+            issues.push('pH levels outside optimal range');
+          }
+          if (avgWaterQuality.do < 4) {
+            healthScore -= 20;
+            issues.push('Dissolved oxygen critically low');
+          }
+          if (avgWaterQuality.ammonia > 0.5) {
+            healthScore -= 15;
+            issues.push('Ammonia levels elevated');
+          }
+          if (avgWaterQuality.temp < 27 || avgWaterQuality.temp > 31) {
+            healthScore -= 10;
+            issues.push('Temperature outside optimal range');
+          }
+          if (avgConsumption < 85) {
+            healthScore -= 10;
+            issues.push('Feed consumption below target');
+          }
 
-        healthScore = Math.max(0, Math.min(100, healthScore));
+          healthScore = Math.max(0, Math.min(100, healthScore));
+        }
 
         // Determine health status
-        let healthStatus: 'excellent' | 'good' | 'fair' | 'poor' = 'good';
-        if (healthScore >= 90) healthStatus = 'excellent';
-        else if (healthScore >= 75) healthStatus = 'good';
-        else if (healthScore >= 60) healthStatus = 'fair';
-        else healthStatus = 'poor';
+        let healthStatus: 'excellent' | 'good' | 'fair' | 'poor' | 'unknown' = 'unknown';
+        if (healthScore !== null) {
+          if (healthScore >= 90) healthStatus = 'excellent';
+          else if (healthScore >= 75) healthStatus = 'good';
+          else if (healthScore >= 60) healthStatus = 'fair';
+          else healthStatus = 'poor';
+        }
 
         // Generate recommendations based on actual data
         const recommendations = [];
         
-        if (avgConsumption < 90) {
+        if (avgConsumption !== null && avgConsumption < 90) {
           recommendations.push({
             type: 'optimization' as const,
             title: 'Optimize Feeding Schedule',
@@ -160,7 +194,7 @@ export function AIAnalyticsDashboard({
           });
         }
         
-        if (avgWaterQuality.ammonia > 0.3) {
+        if (avgWaterQuality.ammonia !== null && avgWaterQuality.ammonia > 0.3) {
           recommendations.push({
             type: 'warning' as const,
             title: 'Water Quality Alert',
@@ -169,7 +203,7 @@ export function AIAnalyticsDashboard({
           });
         }
         
-        if (avgWaterQuality.do < 5) {
+        if (avgWaterQuality.do !== null && avgWaterQuality.do < 5) {
           recommendations.push({
             type: 'warning' as const,
             title: 'Low Dissolved Oxygen',
@@ -178,7 +212,7 @@ export function AIAnalyticsDashboard({
           });
         }
 
-        if (recommendations.length === 0) {
+        if (recommendations.length === 0 && healthScore !== null) {
           recommendations.push({
             type: 'suggestion' as const,
             title: 'Continue Current Management',
@@ -187,22 +221,30 @@ export function AIAnalyticsDashboard({
           });
         }
 
-        // Calculate predicted yield and ROI based on actual consumption
-        const predictedYield = (avgConsumption / 100) * 50000; // Simplified calculation
-        const currentRoi = Math.round((predictedYield / (avgFeedQuantity * 300)) * 100); // Assuming feed cost ~300/kg
+        const predictedYield = null;
+        const currentRoi = null;
+
+        const missing: string[] = [];
+        if (avgWaterQuality.ph === null) missing.push('pH');
+        if (avgWaterQuality.do === null) missing.push('DO');
+        if (avgWaterQuality.ammonia === null) missing.push('Ammonia');
+        if (avgWaterQuality.temp === null) missing.push('Temperature');
+        if (avgFeedQuantity === null) missing.push('Feed quantity');
+        if (avgConsumption === null) missing.push('Feed consumption');
+        setMissingFields(missing);
 
         const calculatedAnalytics: AnalyticsData = {
           pondId,
           pondName,
           daysCycle: totalLogs,
-          avgFeedQuantity: Math.round(avgFeedQuantity * 100) / 100,
-          avgConsumption: Math.round(avgConsumption * 100) / 100,
-          avgWastage: Math.round(avgWastage * 100) / 100,
+          avgFeedQuantity: avgFeedQuantity === null ? null : Math.round(avgFeedQuantity * 100) / 100,
+          avgConsumption: avgConsumption === null ? null : Math.round(avgConsumption * 100) / 100,
+          avgWastage: avgWastage === null ? null : Math.round(avgWastage * 100) / 100,
           avgWaterQuality: {
-            ph: Math.round(avgWaterQuality.ph * 10) / 10,
-            do: Math.round(avgWaterQuality.do * 10) / 10,
-            ammonia: Math.round(avgWaterQuality.ammonia * 100) / 100,
-            temp: Math.round(avgWaterQuality.temp),
+            ph: avgWaterQuality.ph === null ? null : Math.round(avgWaterQuality.ph * 10) / 10,
+            do: avgWaterQuality.do === null ? null : Math.round(avgWaterQuality.do * 10) / 10,
+            ammonia: avgWaterQuality.ammonia === null ? null : Math.round(avgWaterQuality.ammonia * 100) / 100,
+            temp: avgWaterQuality.temp === null ? null : Math.round(avgWaterQuality.temp),
           },
           trends,
           healthIndicators: {
@@ -211,8 +253,8 @@ export function AIAnalyticsDashboard({
             issues,
           },
           recommendations,
-          predictedYield: Math.round(predictedYield),
-          currentRoi: Math.max(0, currentRoi),
+          predictedYield,
+          currentRoi,
         };
 
         setAnalytics(calculatedAnalytics);
@@ -261,18 +303,35 @@ export function AIAnalyticsDashboard({
 
   if (!analytics) {
     return (
-      <FeedChartQuestionnaire
-        pondId={pondId}
-        pondName={pondName}
-        currentStock={currentStock}
-        pondArea={pondArea}
-        farmingType={farmingType}
-        cycleDay={cycleDay}
-        onDataSubmit={(data) => {
-          console.log('Feed chart designed:', data);
-          // Analytics will automatically update when daily logs are added
-        }}
-      />
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <Alert>
+            <AlertDescription>
+              No daily logs found for {pondName}. Add logs to unlock analytics.
+            </AlertDescription>
+          </Alert>
+          {DEMO_MODE && (
+            <div className="space-y-3">
+              <Alert className="border border-amber-200 bg-amber-50">
+                <AlertDescription>
+                  Demo mode: preview-only feed chart shown. Disable by setting NEXT_PUBLIC_DEMO_MODE=false.
+                </AlertDescription>
+              </Alert>
+              <FeedChartQuestionnaire
+                pondId={pondId}
+                pondName={pondName}
+                currentStock={currentStock}
+                pondArea={pondArea}
+                farmingType={farmingType}
+                cycleDay={cycleDay}
+                onDataSubmit={(data) => {
+                  console.log('Feed chart designed:', data);
+                }}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     );
   }
 
@@ -286,6 +345,8 @@ export function AIAnalyticsDashboard({
         return 'bg-yellow-100 border-yellow-300 text-yellow-800';
       case 'poor':
         return 'bg-red-100 border-red-300 text-red-800';
+      case 'unknown':
+        return 'bg-gray-100 border-gray-300 text-gray-800';
       default:
         return 'bg-gray-100 border-gray-300 text-gray-800';
     }
@@ -303,6 +364,14 @@ export function AIAnalyticsDashboard({
         return <Info className="h-4 w-4" />;
     }
   };
+
+  const formatMetric = (value: number | null, suffix = '') => {
+    if (value === null) return `--${suffix}`;
+    return `${value}${suffix}`;
+  };
+
+  const hasFeedTrend = analytics.trends.some((item) => item.feedQty !== null || item.consumption !== null);
+  const hasGrowthTrend = analytics.trends.some((item) => item.growth !== null);
 
   return (
     <div className="space-y-6">
@@ -330,7 +399,9 @@ export function AIAnalyticsDashboard({
             <CardTitle className="text-sm font-medium">Pond Health Score</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{analytics.healthIndicators.score}/100</div>
+            <div className="text-3xl font-bold">
+              {analytics.healthIndicators.score === null ? '--' : `${analytics.healthIndicators.score}/100`}
+            </div>
             <div className="flex items-center gap-1 mt-2">
               <CheckCircle className="h-4 w-4" />
               <p className="text-xs capitalize font-medium">{analytics.healthIndicators.status}</p>
@@ -343,7 +414,7 @@ export function AIAnalyticsDashboard({
             <CardTitle className="text-sm font-medium text-gray-600">📊 Avg Feed Qty</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-gray-900">{analytics.avgFeedQuantity} kg</div>
+            <div className="text-3xl font-bold text-gray-900">{formatMetric(analytics.avgFeedQuantity, ' kg')}</div>
             <p className="text-xs text-gray-600 mt-1">Daily average</p>
           </CardContent>
         </Card>
@@ -353,8 +424,8 @@ export function AIAnalyticsDashboard({
             <CardTitle className="text-sm font-medium text-gray-600">✅ Consumption Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">{analytics.avgConsumption}%</div>
-            <p className="text-xs text-gray-600 mt-1">Target: 95%</p>
+            <div className="text-3xl font-bold text-green-600">{formatMetric(analytics.avgConsumption, '%')}</div>
+            <p className="text-xs text-gray-600 mt-1">Based on recorded logs</p>
           </CardContent>
         </Card>
 
@@ -363,11 +434,21 @@ export function AIAnalyticsDashboard({
             <CardTitle className="text-sm font-medium text-gray-600">🎯 Predicted Yield</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{(analytics.predictedYield / 1000).toFixed(0)}K</div>
-            <p className="text-xs text-gray-600 mt-1">Shrimp at harvest</p>
+            <div className="text-3xl font-bold text-blue-600">
+              {analytics.predictedYield === null ? '--' : `${(analytics.predictedYield / 1000).toFixed(0)}K`}
+            </div>
+            <p className="text-xs text-gray-600 mt-1">Requires yield data</p>
           </CardContent>
         </Card>
       </div>
+
+      {missingFields.length > 0 && (
+        <Alert className="border border-amber-200 bg-amber-50">
+          <AlertDescription>
+            Missing data: {missingFields.join(', ')}. Add daily logs or upload documents to fill these fields.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Water Quality Summary */}
       <Card>
@@ -381,22 +462,22 @@ export function AIAnalyticsDashboard({
           <div className="grid gap-4 md:grid-cols-4">
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-xs text-gray-600 uppercase font-semibold">pH Level</p>
-              <p className="text-2xl font-bold text-blue-600 mt-1">{analytics.avgWaterQuality.ph}</p>
+              <p className="text-2xl font-bold text-blue-600 mt-1">{formatMetric(analytics.avgWaterQuality.ph)}</p>
               <p className="text-xs text-gray-500 mt-1">Optimal: 7.5-8.5</p>
             </div>
             <div className="p-3 bg-green-50 rounded-lg border border-green-200">
               <p className="text-xs text-gray-600 uppercase font-semibold">DO (ppm)</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">{analytics.avgWaterQuality.do}</p>
+              <p className="text-2xl font-bold text-green-600 mt-1">{formatMetric(analytics.avgWaterQuality.do)}</p>
               <p className="text-xs text-gray-500 mt-1">Optimal: {'>'} 4 ppm</p>
             </div>
             <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
               <p className="text-xs text-gray-600 uppercase font-semibold">Ammonia (ppm)</p>
-              <p className="text-2xl font-bold text-orange-600 mt-1">{analytics.avgWaterQuality.ammonia}</p>
+              <p className="text-2xl font-bold text-orange-600 mt-1">{formatMetric(analytics.avgWaterQuality.ammonia)}</p>
               <p className="text-xs text-gray-500 mt-1">Optimal: {'<'} 0.5 ppm</p>
             </div>
             <div className="p-3 bg-red-50 rounded-lg border border-red-200">
               <p className="text-xs text-gray-600 uppercase font-semibold">Temp (°C)</p>
-              <p className="text-2xl font-bold text-red-600 mt-1">{analytics.avgWaterQuality.temp}</p>
+              <p className="text-2xl font-bold text-red-600 mt-1">{formatMetric(analytics.avgWaterQuality.temp)}</p>
               <p className="text-xs text-gray-500 mt-1">Optimal: 28-30°C</p>
             </div>
           </div>
@@ -412,18 +493,22 @@ export function AIAnalyticsDashboard({
           <CardDescription>Daily feed quantity and consumption tracking</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={analytics.trends}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-              <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#666" />
-              <YAxis yAxisId="left" label={{ value: 'Feed (kg)', angle: -90, position: 'insideLeft' }} stroke="#666" />
-              <YAxis yAxisId="right" orientation="right" label={{ value: 'Consumption %', angle: 90, position: 'insideRight' }} stroke="#666" />
-              <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }} />
-              <Legend />
-              <Line yAxisId="left" type="monotone" dataKey="feedQty" stroke="#3b82f6" name="Feed Qty (kg)" strokeWidth={2} dot={{ r: 3 }} />
-              <Line yAxisId="right" type="monotone" dataKey="consumption" stroke="#10b981" name="Consumption %" strokeWidth={2} dot={{ r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          {hasFeedTrend ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={analytics.trends}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#666" />
+                <YAxis yAxisId="left" label={{ value: 'Feed (kg)', angle: -90, position: 'insideLeft' }} stroke="#666" />
+                <YAxis yAxisId="right" orientation="right" label={{ value: 'Consumption %', angle: 90, position: 'insideRight' }} stroke="#666" />
+                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }} />
+                <Legend />
+                <Line yAxisId="left" type="monotone" dataKey="feedQty" stroke="#3b82f6" name="Feed Qty (kg)" strokeWidth={2} dot={{ r: 3 }} />
+                <Line yAxisId="right" type="monotone" dataKey="consumption" stroke="#10b981" name="Consumption %" strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-sm text-muted-foreground">No feed trend data available yet.</div>
+          )}
         </CardContent>
       </Card>
 
@@ -436,16 +521,20 @@ export function AIAnalyticsDashboard({
           <CardDescription>Shrimp growth progression correlated with feeding</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={analytics.trends}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-              <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#666" />
-              <YAxis label={{ value: 'Average Weight (g)', angle: -90, position: 'insideLeft' }} stroke="#666" />
-              <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }} formatter={(value) => `${value}g`} />
-              <Legend />
-              <Line type="monotone" dataKey="growth" stroke="#8b5cf6" name="Avg Weight" strokeWidth={2} dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          {hasGrowthTrend ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={analytics.trends}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#666" />
+                <YAxis label={{ value: 'Average Weight (g)', angle: -90, position: 'insideLeft' }} stroke="#666" />
+                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }} formatter={(value) => `${value}g`} />
+                <Legend />
+                <Line type="monotone" dataKey="growth" stroke="#8b5cf6" name="Avg Weight" strokeWidth={2} dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-sm text-muted-foreground">No growth data recorded yet.</div>
+          )}
         </CardContent>
       </Card>
 
@@ -495,7 +584,7 @@ export function AIAnalyticsDashboard({
             <div className="p-3 bg-green-50 rounded border border-green-200">
               <p className="text-sm text-green-800 flex items-center gap-2">
                 <CheckCircle className="h-4 w-4" />
-                All metrics are optimal. Continue current practices.
+                No recommendations available yet. Add more logs to enable analysis.
               </p>
             </div>
           )}
@@ -509,8 +598,10 @@ export function AIAnalyticsDashboard({
             <CardTitle className="text-sm font-medium text-gray-600">📈 Predicted Yield</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{(analytics.predictedYield / 1000).toFixed(0)}K</div>
-            <p className="text-xs text-green-600 mt-1">+8% vs target</p>
+            <div className="text-2xl font-bold text-gray-900">
+              {analytics.predictedYield === null ? '--' : `${(analytics.predictedYield / 1000).toFixed(0)}K`}
+            </div>
+            <p className="text-xs text-gray-600 mt-1">Requires yield data</p>
           </CardContent>
         </Card>
 
@@ -519,8 +610,10 @@ export function AIAnalyticsDashboard({
             <CardTitle className="text-sm font-medium text-gray-600">💰 Current ROI</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{analytics.currentRoi}%</div>
-            <p className="text-xs text-gray-600 mt-1">Return on Investment</p>
+            <div className="text-2xl font-bold text-green-600">
+              {analytics.currentRoi === null ? '--' : `${analytics.currentRoi}%`}
+            </div>
+            <p className="text-xs text-gray-600 mt-1">Requires cost data</p>
           </CardContent>
         </Card>
 
@@ -541,9 +634,8 @@ export function AIAnalyticsDashboard({
         <AlertDescription className="ml-2">
           <p className="font-semibold text-gray-900">📊 System Insights</p>
           <p className="text-sm text-gray-700 mt-2">
-            All analytics are automatically generated from daily log data collected for {pondName}. 
-            The system continuously analyzes trends, water quality, feeding patterns, and growth metrics 
-            to provide real-time AI recommendations without requiring manual data entry.
+            Analytics are generated only from recorded daily logs for {pondName}. Missing fields will appear
+            as placeholders until data is added.
           </p>
         </AlertDescription>
       </Alert>

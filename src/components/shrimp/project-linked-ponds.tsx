@@ -64,9 +64,10 @@ export function ProjectLinkedPonds({
 }: ProjectLinkedPondsProps) {
   const totalStock = linkedPonds.reduce((sum, pond) => sum + pond.currentStock, 0);
   const activePonds = linkedPonds.filter((pond) => pond.status === 'active').length;
-  const avgSurvivalRate = linkedPonds.length > 0
-    ? Math.round(linkedPonds.reduce((sum, pond) => sum + pond.metrics.survivalRate, 0) / linkedPonds.length)
-    : 0;
+  const pondsWithMetrics = linkedPonds.filter(pond => pond.metrics?.survivalRate);
+  const avgSurvivalRate = pondsWithMetrics.length > 0
+    ? Math.round(pondsWithMetrics.reduce((sum, pond) => sum + pond.metrics.survivalRate, 0) / pondsWithMetrics.length)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -180,7 +181,9 @@ export function ProjectLinkedPonds({
                   <div className="flex items-center gap-3">
                     <div className="text-right text-xs">
                       <p className="font-semibold">{(pond.currentStock / 1000).toFixed(1)}K</p>
-                      <p className="text-muted-foreground">{pond.metrics.survivalRate}% survival</p>
+                      <p className="text-muted-foreground">
+                        {pond.metrics?.survivalRate ? `${pond.metrics.survivalRate}% survival` : '--'}
+                      </p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
@@ -223,15 +226,15 @@ function LinkedPondCard({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return '🟢 Active';
+        return 'Active';
       case 'preparing':
-        return '🟡 Preparing';
+        return 'Preparing';
       case 'harvesting':
-        return '🟠 Harvesting';
+        return 'Harvesting';
       case 'resting':
-        return '⚫ Resting';
+        return 'Resting';
       default:
-        return '⚪ Unknown';
+        return 'Unknown';
     }
   };
 
@@ -303,7 +306,7 @@ function LinkedPondCard({
           </div>
           <div className="p-2 rounded bg-muted">
             <p className="text-muted-foreground text-xs">Survival Rate</p>
-            <p className="font-semibold">{pond.metrics.survivalRate}%</p>
+            <p className="font-semibold">{pond.metrics?.survivalRate ? `${pond.metrics.survivalRate}%` : '--'}</p>
           </div>
         </div>
 
@@ -322,7 +325,7 @@ function LinkedPondCard({
         <div className="grid grid-cols-3 gap-1 text-center text-xs">
           <div className="p-1.5 rounded bg-muted">
             <p className="text-muted-foreground">FCR</p>
-            <p className="font-semibold">{pond.metrics.fcr}</p>
+            <p className="font-semibold">{pond.metrics?.fcr || '--'}</p>
           </div>
           <div className="p-1.5 rounded bg-muted">
             <p className="text-muted-foreground">Temp</p>

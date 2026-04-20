@@ -183,7 +183,7 @@ function TransactionsPageContent() {
     const [popoverSelectedProjects, setPopoverSelectedProjects] = useState<string[]>([]);
     
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-    const [sortBy, setSortBy] = useState("createdAt");
+    const [sortBy, setSortBy] = useState("date");
     
     // Other States
     const [visibleCount, setVisibleCount] = useState(TRANSACTIONS_PER_PAGE);
@@ -197,6 +197,11 @@ function TransactionsPageContent() {
             setSelectedStatuses(prev => [...new Set([...prev, statusFromUrl])]);
         }
     }, [searchParams]);
+
+    // Reset pagination whenever any filter or sort changes
+    useEffect(() => {
+        setVisibleCount(TRANSACTIONS_PER_PAGE);
+    }, [searchTerm, selectedCategories, selectedStatuses, selectedProjectId, popoverSelectedProjects, sortBy, selectedDate]);
 
     useEffect(() => {
         // Sync the popover multi-select with the global single select
@@ -246,11 +251,18 @@ function TransactionsPageContent() {
             if (sortBy === 'createdAt') {
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             }
+            if (sortBy === 'amountDesc') {
+                return b.amount - a.amount;
+            }
+            if (sortBy === 'amountAsc') {
+                return a.amount - b.amount;
+            }
             if (sortBy === 'project') {
                 const projectA = projects.find(p => p.id === a.projectId)?.name || '';
                 const projectB = projects.find(p => p.id === b.projectId)?.name || '';
                 return projectA.localeCompare(projectB);
             }
+            // Default: sort by transaction date desc
             return new Date(b.date).getTime() - new Date(a.date).getTime();
         })
     },
@@ -546,20 +558,28 @@ function TransactionsPageContent() {
 
                              <Separator />
 
-                            <div className="grid gap-2">
-                                <Label>Sort By</Label>
-                                <RadioGroup value={sortBy} onValueChange={setSortBy}>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="createdAt" id="sort-createdAt" />
-                                        <Label htmlFor="sort-createdAt" className="font-normal">Date Added</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
+                             <div className="grid gap-2">
+                                <Label className="text-sm font-semibold">Sort By</Label>
+                                <RadioGroup value={sortBy} onValueChange={setSortBy} className="gap-1">
+                                    <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
                                         <RadioGroupItem value="date" id="sort-date" />
-                                        <Label htmlFor="sort-date">Expense Date</Label>
+                                        <Label htmlFor="sort-date" className="font-normal cursor-pointer">Transaction Date (newest first)</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
+                                        <RadioGroupItem value="createdAt" id="sort-createdAt" />
+                                        <Label htmlFor="sort-createdAt" className="font-normal cursor-pointer">Date Added (newest first)</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
+                                        <RadioGroupItem value="amountDesc" id="sort-amountDesc" />
+                                        <Label htmlFor="sort-amountDesc" className="font-normal cursor-pointer">Amount (highest first)</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
+                                        <RadioGroupItem value="amountAsc" id="sort-amountAsc" />
+                                        <Label htmlFor="sort-amountAsc" className="font-normal cursor-pointer">Amount (lowest first)</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
                                         <RadioGroupItem value="project" id="sort-project" />
-                                        <Label htmlFor="sort-project" className="font-normal">Project</Label>
+                                        <Label htmlFor="sort-project" className="font-normal cursor-pointer">Project (A–Z)</Label>
                                     </div>
                                 </RadioGroup>
                             </div>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useUser } from '@/context/user-context';
 
 interface FarmStatusFormProps {
   pondName: string;
@@ -13,36 +14,38 @@ interface FarmStatusFormProps {
 }
 
 export function FarmStatusForm({ pondName, pondId }: FarmStatusFormProps) {
+  const { selectedProfile } = useUser();
   const [status, setStatus] = useState<'excellent' | 'good' | 'fair' | 'poor' | null>(null);
   const [symptoms, setSymptoms] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [aiResponse, setAiResponse] = useState<string>('');
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
   const statusOptions = [
     {
       value: 'excellent' as const,
-      label: '✨ Excellent',
+      label: 'Excellent',
       description: 'Perfect conditions, no visible issues',
       color: 'bg-green-100 border-green-500 hover:bg-green-200',
       badge: 'success'
     },
     {
       value: 'good' as const,
-      label: '👍 Good',
+      label: 'Good',
       description: 'Minor issues, manageable',
       color: 'bg-blue-100 border-blue-500 hover:bg-blue-200',
       badge: 'default'
     },
     {
       value: 'fair' as const,
-      label: '⚠️ Fair',
+      label: 'Fair',
       description: 'Several issues, needs attention',
       color: 'bg-orange-100 border-orange-500 hover:bg-orange-200',
       badge: 'secondary'
     },
     {
       value: 'poor' as const,
-      label: '🚨 Poor',
+      label: 'Poor',
       description: 'Critical issues, immediate action needed',
       color: 'bg-red-100 border-red-500 hover:bg-red-200',
       badge: 'destructive'
@@ -76,12 +79,19 @@ export function FarmStatusForm({ pondName, pondId }: FarmStatusFormProps) {
       return;
     }
 
+    if (!selectedProfile) {
+      setAiResponse('No profile selected. Unable to analyze farm status.');
+      setMissingFields(['profile']);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch('/api/ai/analyze-farm-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          profile: selectedProfile,
           pondId,
           pondName,
           status,
@@ -93,8 +103,10 @@ export function FarmStatusForm({ pondName, pondId }: FarmStatusFormProps) {
 
       const data = await response.json();
       setAiResponse(data.recommendations);
+      setMissingFields(data.missingFields || []);
     } catch (err) {
       setAiResponse('Failed to get recommendations. Please try again.');
+      setMissingFields([]);
     } finally {
       setLoading(false);
     }
@@ -145,7 +157,7 @@ export function FarmStatusForm({ pondName, pondId }: FarmStatusFormProps) {
                       : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
                   }`}
                 >
-                  {symptoms.includes(symptom) ? '✓ ' : ''}{symptom}
+                  {symptoms.includes(symptom) ? '• ' : ''}{symptom}
                 </button>
               ))}
             </div>
@@ -166,7 +178,7 @@ export function FarmStatusForm({ pondName, pondId }: FarmStatusFormProps) {
               Analyzing Farm Status...
             </>
           ) : (
-            '🔍 Get AI Recommendations'
+            'Get AI Recommendations'
           )}
         </Button>
       )}
@@ -181,6 +193,15 @@ export function FarmStatusForm({ pondName, pondId }: FarmStatusFormProps) {
           )}
           <AlertDescription className={`ml-2 ${aiResponse.includes('critical') ? 'text-red-800' : 'text-green-800'}`}>
             {aiResponse}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {missingFields.length > 0 && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="ml-2 text-amber-800">
+            Missing data: {missingFields.join(', ')}. Add daily logs or upload reports to improve recommendations.
           </AlertDescription>
         </Alert>
       )}

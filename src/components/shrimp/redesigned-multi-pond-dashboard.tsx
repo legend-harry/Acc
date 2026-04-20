@@ -62,8 +62,8 @@ interface AggregatedMetrics {
   activePonds: number;
   totalSeed: number;
   totalCurrent: number;
-  avgFCR: number;
-  avgSurvivalRate: number;
+  avgFCR: number | null;
+  avgSurvivalRate: number | null;
   criticalAlerts: number;
   warnings: number;
 }
@@ -87,15 +87,22 @@ export function MultiPondDashboard({
     const activePonds = ponds.filter((p) => p.status === 'active');
     const totalSeed = ponds.reduce((sum, p) => sum + p.seedAmount, 0);
     const totalCurrent = ponds.reduce((sum, p) => sum + p.currentStock, 0);
-    const avgFCR = ponds.length > 0 ? (ponds.reduce((sum, p) => sum + p.metrics.fcr, 0) / ponds.length).toFixed(2) : 0;
-    const avgSurvivalRate = ponds.length > 0 ? Math.round((ponds.reduce((sum, p) => sum + p.metrics.survivalRate, 0) / ponds.length)) : 0;
+    
+    // Only calculate metrics from ponds that have metrics data
+    const pondsWithMetrics = ponds.filter(p => p.metrics && p.metrics.fcr);
+    const avgFCR = pondsWithMetrics.length > 0 
+      ? (pondsWithMetrics.reduce((sum, p) => sum + p.metrics.fcr, 0) / pondsWithMetrics.length).toFixed(2) 
+      : null;
+    const avgSurvivalRate = pondsWithMetrics.length > 0 
+      ? Math.round((pondsWithMetrics.reduce((sum, p) => sum + p.metrics.survivalRate, 0) / pondsWithMetrics.length)) 
+      : null;
 
     setMetrics({
       totalPonds: ponds.length,
       activePonds: activePonds.length,
       totalSeed,
       totalCurrent,
-      avgFCR: parseFloat(avgFCR as string),
+      avgFCR: avgFCR ? parseFloat(avgFCR as string) : null,
       avgSurvivalRate,
       criticalAlerts: ponds.filter((p) => p.waterQuality === 'poor').length,
       warnings: ponds.filter((p) => p.waterQuality === 'fair').length,
@@ -182,8 +189,10 @@ export function MultiPondDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{metrics.avgFCR}</div>
-            <p className="text-xs text-muted-foreground mt-1">Average across all ponds</p>
+            <div className="text-3xl font-bold">{metrics.avgFCR === null ? '--' : metrics.avgFCR}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {metrics.avgFCR === null ? 'Add daily logs to calculate' : 'Average across all ponds'}
+            </p>
           </CardContent>
         </Card>
 
@@ -192,8 +201,10 @@ export function MultiPondDashboard({
             <CardTitle className="text-sm font-medium text-muted-foreground">Survival Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{metrics.avgSurvivalRate}%</div>
-            <p className="text-xs text-muted-foreground mt-1">Farm average</p>
+            <div className="text-3xl font-bold">{metrics.avgSurvivalRate === null ? '--' : `${metrics.avgSurvivalRate}%`}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {metrics.avgSurvivalRate === null ? 'Add daily logs to calculate' : 'Farm average'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -365,9 +376,11 @@ function PondCard({
         <div>
           <div className="flex justify-between items-center mb-1 text-xs">
             <span className="text-muted-foreground">Survival Rate</span>
-            <span className="font-semibold">{pond.metrics.survivalRate}%</span>
+            <span className="font-semibold">
+              {pond.metrics?.survivalRate ? `${pond.metrics.survivalRate}%` : '--'}
+            </span>
           </div>
-          <Progress value={pond.metrics.survivalRate} className="h-2" />
+          <Progress value={pond.metrics?.survivalRate || 0} className="h-2" />
         </div>
 
         {/* Environmental Data */}
@@ -459,11 +472,11 @@ function PondListItem({
               </div>
               <div>
                 <p className="text-muted-foreground">FCR</p>
-                <p className="font-semibold text-foreground">{pond.metrics.fcr}</p>
+                <p className="font-semibold text-foreground">{pond.metrics?.fcr || '--'}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Survival</p>
-                <p className="font-semibold text-foreground">{pond.metrics.survivalRate}%</p>
+                <p className="font-semibold text-foreground">{pond.metrics?.survivalRate ? `${pond.metrics.survivalRate}%` : '--'}</p>
               </div>
             </div>
           </div>

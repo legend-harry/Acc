@@ -77,7 +77,7 @@ function ExportButton({ transactions }: { transactions: any[] }) {
         const rows = transactions.map(t => [
             t.id,
             formatDate(t.date),
-            t.createdAt.toLocaleString(),
+            t.createdAt ? new Date(t.createdAt).toLocaleString() : '',
             t.title,
             t.description,
             t.category,

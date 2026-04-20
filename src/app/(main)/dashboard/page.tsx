@@ -10,6 +10,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Project } from "@/types";
 import { useProjectFilter } from "@/context/project-filter-context";
+import { DataCompletenessPanel } from "@/components/data-completeness-panel";
 
 export default function DashboardPage() {
   const { transactions, loading: transactionsLoading } = useTransactions();
@@ -95,6 +96,9 @@ export default function DashboardPage() {
           </div>
       ) : (
         <>
+            <div className="mb-6">
+              <DataCompletenessPanel showFinance showShrimp={false} />
+            </div>
             <DashboardClientContent 
                 transactions={filteredData.transactions} 
                 budgets={filteredData.budgets}

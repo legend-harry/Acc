@@ -113,21 +113,21 @@ export function PondDetailView({ pond, onBack, onEdit }: PondDetailViewProps) {
         <Card>
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">FCR</p>
-            <p className="text-2xl font-bold">{pond.metrics.fcr}</p>
+            <p className="text-2xl font-bold">{pond.metrics?.fcr || '--'}</p>
             <Badge variant="outline" className="mt-1 text-xs">Feed Conversion</Badge>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">Survival Rate</p>
-            <p className="text-2xl font-bold">{pond.metrics.survivalRate}%</p>
-            <Progress value={pond.metrics.survivalRate} className="mt-2 h-1" />
+            <p className="text-2xl font-bold">{pond.metrics?.survivalRate ? `${pond.metrics.survivalRate}%` : '--'}</p>
+            <Progress value={pond.metrics?.survivalRate || 0} className="mt-2 h-1" />
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">Avg Weight</p>
-            <p className="text-2xl font-bold">{pond.metrics.avgWeight}g</p>
+            <p className="text-2xl font-bold">{pond.metrics?.avgWeight ? `${pond.metrics.avgWeight}g` : '--'}</p>
             <p className="text-xs text-muted-foreground mt-1">Est. per shrimp</p>
           </CardContent>
         </Card>
@@ -262,16 +262,16 @@ export function PondDetailView({ pond, onBack, onEdit }: PondDetailViewProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Feed Conversion Ratio</span>
-                  <span className="font-semibold">{pond.metrics.fcr}</span>
+                  <span className="font-semibold">{pond.metrics?.fcr || '--'}</span>
                 </div>
-                <Progress value={80} className="h-2" />
+                <Progress value={pond.metrics?.fcr ? 80 : 0} className="h-2" />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Survival Rate</span>
-                  <span className="font-semibold">{pond.metrics.survivalRate}%</span>
+                  <span className="font-semibold">{pond.metrics?.survivalRate ? `${pond.metrics.survivalRate}%` : '--'}</span>
                 </div>
-                <Progress value={pond.metrics.survivalRate} className="h-2" />
+                <Progress value={pond.metrics?.survivalRate || 0} className="h-2" />
               </div>
             </CardContent>
           </Card>

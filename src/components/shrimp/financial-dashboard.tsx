@@ -4,11 +4,15 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { DollarSign, TrendingUp, TrendingDown, PieChart as PieChartIcon, AlertTriangle } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, PieChart as PieChartIcon, AlertTriangle, Plus, Link as LinkIcon } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import { useUser } from '@/context/user-context';
+import { useProjects } from '@/hooks/use-database';
+import { usePonds } from '@/hooks/use-shrimp';
+import { AddExpenseDialog } from '@/components/add-expense-dialog';
 
 interface FinancialMetrics {
   totalRevenue: number;
@@ -21,9 +25,15 @@ interface FinancialMetrics {
 
 export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string; linkedProjectId?: string | null }) {
   const { selectedProfile } = useUser();
+  const { projects } = useProjects();
+  const { ponds, updatePond } = usePonds();
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<FinancialMetrics | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const activePondData = ponds.find(p => p.id === pondId);
+  const linkedProject = projects.find(p => p.id === linkedProjectId);
+  const activeProjects = projects.filter(p => !p.archived);
 
   useEffect(() => {
     if (!selectedProfile) {
@@ -33,27 +43,26 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
     }
 
     if (!linkedProjectId) {
-      setError('This pond is not linked to any project');
       setLoading(false);
       return;
     }
 
-    // Fetch transactions from the linked project
-    const transactionsRef = ref(db, `projects/${linkedProjectId}/transactions`);
+    // Read from the root transactions node, filtered by projectId
+    const transactionsRef = ref(db, 'transactions');
     
     const unsubscribe = onValue(transactionsRef, (snapshot) => {
       try {
-        const transactionsData = snapshot.val();
+        const allData = snapshot.val();
         
-        if (!transactionsData) {
-          // No transaction data yet
+        if (!allData) {
           setMetrics(null);
           setLoading(false);
           return;
         }
 
-        // Convert to array
-        const transactions = Object.values(transactionsData) as any[];
+        // Filter transactions for this pond's linked project
+        const allTransactions = Object.values(allData) as any[];
+        const transactions = allTransactions.filter(tx => tx.projectId === linkedProjectId);
 
         // Calculate metrics from database
         let totalRevenue = 0;
@@ -154,21 +163,60 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
     );
   }
 
-  if (!metrics) {
+  if (!linkedProjectId) {
     return (
-      <Card>
+      <Card className="border-amber-200 bg-amber-50">
         <CardContent className="pt-6">
-          <Alert>
-            <AlertDescription>
-              No financial transactions recorded yet for this pond.
-            </AlertDescription>
-          </Alert>
+          <div className="text-center py-6 space-y-4">
+            <LinkIcon className="h-10 w-10 text-amber-500 mx-auto" />
+            <div>
+              <p className="font-semibold text-amber-900">No Project Linked</p>
+              <p className="text-sm text-amber-700 mt-1">
+                Link this pond to a project to track expenses and revenue, then add transactions against that project.
+              </p>
+            </div>
+            {activeProjects.length > 0 && (
+              <div className="flex gap-2 justify-center flex-wrap">
+                {activeProjects.slice(0, 5).map(p => (
+                  <Button
+                    key={p.id}
+                    size="sm"
+                    variant="outline"
+                    className="border-amber-400 text-amber-900"
+                    onClick={() => updatePond(pondId, { linkedProjectId: p.id })}
+                  >
+                    Link to {p.name}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+  if (!metrics) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8 space-y-4">
+            <p className="text-gray-600 font-medium">
+              No transactions yet for <span className="font-bold">{linkedProject?.name || linkedProjectId}</span>
+            </p>
+            <p className="text-sm text-gray-500">Add income or expense transactions linked to this project to see financial analytics here.</p>
+            <AddExpenseDialog>
+              <Button className="gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white">
+                <Plus className="h-4 w-4" /> Add Transaction
+              </Button>
+            </AddExpenseDialog>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const COLORS = ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#be185d', '#65a30d', '#ea580c', '#6366f1'];
 
   // Convert cost by category to array for charts
   const costDataArray = Object.entries(metrics.costByCategory).map(([name, value]) => ({
@@ -179,15 +227,18 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
 
   return (
     <div className="space-y-6">
-      {/* Pond Identifier */}
-      <Card className="border-blue-200 bg-blue-50">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-600">📍 Financial Analytics for:</span>
-            <Badge className="bg-blue-600">{pondId}</Badge>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <Badge className="bg-blue-600">{activePondData?.name || pondId}</Badge>
+          {linkedProject && <span className="text-sm text-gray-500">→ <span className="font-medium text-gray-700">{linkedProject.name}</span></span>}
+        </div>
+        <AddExpenseDialog>
+          <Button size="sm" className="gap-1.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white">
+            <Plus className="h-3.5 w-3.5" /> Add Transaction
+          </Button>
+        </AddExpenseDialog>
+      </div>
 
       {/* Financial Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -249,9 +300,10 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
       {/* Monthly Trend */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            📈 Monthly Revenue vs Expenses - Pond {pondId}
-          </CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              Monthly Revenue vs Expenses
+            </CardTitle>
           <CardDescription>Trend analysis from database transactions</CardDescription>
         </CardHeader>
         <CardContent>
@@ -261,7 +313,7 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#666" />
                 <YAxis label={{ value: 'Amount (₹)', angle: -90, position: 'insideLeft' }} stroke="#666" />
-                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }} formatter={(value) => `₹${value.toLocaleString()}`} />
+                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }} formatter={(value) => `₹${(Number(value) || 0).toLocaleString()}`} />
                 <Legend />
                 <Line type="monotone" dataKey="revenue" stroke="#10b981" name="Revenue" strokeWidth={2} dot={{ r: 4 }} />
                 <Line type="monotone" dataKey="expenses" stroke="#ef4444" name="Expenses" strokeWidth={2} dot={{ r: 4 }} />
@@ -276,36 +328,55 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
         </CardContent>
       </Card>
 
-      {/* Cost Breakdown Pie Chart */}
+      {/* Cost Breakdown Donut Chart */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              🥧 Cost Breakdown - {pondId}
+              <PieChartIcon className="h-5 w-5 text-blue-500" />
+              Cost Breakdown
             </CardTitle>
-            <CardDescription>Expense distribution from database</CardDescription>
+            <CardDescription>Expense distribution by category</CardDescription>
           </CardHeader>
           <CardContent>
             {costDataArray.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={costDataArray}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percentage }) => `${name} ${percentage}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {costDataArray.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="flex flex-col items-center gap-4">
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={costDataArray}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={95}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {costDataArray.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value) => `\u20B9${(Number(value) || 0).toLocaleString()}`}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '13px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Legend */}
+                <div className="w-full grid grid-cols-2 gap-x-4 gap-y-1.5">
+                  {costDataArray.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <div
+                        className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                      />
+                      <span className="text-gray-600 truncate flex-1">{item.name}</span>
+                      <span className="text-gray-900 font-medium tabular-nums">{item.percentage}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className="h-80 flex items-center justify-center text-gray-500">
                 No expense data available yet
@@ -318,7 +389,8 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              💰 Expense Details - {pondId}
+              <DollarSign className="h-5 w-5 text-emerald-500" />
+              Expense Details
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -356,22 +428,29 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
       {/* Recommendations */}
       <Card className="border-green-200 bg-green-50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            💡 Financial Recommendations for {pondId}
-          </CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              Financial Recommendations
+            </CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="space-y-2">
             <li className="flex gap-2">
-              <Badge variant="outline" className="bg-green-100 text-green-800 flex-shrink-0">✓</Badge>
+              <Badge variant="outline" className="bg-green-100 text-green-800 flex-shrink-0">
+                <TrendingUp className="h-3 w-3" />
+              </Badge>
               <span className="text-sm text-gray-700">Track all expenses in database to enable financial analysis</span>
             </li>
             <li className="flex gap-2">
-              <Badge variant="outline" className="bg-blue-100 text-blue-800 flex-shrink-0">ℹ️</Badge>
+              <Badge variant="outline" className="bg-blue-100 text-blue-800 flex-shrink-0">
+                <AlertTriangle className="h-3 w-3" />
+              </Badge>
               <span className="text-sm text-gray-700">Record revenue transactions to monitor profitability</span>
             </li>
             <li className="flex gap-2">
-              <Badge variant="outline" className="bg-orange-100 text-orange-800 flex-shrink-0">⚠️</Badge>
+              <Badge variant="outline" className="bg-orange-100 text-orange-800 flex-shrink-0">
+                <AlertTriangle className="h-3 w-3" />
+              </Badge>
               <span className="text-sm text-gray-700">Review expense categories for cost optimization opportunities</span>
             </li>
           </ul>

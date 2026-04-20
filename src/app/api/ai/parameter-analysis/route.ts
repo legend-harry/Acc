@@ -3,88 +3,109 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/firebase';
+import { get, ref } from 'firebase/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const { pondId } = await request.json();
+    const { pondId, profile } = await request.json();
 
-    // TODO: Integrate with actual parameter history from database
+    if (!pondId || !profile) {
+      return NextResponse.json(
+        { error: 'Missing pondId or profile' },
+        { status: 400 }
+      );
+    }
 
-    const mockAnalyses = [
-      {
-        parameter: 'Ammonia (NH₃)',
-        currentValue: 0.35,
-        optimalRange: [0, 0.25],
-        trend: 'rising',
-        trendPercentage: 8,
+    const logsRef = ref(db, `shrimp/${profile}/daily-logs/${pondId}`);
+    const snapshot = await get(logsRef);
+    const logsData = snapshot.val();
+
+    if (!logsData) {
+      return NextResponse.json(
+        { analyses: [], historicalData: [], missingFields: ['dailyLogs'] },
+        { status: 200 }
+      );
+    }
+
+    const logsArray = Object.values(logsData) as any[];
+    const sortedLogs = logsArray.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
+    const recentLogs = sortedLogs.slice(-14);
+
+    const toNumber = (value: unknown) => {
+      const numeric = typeof value === 'string' ? Number(value) : Number(value);
+      return Number.isFinite(numeric) ? numeric : null;
+    };
+
+    const seriesFor = (field: string) => {
+      return recentLogs
+        .map((log) => toNumber(log[field]))
+        .filter((value): value is number => value !== null);
+    };
+
+    const buildAnalysis = (label: string, field: string) => {
+      const values = seriesFor(field);
+      if (values.length === 0) return null;
+
+      const currentValue = values[values.length - 1];
+      const previousAvg = values.length > 1 ? values.slice(0, -1).reduce((sum, value) => sum + value, 0) / (values.length - 1) : currentValue;
+      const delta = currentValue - previousAvg;
+      const trendPercentage = previousAvg === 0 ? 0 : (delta / previousAvg) * 100;
+      const trend = delta > 0.02 ? 'rising' : delta < -0.02 ? 'falling' : 'stable';
+
+      const slope = values.length > 1 ? (values[values.length - 1] - values[0]) / (values.length - 1) : 0;
+      const predicted24h = currentValue + slope;
+      const predicted48h = currentValue + slope * 2;
+      const confidence = Math.min(95, 50 + values.length * 3);
+
+      const autoSuggestions: string[] = [];
+      if (trend === 'rising') autoSuggestions.push('Monitor closely and review feeding/aeration schedule.');
+      if (trend === 'falling') autoSuggestions.push('Investigate recent operational changes and validate sensors.');
+      if (autoSuggestions.length === 0) autoSuggestions.push('Continue monitoring with current schedule.');
+
+      return {
+        parameter: label,
+        currentValue,
+        optimalRange: null,
+        trend,
+        trendPercentage: Number.isFinite(trendPercentage) ? Math.round(trendPercentage) : 0,
         anomalies: [],
         prediction: {
-          predicted24h: 0.42,
-          predicted48h: 0.51,
-          confidence: 85,
+          predicted24h,
+          predicted48h,
+          confidence,
         },
-        historicalPattern:
-          'Ammonia levels consistently rise during afternoon feeding hours. Your aerators appear to be less efficient during peak temperature hours.',
-        autoSuggestions: [
-          'Reduce feeding amount by 10% to lower ammonia production',
-          'Check aerator #2 - efficiency dropping during 2-4 PM window',
-          'Schedule 20% water exchange for tomorrow morning',
-        ],
-      },
-      {
-        parameter: 'Dissolved Oxygen (DO)',
-        currentValue: 4.2,
-        optimalRange: [5, 8],
-        trend: 'falling',
-        trendPercentage: -12,
-        anomalies: [],
-        prediction: {
-          predicted24h: 3.8,
-          predicted48h: 3.4,
-          confidence: 88,
-        },
-        historicalPattern:
-          'DO drops by ~1 ppm daily. This correlates with temperature increases and suggests aerator maintenance is needed soon.',
-        autoSuggestions: [
-          'Increase aeration to compensate for declining efficiency',
-          'Perform aerator maintenance - clean intake filters',
-          'Monitor shrimp behavior for stress signs',
-        ],
-      },
-      {
-        parameter: 'pH Level',
-        currentValue: 7.8,
-        optimalRange: [7.0, 8.5],
-        trend: 'stable',
-        trendPercentage: 0,
-        anomalies: [],
-        prediction: {
-          predicted24h: 7.9,
-          predicted48h: 7.9,
-          confidence: 92,
-        },
-        historicalPattern:
-          'pH remains stable. Your buffering system is working well.',
-        autoSuggestions: [
-          'Continue current water management practices',
-        ],
-      },
+        historicalPattern: `Based on the last ${values.length} logs, ${label} is ${trend} (${trendPercentage.toFixed(1)}%).`,
+        autoSuggestions,
+      };
+    };
+
+    const parameterMap = [
+      { label: 'pH Level', field: 'ph' },
+      { label: 'Dissolved Oxygen (DO)', field: 'do' },
+      { label: 'Ammonia (NH3)', field: 'ammonia' },
+      { label: 'Temperature', field: 'temperature' },
     ];
 
-    const mockHistoricalData = [
-      { time: 'Day 1', pH: 7.6, DO: 5.2 },
-      { time: 'Day 2', pH: 7.7, DO: 4.8 },
-      { time: 'Day 3', pH: 7.7, DO: 4.5 },
-      { time: 'Day 4', pH: 7.8, DO: 4.3 },
-      { time: 'Day 5', pH: 7.8, DO: 4.2 },
-      { time: 'Day 6', pH: 7.8, DO: 4.2 },
-      { time: 'Today', pH: 7.8, DO: 4.2 },
-    ];
+    const analyses = parameterMap
+      .map((item) => buildAnalysis(item.label, item.field))
+      .filter((item) => item !== null);
+
+    const missingFields = parameterMap
+      .filter((item) => seriesFor(item.field).length === 0)
+      .map((item) => item.label);
+
+    const historicalData = recentLogs.map((log, index) => ({
+      time: log.date || `Day ${index + 1}`,
+      pH: toNumber(log.ph),
+      DO: toNumber(log.do),
+    })).filter((row) => row.pH !== null || row.DO !== null);
 
     return NextResponse.json(
       {
-        analyses: mockAnalyses,
-        historicalData: mockHistoricalData,
+        analyses,
+        historicalData,
+        missingFields,
       },
       { status: 200 }
     );

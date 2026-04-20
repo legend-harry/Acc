@@ -134,7 +134,7 @@ export function ImageUploadDialog({ open, onOpenChange }: ImageUploadDialogProps
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🦐 Shrimp Image
+              Shrimp Image
             </button>
             <button
               onClick={() => setImageType('pond')}
@@ -144,7 +144,7 @@ export function ImageUploadDialog({ open, onOpenChange }: ImageUploadDialogProps
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              💧 Pond Image
+              Pond Image
             </button>
           </div>
 
@@ -194,10 +194,10 @@ export function ImageUploadDialog({ open, onOpenChange }: ImageUploadDialogProps
                   </Alert>
 
                   <Card className="p-4 border border-blue-200 bg-blue-50">
-                    <h3 className="font-semibold text-gray-900 mb-2">📊 Analysis Results</h3>
+                    <h3 className="font-semibold text-gray-900 mb-2">Analysis Results</h3>
                     <p className="text-sm text-gray-700 leading-relaxed mb-4">{result.insights}</p>
 
-                    <h4 className="font-semibold text-gray-900 mb-2">💡 Recommendations</h4>
+                    <h4 className="font-semibold text-gray-900 mb-2">Recommendations</h4>
                     <ul className="space-y-2">
                       {result.recommendations.map((rec, idx) => (
                         <li key={idx} className="flex gap-2 text-sm text-gray-700">

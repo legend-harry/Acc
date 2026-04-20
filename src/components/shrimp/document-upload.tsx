@@ -20,14 +20,14 @@ interface DocumentUploadProps {
 }
 
 const documentTypes = {
-  'soil-testing': { label: '🧪 Soil Testing Report', color: 'bg-orange-100 border-orange-500 text-orange-900' },
-  'water-testing': { label: '💧 Water Testing Report', color: 'bg-blue-100 border-blue-500 text-blue-900' },
-  'feed-analysis': { label: '🌾 Feed Analysis', color: 'bg-green-100 border-green-500 text-green-900' },
-  'health-report': { label: '🏥 Health Report', color: 'bg-red-100 border-red-500 text-red-900' },
-  'shrimp-health-image': { label: '🦐 Shrimp Health Photo', color: 'bg-purple-100 border-purple-500 text-purple-900' },
-  'pond-condition': { label: '🏞️ Pond Condition', color: 'bg-cyan-100 border-cyan-500 text-cyan-900' },
-  'equipment-photo': { label: '⚙️ Equipment Photo', color: 'bg-gray-100 border-gray-500 text-gray-900' },
-  'unknown': { label: '📄 Document', color: 'bg-gray-100 border-gray-500 text-gray-900' },
+  'soil-testing': { label: 'Soil Testing Report', color: 'bg-orange-100 border-orange-500 text-orange-900' },
+  'water-testing': { label: 'Water Testing Report', color: 'bg-blue-100 border-blue-500 text-blue-900' },
+  'feed-analysis': { label: 'Feed Analysis', color: 'bg-green-100 border-green-500 text-green-900' },
+  'health-report': { label: 'Health Report', color: 'bg-red-100 border-red-500 text-red-900' },
+  'shrimp-health-image': { label: 'Shrimp Health Photo', color: 'bg-purple-100 border-purple-500 text-purple-900' },
+  'pond-condition': { label: 'Pond Condition', color: 'bg-cyan-100 border-cyan-500 text-cyan-900' },
+  'equipment-photo': { label: 'Equipment Photo', color: 'bg-gray-100 border-gray-500 text-gray-900' },
+  'unknown': { label: 'Document', color: 'bg-gray-100 border-gray-500 text-gray-900' },
 };
 
 const getTypeMeta = (type: string) => documentTypes[type as keyof typeof documentTypes] || documentTypes['unknown'];

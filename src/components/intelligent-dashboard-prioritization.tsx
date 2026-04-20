@@ -21,6 +21,7 @@ import {
   Moon,
   Sun,
 } from 'lucide-react';
+import { useUser } from '@/context/user-context';
 
 interface DashboardPriority {
   componentId: string;
@@ -52,6 +53,8 @@ export function IntelligentDashboardPrioritization({
   const [priorities, setPriorities] = useState<DashboardPriority[]>([]);
   const [focusMode, setFocusMode] = useState<FocusMode | null>(null);
   const [loading, setLoading] = useState(true);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const { selectedProfile } = useUser();
 
   useEffect(() => {
     loadPrioritization();
@@ -63,7 +66,7 @@ export function IntelligentDashboardPrioritization({
       const response = await fetch('/api/ai/dashboard-prioritization', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPhase, timeOfDay, alertCount: recentAlerts.length }),
+        body: JSON.stringify({ currentPhase, timeOfDay, alertCount: recentAlerts.length, profile: selectedProfile }),
       });
 
       if (!response.ok) throw new Error('Failed to load prioritization');
@@ -71,6 +74,7 @@ export function IntelligentDashboardPrioritization({
       const data = await response.json();
       setPriorities(data.priorities || []);
       setFocusMode(data.focusMode || null);
+      setMissingFields(data.missingFields || []);
     } catch (error) {
       console.error('Error loading prioritization:', error);
     } finally {
@@ -98,6 +102,14 @@ export function IntelligentDashboardPrioritization({
 
   return (
     <div className="space-y-6">
+      {missingFields.length > 0 && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Missing data: {missingFields.join(', ')}. Add alerts or logs to improve prioritization.
+          </AlertDescription>
+        </Alert>
+      )}
       {/* Focus Mode */}
       {focusMode && (
         <Card className="border-amber-200 bg-amber-50">
@@ -197,28 +209,29 @@ export function IntelligentDashboardPrioritization({
                 <Card className="bg-muted">
                   <CardContent className="pt-4">
                     <p className="text-xs text-muted-foreground">Water Quality</p>
-                    <p className="text-lg font-bold">Good</p>
+                    <p className="text-lg font-bold">--</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-muted">
                   <CardContent className="pt-4">
                     <p className="text-xs text-muted-foreground">Production Rate</p>
-                    <p className="text-lg font-bold">85%</p>
+                    <p className="text-lg font-bold">--</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-muted">
                   <CardContent className="pt-4">
                     <p className="text-xs text-muted-foreground">Feed Efficiency</p>
-                    <p className="text-lg font-bold">1.4 FCR</p>
+                    <p className="text-lg font-bold">--</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-muted">
                   <CardContent className="pt-4">
                     <p className="text-xs text-muted-foreground">Survival Rate</p>
-                    <p className="text-lg font-bold">92%</p>
+                    <p className="text-lg font-bold">--</p>
                   </CardContent>
                 </Card>
               </div>
+              <p className="text-xs text-muted-foreground">Add daily logs to populate these metrics.</p>
             </TabsContent>
 
             <TabsContent value="schedule" className="space-y-3 mt-4">

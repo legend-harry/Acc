@@ -18,7 +18,7 @@ export function EnterpriseTopbar({ onMobileMenuToggle }: EnterpriseTopbarProps) 
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <header className="enterprise-topbar fixed top-0 right-0 left-0 z-40 px-4 lg:px-8 h-16 lg:h-20 flex items-center justify-between bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+    <header className="enterprise-topbar fixed top-0 right-0 left-0 z-40 px-4 lg:px-8 h-16 lg:h-20 flex items-center justify-between glass-nav border-b border-border/20 shadow-ambient-sm">
       {/* Left: Mobile menu + Search */}
       <div className="flex items-center flex-1 gap-3">
         <Button
@@ -37,7 +37,7 @@ export function EnterpriseTopbar({ onMobileMenuToggle }: EnterpriseTopbarProps) 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search transactions..."
-            className="w-full bg-slate-100 dark:bg-slate-900 border-none ring-1 ring-slate-200/50 dark:ring-slate-700/50 focus:ring-2 focus:ring-blue-500/30 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 transition-all outline-none"
+            className="w-full bg-muted/50 dark:bg-muted/30 border-none ring-1 ring-border/30 focus:ring-2 focus:ring-primary/30 rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 transition-all duration-200 ease-precision outline-none"
           />
         </div>
       </div>
@@ -54,14 +54,14 @@ export function EnterpriseTopbar({ onMobileMenuToggle }: EnterpriseTopbarProps) 
 
 
         <AddExpenseDialog>
-          <Button className="bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-300 px-4 sm:px-6 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-slate-900/10 active:scale-95 transition-all duration-200">
+          <Button className="bg-gradient-to-br from-primary to-primary-container text-white hover:opacity-90 px-4 sm:px-6 py-2.5 rounded-xl text-sm font-bold shadow-ambient active:scale-[0.97] transition-all duration-200 ease-precision">
             <PlusCircle className="h-4 w-4 mr-0 sm:mr-2" />
             <span className="hidden sm:inline">Add Transaction</span>
           </Button>
         </AddExpenseDialog>
 
         {/* Profile Avatar */}
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold border-2 border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white text-sm font-bold border-2 border-background shadow-ambient-sm transition-transform duration-200 hover:scale-105">
           {user?.charAt(0) || "U"}
         </div>
       </div>

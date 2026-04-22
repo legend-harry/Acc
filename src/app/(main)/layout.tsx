@@ -12,6 +12,7 @@ import { SubscriptionProvider } from "@/context/subscription-context";
 import { CurrencyProvider } from "@/context/currency-context";
 import { LayoutProvider, useLayout } from "@/context/layout-context";
 import { UpgradeDialog } from "@/components/upgrade-dialog";
+import { AIOnboardingFlow } from "@/components/ai-onboarding-flow";
 
 function LayoutShell({ children }: { children: ReactNode }) {
   const { layout } = useLayout();
@@ -19,22 +20,35 @@ function LayoutShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, isLoading } = useUser();
 
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/login');
+    } else if (user) {
+       const isComplete = localStorage.getItem('onboardingComplete');
+       if (isComplete !== 'true') {
+           setShowOnboarding(true);
+       }
     }
   }, [user, isLoading, router]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary/20 border-t-primary"></div>
       </div>
     );
   }
 
   // Prevent flash of content before redirect executes
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary/20 border-t-primary"></div>
+      </div>
+    );
+  }
 
   if (layout === "enterprise") {
     return (
@@ -46,7 +60,10 @@ function LayoutShell({ children }: { children: ReactNode }) {
         <EnterpriseTopbar onMobileMenuToggle={() => setMobileOpen((p) => !p)} />
         <div className="enterprise-content-area">
           <main className="pt-20 lg:pt-24 p-4 md:p-6 lg:p-8 min-h-screen">
-            {children}
+            <div className="animate-fade-up">
+              {children}
+            </div>
+            {showOnboarding && <AIOnboardingFlow open={showOnboarding} onOpenChange={setShowOnboarding} />}
           </main>
         </div>
       </div>
@@ -59,6 +76,7 @@ function LayoutShell({ children }: { children: ReactNode }) {
       <Header />
       <main className="flex-1 p-4 md:p-6 lg:p-8">
         {children}
+        {showOnboarding && <AIOnboardingFlow open={showOnboarding} onOpenChange={setShowOnboarding} />}
       </main>
     </div>
   );

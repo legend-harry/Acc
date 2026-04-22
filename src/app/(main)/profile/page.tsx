@@ -381,12 +381,13 @@ function ProjectSettings() {
 }
 
 export default function ProfilePage() {
-  const { user } = useUser();
+  const { userData } = useUser();
+  const displayName = userData?.user_metadata?.full_name || userData?.email || "User";
 
   return (
     <div>
       <PageHeader
-        title={`${user}'s Profile`}
+        title={`${displayName}'s Profile`}
         description="View and manage your profile information and settings."
       />
       <Tabs defaultValue="projects" className="w-full">

@@ -40,7 +40,7 @@ export function EnterpriseSidebar({ mobileOpen, onMobileClose }: EnterpriseSideb
   const currentPath = pathname ?? "";
 
   const sidebar = (
-    <aside className="enterprise-sidebar h-screen w-72 bg-white dark:bg-slate-950 flex flex-col py-8 border-r border-slate-200 dark:border-slate-800 z-[60] shadow-sm">
+    <aside className="enterprise-sidebar h-screen w-72 glass-nav flex flex-col py-8 border-r border-border/20 z-[60] shadow-ambient">
       {/* Logo */}
       <div className="px-8 mb-10">
         <div className="flex items-center gap-2">
@@ -61,10 +61,10 @@ export function EnterpriseSidebar({ mobileOpen, onMobileClose }: EnterpriseSideb
               key={item.href}
               href={item.href}
               onClick={onMobileClose}
-              className={`flex items-center mx-4 py-3 px-4 transition-all duration-200 rounded-lg ${
+              className={`flex items-center mx-4 py-3 px-4 transition-all duration-200 ease-precision rounded-xl ${
                 isActive
-                  ? "bg-slate-200/60 dark:bg-slate-800/60 text-slate-900 dark:text-slate-50 scale-[1.02] font-bold shadow-sm"
-                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900"
+                  ? "bg-primary/8 dark:bg-primary/15 text-foreground scale-[1.01] font-bold shadow-ambient-sm border-l-2 border-primary"
+                  : "text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/40 hover:text-foreground"
               }`}
             >
               <item.icon className="h-5 w-5 mr-3 flex-shrink-0" />

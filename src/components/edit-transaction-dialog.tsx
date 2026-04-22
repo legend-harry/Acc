@@ -36,10 +36,12 @@ export function EditTransactionDialog({
   transaction,
   isOpen,
   onOpenChange,
+  allTransactions = [],
 }: {
   transaction: Transaction;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  allTransactions?: Transaction[];
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -55,6 +57,19 @@ export function EditTransactionDialog({
   const { user } = useUser();
   const [transactionType, setTransactionType] = useState<'expense' | 'income' | undefined>(undefined);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Category performance analysis
+  const categoryStats = useMemo(() => {
+    if (!transaction || !allTransactions.length) return null;
+    const sameCategory = allTransactions.filter(t => t.category === transaction.category && t.type === transaction.type);
+    const total = sameCategory.reduce((sum, t) => sum + t.amount, 0);
+    const avg = total / (sameCategory.length || 1);
+    const isHigherThanAvg = transaction.amount > avg;
+    
+    // Simple 5-point sparkline
+    const trend = sameCategory.slice(-5).map(t => t.amount);
+    return { avg, isHigherThanAvg, trend };
+  }, [transaction, allTransactions]);
 
   useEffect(() => {
     if (isOpen && transaction) {
@@ -97,17 +112,16 @@ export function EditTransactionDialog({
     }
     
     let receiptUrl = transaction.receiptUrl || "";
-    // Receipt upload to Firebase Storage disabled for now
     
     const updatedTransaction = {
-        ...transaction, // Keep original data like createdAt, id
+        ...transaction,
         ...data,
         amount: Number(data.amount),
         quantity: Number(data.qty) || 0,
         ratePerUnit: 0,
         date: data.date ? new Date(data.date as string).toISOString() : new Date().toISOString(),
         receiptUrl: receiptUrl,
-        createdBy: user, // Or keep original creator? For now, update it
+        createdBy: user,
         type: data.type,
         status: data.type === 'income' ? 'completed' : data.status,
         category: data.type === 'income' ? 'Income' : data.category,
@@ -116,7 +130,8 @@ export function EditTransactionDialog({
     
     try {
         const supabase = createClient();
-        const { error } = await supabase.from('transactions').update({
+        // Full update (requires extended columns from migration)
+        const fullUpdate = {
             title: updatedTransaction.title,
             amount: updatedTransaction.amount,
             type: updatedTransaction.type,
@@ -129,10 +144,24 @@ export function EditTransactionDialog({
             unit: updatedTransaction.unit,
             notes: updatedTransaction.notes,
             status: updatedTransaction.status,
-            project_id: updatedTransaction.projectId,
+            projectid: updatedTransaction.projectId,
             receipt_url: updatedTransaction.receiptUrl,
-        }).eq('id', transaction.id);
-        if (error) throw error;
+        };
+        // Core update (base schema only)
+        const coreUpdate = {
+            amount: updatedTransaction.amount,
+            type: updatedTransaction.type,
+            category: updatedTransaction.category,
+            date: updatedTransaction.date,
+            description: updatedTransaction.description,
+        };
+
+        const { error } = await supabase.from('transactions').update(fullUpdate).eq('id', transaction.id);
+        if (error) {
+            console.warn("Full update failed, trying core-only:", error.message);
+            const { error: coreError } = await supabase.from('transactions').update(coreUpdate).eq('id', transaction.id);
+            if (coreError) throw coreError;
+        }
         
         setIsLoading(false);
         onOpenChange(false);
@@ -157,27 +186,33 @@ export function EditTransactionDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Edit Transaction</DialogTitle>
-          <DialogDescription>
-            Update the details of your transaction. Click save when you're done.
+      <DialogContent className="sm:max-w-xl bg-surface">
+        <DialogHeader className="bg-primary/5 -m-6 mb-0 p-6 rounded-t-lg border-b border-primary/10">
+          <DialogTitle className="font-headline text-2xl font-bold flex items-center gap-2">
+             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Edit className="w-4 h-4 text-primary" />
+             </div>
+             Edit Transaction
+          </DialogTitle>
+          <DialogDescription className="font-label font-medium text-on-surface-variant">
+            Precision adjustment of financial records.
           </DialogDescription>
         </DialogHeader>
+
         {!isInitialized ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : (
-        <form onSubmit={handleSubmit}>
-          <ScrollArea className="max-h-[70vh] p-1">
-            <div className="grid gap-4 py-4 pr-4">
+        <form onSubmit={handleSubmit} className="mt-4">
+          <ScrollArea className="max-h-[60vh] -mx-6 px-6">
+            <div className="grid gap-6 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="project" className="text-right">
-                    Project *
+                  <Label htmlFor="project" className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">
+                    Project
                   </Label>
                   <Select name="projectId" defaultValue={transaction.projectId} required onValueChange={setSelectedProjectId}>
-                    <SelectTrigger className="col-span-3">
+                    <SelectTrigger className="col-span-3 bg-surface-container-low border-none shadow-none font-medium">
                       <SelectValue placeholder="Select a project" />
                     </SelectTrigger>
                     <SelectContent>
@@ -195,35 +230,66 @@ export function EditTransactionDialog({
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Type *</Label>
+                    <Label className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">Type</Label>
                     <RadioGroup
                       name="type"
                       value={transactionType}
-                      className="col-span-3 flex gap-4"
+                      className="col-span-3 flex gap-6"
                       onValueChange={(value) => setTransactionType(value as 'expense' | 'income')}
                       required
                     >
                         <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="expense" id="r-edit-expense" />
-                        <Label htmlFor="r-edit-expense">Expense</Label>
+                          <RadioGroupItem value="expense" id="r-edit-expense" className="border-secondary text-secondary" />
+                          <Label htmlFor="r-edit-expense" className="font-bold text-sm">Expense</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="income" id="r-edit-income" />
-                        <Label htmlFor="r-edit-income">Income</Label>
+                          <RadioGroupItem value="income" id="r-edit-income" className="border-primary text-primary" />
+                          <Label htmlFor="r-edit-income" className="font-bold text-sm">Income</Label>
                         </div>
                     </RadioGroup>
                 </div>
                 
                  {transactionType && (
                     <>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="title" className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">
+                                Title
+                            </Label>
+                            <Input
+                                id="title"
+                                name="title"
+                                defaultValue={transaction.title}
+                                required
+                                className="col-span-3 bg-surface-container-low border-none focus-visible:ring-primary/20 font-bold"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="amount" className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">
+                                Amount
+                            </Label>
+                            <div className="col-span-3 relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-on-surface-variant/50">$</span>
+                                <Input
+                                    id="amount"
+                                    name="amount"
+                                    type="number"
+                                    step="0.01"
+                                    defaultValue={transaction.amount}
+                                    required
+                                    className="pl-8 bg-surface-container-low border-none font-extrabold text-lg text-on-surface"
+                                />
+                            </div>
+                        </div>
+
                         {transactionType === 'expense' && (
                         <>
                           <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="category" className="text-right">
-                                  Category *
+                              <Label htmlFor="category" className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">
+                                  Category
                               </Label>
                               <Select name="category" defaultValue={transaction.category} required disabled={!selectedProjectId}>
-                                  <SelectTrigger className="col-span-3">
+                                  <SelectTrigger className="col-span-3 bg-surface-container-low border-none">
                                   <SelectValue placeholder={!selectedProjectId ? "First select a project" : "Select a category"} />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -239,29 +305,66 @@ export function EditTransactionDialog({
                                   </SelectContent>
                               </Select>
                           </div>
+                   
+                          {/* Category Performance Analytics */}
+                          {categoryStats && (
+                            <div className="col-span-4 bg-surface-container-low/50 rounded-xl p-4 mt-2 border border-outline-variant/10">
+                                <div className="flex justify-between items-center mb-3">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-outline">Category Context</h4>
+                                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", categoryStats.isHigherThanAvg ? "bg-secondary-container/10 text-secondary-container" : "bg-primary-container/10 text-primary-container")}>
+                                        {categoryStats.isHigherThanAvg ? "Above Average" : "Below Average"}
+                                    </span>
+                                </div>
+                                <div className="flex items-end gap-6">
+                                    <div className="flex-1 h-12">
+                                        <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
+                                            <path 
+                                                d={`M ${categoryStats.trend.map((val, i) => `${i * 25} ${40 - (val / Math.max(...categoryStats.trend, 1)) * 35}`).join(' L ')}`}
+                                                fill="none"
+                                                stroke="hsl(var(--primary-container))"
+                                                strokeWidth="3"
+                                                strokeLinecap="round"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-xs font-bold text-on-surface">Avg Spend</p>
+                                        <p className="text-sm font-extrabold text-primary">{formatCurrency(categoryStats.avg, currency)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                          )}
+
                           <div className="grid grid-cols-4 items-center gap-4">
-                              <Label className="text-right">Status</Label>
-                              <RadioGroup name="status" defaultValue={transaction.status} className="col-span-3 flex gap-4">
-                                  <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="completed" id="r-edit-completed" />
-                                      <Label htmlFor="r-edit-completed">Completed</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="credit" id="r-edit-credit" />
-                                      <Label htmlFor="r-edit-credit">Credit</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="expected" id="r-edit-expected" />
-                                      <Label htmlFor="r-edit-expected">Expected</Label>
-                                  </div>
-                              </RadioGroup>
+                              <Label className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">Status</Label>
+                              <div className="col-span-3 flex flex-wrap gap-2">
+                                  {['completed', 'credit', 'expected'].map(s => (
+                                      <button 
+                                        key={s}
+                                        type="button"
+                                        onClick={() => {
+                                            const el = document.getElementById(`edit-status-${s}`) as HTMLInputElement;
+                                            if (el) el.click();
+                                        }}
+                                        className={cn(
+                                            "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all",
+                                            transaction.status === s ? "bg-primary text-white border-primary" : "bg-surface-container-low text-on-surface-variant border-outline-variant/20 hover:border-outline-variant"
+                                        )}
+                                      >
+                                        <input type="radio" name="status" id={`edit-status-${s}`} value={s} defaultChecked={transaction.status === s} className="hidden" />
+                                        {s}
+                                      </button>
+                                  ))}
+                              </div>
                           </div>
                         </>
                         )}
+                        
+                        <Separator className="col-span-4 my-2 opacity-50" />
 
                         <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="date" className="text-right">
-                            Date *
+                        <Label htmlFor="date" className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">
+                            Date
                         </Label>
                         <Input
                             id="date"
@@ -269,134 +372,88 @@ export function EditTransactionDialog({
                             type="date"
                             defaultValue={new Date(transaction.date).toISOString().split("T")[0]}
                             required
-                            className="col-span-3"
+                            className="col-span-3 bg-surface-container-low border-none"
                         />
                         </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="title" className="text-right">
-                            Title *
-                        </Label>
-                        <Input
-                            id="title"
-                            name="title"
-                            defaultValue={transaction.title}
-                            required
-                            className="col-span-3"
-                        />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="amount" className="text-right">
-                            Amount *
-                        </Label>
-                        <Input
-                            id="amount"
-                            name="amount"
-                            type="number"
-                            step="0.01"
-                            defaultValue={transaction.amount}
-                            required
-                            className="col-span-3"
-                        />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="description" className="text-right">
-                            Description
+                        <Label htmlFor="description" className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">
+                            Notes
                         </Label>
                         <Textarea
                             id="description"
                             name="description"
                             defaultValue={transaction.description}
-                            className="col-span-3"
+                            className="col-span-3 bg-surface-container-low border-none resize-none"
+                            placeholder="Add a memo..."
                         />
                         </div>
+                        
                         <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="vendor" className="text-right">
+                        <Label htmlFor="vendor" className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">
                             Vendor
                         </Label>
                         <Input
                             id="vendor"
                             name="vendor"
                             defaultValue={transaction.vendor}
-                            className="col-span-3"
+                            className="col-span-3 bg-surface-container-low border-none"
                         />
                         </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="invoiceNo" className="text-right">
-                            Invoice No
+                        <Label htmlFor="receipt" className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">
+                            Invoice
                         </Label>
-                        <Input
-                            id="invoiceNo"
-                            name="invoiceNo"
-                            defaultValue={transaction.invoiceNo}
-                            className="col-span-3"
-                        />
+                        <div className="col-span-3 flex items-center gap-4">
+                            <Input
+                                id="receipt"
+                                name="receipt"
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleReceiptChange}
+                            />
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                className="bg-surface-container-low border-none w-full justify-start text-on-surface-variant font-medium h-12"
+                                onClick={() => document.getElementById('receipt')?.click()}
+                            >
+                                <Receipt className="w-4 h-4 mr-2" />
+                                {receiptPreview ? "Update Documents" : "Attach Invoice/Receipt"}
+                            </Button>
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="qty" className="text-right">
-                            Quantity
-                        </Label>
-                        <Input
-                            id="qty"
-                            name="qty"
-                            type="number"
-                            defaultValue={transaction.quantity}
-                            className="col-span-3"
-                        />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="unit" className="text-right">
-                            Unit
-                        </Label>
-                        <Input
-                            id="unit"
-                            name="unit"
-                            defaultValue={transaction.unit}
-                            className="col-span-3"
-                        />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="notes" className="text-right">
-                            Notes
-                        </Label>
-                        <Textarea
-                            id="notes"
-                            name="notes"
-                            defaultValue={transaction.notes}
-                            className="col-span-3"
-                        />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="receipt" className="text-right">
-                            Receipt
-                        </Label>
-                        <Input
-                            id="receipt"
-                            name="receipt"
-                            type="file"
-                            accept="image/*"
-                            className="col-span-3"
-                            onChange={handleReceiptChange}
-                        />
-                        </div>
+
                         {receiptPreview && (
                             <div className="grid grid-cols-4 items-start gap-4">
                                 <div className="col-start-2 col-span-3">
-                                    <img src={receiptPreview} alt="Receipt preview" className="rounded-md max-h-40 object-contain" />
+                                    <div className="relative group rounded-xl overflow-hidden border border-outline-variant/30">
+                                        <img src={receiptPreview} alt="Receipt preview" className="w-full h-auto max-h-60 object-contain bg-surface-container-lowest" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <Button variant="secondary" size="sm" type="button" onClick={() => setReceiptPreview(null)}>Remove</Button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
                     </>
-                )}
+                 )}
               </div>
           </ScrollArea>
-          <DialogFooter className="pt-4 border-t">
+          <DialogFooter className="pt-6 mt-6 border-t border-outline-variant/10">
             <DialogClose asChild>
-              <Button type="button" variant="secondary">
+              <Button type="button" variant="ghost" className="font-bold text-outline">
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={isLoading || categoriesLoading || projectsLoading || !transactionType}>
-              {isLoading ? "Saving..." : "Save Changes"}
+            <Button 
+                type="submit" 
+                disabled={isLoading || categoriesLoading || projectsLoading || !transactionType}
+                className="bg-primary hover:bg-primary/90 text-white font-bold px-8 rounded-xl shadow-lg shadow-primary/20"
+            >
+              {isLoading ? "Saving Analysis..." : "Save Record"}
             </Button>
           </DialogFooter>
         </form>

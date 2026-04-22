@@ -10,9 +10,18 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['PT Sans', 'sans-serif'],
-        headline: ['PT Sans', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+        headline: ['Manrope', 'sans-serif'],
+        display: ['Manrope', 'sans-serif'],
+        label: ['Inter', 'sans-serif'],
         code: ['monospace'],
+      },
+      transitionTimingFunction: {
+        'precision': 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      },
+      transitionDuration: {
+        '250': '250ms',
+        '1200': '1200ms',
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -55,6 +64,22 @@ export default {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        'primary-container': 'hsl(var(--primary-container))',
+        'secondary-container': 'hsl(var(--secondary-container))',
+        'surface-container': 'hsl(var(--surface-container))',
+        'surface-container-low': 'hsl(var(--surface-container-low))',
+        'surface-container-lowest': 'hsl(var(--surface-container-lowest))',
+        'surface-container-high': 'hsl(var(--surface-container-high))',
+        'surface-container-highest': 'hsl(var(--surface-container-highest))',
+        'on-primary-container': 'hsl(var(--on-primary-container))',
+        'on-secondary-container': 'hsl(var(--on-secondary-container))',
+        'on-tertiary-container': 'hsl(var(--on-tertiary-container))',
+        'error-container': 'hsl(var(--error-container))',
+        'on-error-container': 'hsl(var(--on-error-container))',
+        tertiary: {
+          DEFAULT: 'hsl(var(--tertiary))',
+          container: 'hsl(var(--tertiary-container))',
+        },
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
           foreground: 'hsl(var(--sidebar-foreground))',
@@ -88,10 +113,20 @@ export default {
             height: '0',
           },
         },
+        'marquee': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        'pulse-ring': {
+          '0%': { transform: 'scale(0.8)', opacity: '0.5' },
+          '100%': { transform: 'scale(1.5)', opacity: '0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'marquee': 'marquee 20s linear infinite',
+        'pulse-ring': 'pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite',
       },
     },
   },

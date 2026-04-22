@@ -12,9 +12,8 @@ export interface Pond {
   area: number;
   length: number;
   width: number;
-  depth: number;
-  shrimpType: 'white' | 'tiger' | 'giant';
-  farmingType: 'extensive' | 'semi-intensive' | 'intensive';
+  shrimptype: 'white' | 'tiger' | 'giant';
+  farmingtype: 'extensive' | 'semi-intensive' | 'intensive';
   targetDensity: number;
   seedAmount: number;
   expectedCount: number;
@@ -22,11 +21,11 @@ export interface Pond {
   currentStock: number;
   status: 'active' | 'preparing' | 'harvesting' | 'resting';
   createdAt: string;
-  stockingDate?: string;
+  stockingdate?: string;
   currentPhase?: string;
   currentStage?: 'planning' | 'preparation' | 'stocking' | 'operation' | 'harvest';
   cycleDay?: number;
-  linkedProjectId?: string | null;
+  linkedprojectid?: string | null;
   metrics?: { fcr: number; survivalRate: number; avgWeight: number; feeding?: number; };
 }
 
@@ -34,7 +33,7 @@ export interface Alert {
   id: string;
   level: 'critical' | 'warning' | 'info';
   message: string;
-  pondId: string | null;
+  pondid: string | null;
   createdAt: string;
 }
 
@@ -86,23 +85,39 @@ export function usePonds() {
     }
 
     const fetchPonds = async () => {
-      const { data } = await supabase
+      // Build query — only apply profile_id filter if selectedProfile is set,
+      // so ponds that were created without a profile_id still appear.
+      let query = supabase
         .from('ponds')
         .select('*')
-        .eq('client_id', clientId)
-        .eq('profile_id', selectedProfile);
+        .eq('client_id', clientId);
+
+      if (selectedProfile) {
+        query = query.eq('profile_id', selectedProfile);
+      }
+
+      const { data } = await query;
         
       if (data) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
         const pondsArray = data.map(pond => {
-          const refDate = pond.stockingDate || pond.created_at;
+          const refDate = pond.stockingdate || pond.stocking_date || pond.created_at;
           const dynamicCycleDay = refDate ? Math.max(0, differenceInDays(today, new Date(refDate))) : (pond.cycleDay || 0);
           return {
             ...pond,
             createdAt: pond.created_at,
-            cycleDay: dynamicCycleDay
+            cycleDay: dynamicCycleDay,
+            // Normalise all possible snake_case / combined column names → camelCase
+            shrimpType: pond.shrimp_type     ?? pond.shrimptype     ?? '',
+            farmingType: pond.farming_type    ?? pond.farmingtype    ?? '',
+            targetDensity: pond.target_density  ?? pond.targetDensity  ?? 0,
+            seedAmount: pond.seed_amount     ?? pond.seedAmount     ?? 0,
+            expectedCount: pond.expected_count  ?? pond.expectedCount  ?? 0,
+            currentStock: pond.current_stock   ?? pond.currentStock   ?? 0,
+            stockingdate: pond.stockingdate    ?? pond.stocking_date  ?? null,
+            linkedprojectid: pond.linkedprojectid ?? pond.linked_project_id ?? null,
           } as unknown as Pond;
         });
         setPonds(pondsArray);
@@ -116,13 +131,78 @@ export function usePonds() {
   }, [clientId, selectedProfile]);
 
   const addPond = async (pondData: Omit<Pond, 'id' | 'createdAt'>) => {
-    if (!clientId || !selectedProfile) return;
-    const { data } = await supabase.from('ponds').insert([{ ...pondData, client_id: clientId, profile_id: selectedProfile }]).select('id').single();
+    if (!clientId) return;
+    // Explicitly map to lowercase DB column names (PostgreSQL folds unquoted identifiers)
+    const dbRecord = {
+      client_id: clientId,
+      profile_id: selectedProfile || '',
+      name: pondData.name,
+      area: pondData.area ?? 0,
+      length: pondData.length ?? 0,
+      width: pondData.width ?? 0,
+      shrimptype: pondData.shrimptype ?? pondData.shrimpType ?? '',
+      farmingtype: pondData.farmingtype ?? pondData.farmingType ?? '',
+      targetdensity: pondData.targetDensity ?? 0,
+      seedamount: pondData.seedAmount ?? 0,
+      expectedcount: pondData.expectedCount ?? 0,
+      watersource: pondData.waterSource ?? '',
+      currentstock: pondData.currentStock ?? 0,
+      status: pondData.status ?? 'active',
+      stockingdate: pondData.stockingdate ?? null,
+      currentphase: (pondData as any).currentPhase ?? '',
+      currentstage: (pondData as any).currentStage ?? 'planning',
+      cycleday: pondData.cycleDay ?? 0,
+      linkedprojectid: pondData.linkedprojectid ?? null,
+    };
+    // Core-only record (base schema without migration)
+    const coreRecord = {
+      client_id: clientId,
+      profile_id: selectedProfile || '',
+      name: pondData.name,
+      area: pondData.area ?? 0,
+      shrimptype: pondData.shrimptype ?? pondData.shrimpType ?? '',
+      farmingtype: pondData.farmingtype ?? pondData.farmingType ?? '',
+      targetdensity: pondData.targetDensity ?? 0,
+      seedamount: pondData.seedAmount ?? 0,
+      expectedcount: pondData.expectedCount ?? 0,
+      watersource: pondData.waterSource ?? '',
+      currentstock: pondData.currentStock ?? 0,
+      status: pondData.status ?? 'active',
+      stockingdate: pondData.stockingdate ?? null,
+    };
+
+    // Try full insert first, fall back to core
+    const { data, error } = await supabase.from('ponds').insert([dbRecord]).select('id').single();
+    if (error) {
+      console.warn("Full pond insert failed, trying core-only:", error.message);
+      const { data: coreData, error: coreError } = await supabase.from('ponds').insert([coreRecord]).select('id').single();
+      if (coreError) { console.error("Core pond insert also failed:", coreError); return; }
+      return coreData?.id;
+    }
     return data?.id;
   };
 
   const updatePond = async (pondId: string, updates: Partial<Pond>) => {
-    await supabase.from('ponds').update(updates).eq('id', pondId).eq('client_id', clientId);
+    // Remap camelCase keys to lowercase DB column names
+    const dbUpdates: Record<string, any> = {};
+    const keyMap: Record<string, string> = {
+      shrimpType: 'shrimptype', shrimptype: 'shrimptype',
+      farmingType: 'farmingtype', farmingtype: 'farmingtype',
+      targetDensity: 'targetdensity',
+      seedAmount: 'seedamount',
+      expectedCount: 'expectedcount',
+      waterSource: 'watersource',
+      currentStock: 'currentstock',
+      stockingDate: 'stockingdate', stockingdate: 'stockingdate',
+      currentPhase: 'currentphase',
+      currentStage: 'currentstage',
+      cycleDay: 'cycleday',
+      linkedprojectid: 'linkedprojectid',
+    };
+    for (const [key, value] of Object.entries(updates)) {
+      dbUpdates[keyMap[key] || key] = value;
+    }
+    await supabase.from('ponds').update(dbUpdates).eq('id', pondId).eq('client_id', clientId);
   };
 
   const deletePond = async (pondId: string) => {
@@ -140,16 +220,26 @@ export function useAlerts() {
   const supabase = createClient();
 
   useEffect(() => {
-    if (!clientId || !selectedProfile) {
+    if (!clientId) {
       setAlerts([]);
       setLoading(false);
       return;
     }
 
     const fetchAlerts = async () => {
-      const { data } = await supabase.from('alerts').select('*').eq('client_id', clientId).eq('profile_id', selectedProfile).order('created_at', { ascending: false });
+      let query = supabase
+        .from('alerts')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
+
+      if (selectedProfile) {
+        query = query.eq('profile_id', selectedProfile);
+      }
+
+      const { data } = await query;
       if (data) {
-          setAlerts(data.map(d => ({ ...d, createdAt: d.created_at })) as unknown as Alert[]);
+        setAlerts(data.map(d => ({ ...d, createdAt: d.created_at, pondid: d.pondid })) as unknown as Alert[]);
       }
       setLoading(false);
     };

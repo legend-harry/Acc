@@ -8,10 +8,9 @@ import { Button } from "@/components/ui/button";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, TrendingDown, PieChart as PieChartIcon, AlertTriangle, Plus, Link as LinkIcon } from 'lucide-react';
 import { useUser } from '@/context/user-context';
-import { useProjects } from '@/hooks/use-database';
+import { useProjects, useTransactions } from '@/hooks/use-database';
 import { usePonds } from '@/hooks/use-shrimp';
 import { AddExpenseDialog } from '@/components/add-expense-dialog';
-import { createClient } from '@/lib/supabase/client';
 
 interface FinancialMetrics {
   totalRevenue: number;
@@ -34,28 +33,68 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
   const linkedProject = projects.find(p => p.id === linkedProjectId);
   const activeProjects = projects.filter(p => !p.archived);
 
+  const { transactions, loading: txLoading } = useTransactions();
+
   useEffect(() => {
-    if (!selectedProfile) {
-      setError('No profile selected');
+    if (!selectedProfile || !linkedProjectId) {
       setLoading(false);
       return;
     }
 
-    if (!linkedProjectId) {
+    if (txLoading) {
+      setLoading(true);
+      return;
+    }
+
+    const projectTransactions = transactions.filter(t => t.projectid === linkedProjectId);
+
+    if (projectTransactions.length === 0) {
+      setMetrics(null);
       setLoading(false);
       return;
     }
 
-    // Read from the root transactions node, filtered by projectId
-    /* supabased ref init */
+    const rev = projectTransactions.filter(t => t.type === 'income').reduce((s,t) => s + t.amount, 0);
+    const exp = projectTransactions.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
+    const costByCategory: Record<string, number> = {};
     
-    // const unsubscribe = onValue(transactionsRef, (snapshot) => {
-    //  ...
-    // });
-    // return unsubscribe;
-    setMetrics(null);
+    projectTransactions.filter(t => t.type === 'expense').forEach(t => {
+       const cat = t.category || 'Uncategorized';
+       costByCategory[cat] = (costByCategory[cat] || 0) + t.amount;
+    });
+
+    const monthlyMap = new Map<string, {revenue: number, expenses: number}>();
+    
+    // Sort ascending for chronological graph
+    const sortedTx = [...projectTransactions].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    sortedTx.forEach(t => {
+       const d = new Date(t.date);
+       const m = `${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear().toString().substr(-2)}`;
+       if (!monthlyMap.has(m)) monthlyMap.set(m, {revenue: 0, expenses: 0});
+       const current = monthlyMap.get(m)!;
+       if (t.type === 'income') current.revenue += t.amount;
+       if (t.type === 'expense') current.expenses += t.amount;
+    });
+
+    const monthlyTrends = Array.from(monthlyMap.entries()).map(([month, data]) => ({
+       month,
+       revenue: data.revenue,
+       expenses: data.expenses,
+       profit: data.revenue - data.expenses
+    }));
+
+    setMetrics({
+       totalRevenue: rev,
+       totalExpenses: exp,
+       totalProfit: rev - exp,
+       costByCategory,
+       monthlyTrends,
+       fcr: 0 
+    });
+
     setLoading(false);
-  }, [linkedProjectId, selectedProfile]);
+  }, [linkedProjectId, selectedProfile, transactions, txLoading]);
 
   if (loading) {
     return (

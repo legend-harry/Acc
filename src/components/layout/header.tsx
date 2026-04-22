@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   PlusCircle,
   LayoutDashboard,
@@ -127,27 +128,25 @@ function GlobalProjectSwitcher() {
   );
 }
 
-function ProfileSwitcher() {
-  const { user, setUser } = useUser();
+function UserNav() {
+  const { userData } = useUser();
+  const displayName = userData?.user_metadata?.full_name || userData?.email || "User";
+  const initial = displayName.charAt(0).toUpperCase();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold border-2 border-slate-200 dark:border-slate-700 shadow-sm hover:scale-105 transition-transform">
-          {user?.charAt(0) || "U"}
+          {initial}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Switch Profile</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={user} onValueChange={setUser}>
-          {profiles.map((profile) => (
-            <DropdownMenuRadioItem key={profile} value={profile}>
-              <User className="mr-2 h-4 w-4" />
-              <span>{profile}</span>
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="font-normal border-b pb-2 mb-2">
+            <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{displayName}</p>
+                <p className="text-xs leading-none text-muted-foreground">{userData?.email || ""}</p>
+            </div>
+        </DropdownMenuLabel>
         <DropdownMenuItem asChild>
           <Link href="/profile">
             <Settings className="mr-2 h-4 w-4" />
@@ -276,20 +275,27 @@ export function Header() {
           </Link>
 
           {/* Desktop nav links */}
-          <div className="hidden lg:flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-1 relative">
             {navItems.map((item) => {
               const isActive = currentPath.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center px-3 xl:px-4 py-2 rounded-lg transition-all duration-200 ${
+                  className={`relative flex items-center px-3 xl:px-4 py-2 rounded-lg transition-all duration-200 z-10 ${
                     isActive
-                      ? "bg-slate-200/60 dark:bg-slate-800/60 text-slate-900 dark:text-slate-50"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      ? "text-slate-900 dark:text-slate-50"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/50"
                   }`}
                   aria-current={isActive ? "page" : undefined}
                 >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTabIndicator"
+                      className="absolute inset-0 bg-slate-200/60 dark:bg-slate-800/60 rounded-lg -z-10"
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
+                  )}
                   <item.icon className="h-[1.15rem] w-[1.15rem] mr-2 flex-shrink-0" />
                   <span className="text-sm font-semibold whitespace-nowrap" style={{ fontFamily: "'Manrope', sans-serif" }}>
                     {item.label}
@@ -324,7 +330,7 @@ export function Header() {
             </button>
           </AddExpenseDialog>
 
-          <ProfileSwitcher />
+          <UserNav />
         </div>
       </nav>
 

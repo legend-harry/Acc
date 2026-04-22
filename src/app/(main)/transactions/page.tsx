@@ -32,6 +32,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { EditTransactionDialog } from '@/components/edit-transaction-dialog';
+import { AddExpenseDialog } from '@/components/add-expense-dialog';
+import { LiveFeedTicker } from '@/components/live-feed-ticker';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -99,7 +101,8 @@ const DeleteConfirmationDialog = ({
   );
 };
 
-const isToday = (someDate: Date | string) => {
+const isToday = (someDate: Date | string | undefined | null) => {
+    if (!someDate) return false;
     const today = new Date();
     const date = typeof someDate === 'string' ? new Date(someDate) : someDate;
     return date.getDate() === today.getDate() &&
@@ -116,10 +119,10 @@ const getStatusBadge = (status: 'completed' | 'credit' | 'expected') => {
 }
 
 const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const { currency } = useCurrency();
 
-    const { totalIncome, totalExpense } = useMemo(() => {
+    const { totalNet } = useMemo(() => {
         const income = transactions
             .filter(t => t.type === 'income')
             .reduce((sum, t) => sum + t.amount, 0);
@@ -128,34 +131,47 @@ const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
             .filter(t => t.type === 'expense')
             .reduce((sum, t) => sum + t.amount, 0);
             
-        return { totalIncome: income, totalExpense: expense };
+        return { totalNet: income - expense };
     }, [transactions]);
 
     if (transactions.length === 0) return null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-50">
-            <div 
-                className={cn(
-                    "bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all duration-300 ease-in-out",
-                    isExpanded ? "h-16 w-auto px-6" : "h-16 w-16"
-                )}
-                onClick={() => setIsExpanded(!isExpanded)}
-            >
-                {isExpanded ? (
-                    <div className="flex items-center gap-6">
-                        <div className="flex flex-col text-center leading-tight">
-                            <span className="text-xs text-green-200">Income</span>
-                            <span className="font-bold text-lg text-white">{formatCurrency(totalIncome, currency)}</span>
+        <div 
+            className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-3"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {/* Quick Actions Menu (Revealed on Hover) */}
+            <div className={cn(
+                "flex flex-col gap-2 transition-all duration-300 origin-bottom right-0 absolute bottom-20",
+                isHovered ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 translate-y-4 pointer-events-none"
+            )}>
+                <AddExpenseDialog defaultType="income">
+                    <button className="flex items-center gap-3 bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-4 py-3 rounded-xl shadow-lg border border-outline-variant/20 transition-colors whitespace-nowrap group w-full text-left">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                            <span className="material-symbols-outlined text-[18px]">add</span>
                         </div>
-                        <div className="flex flex-col text-center leading-tight">
-                            <span className="text-xs text-red-200">Expense</span>
-                            <span className="font-bold text-lg text-white">{formatCurrency(totalExpense, currency)}</span>
+                        <span className="font-semibold text-sm">Log Income</span>
+                    </button>
+                </AddExpenseDialog>
+                
+                <AddExpenseDialog defaultType="expense">
+                    <button className="flex items-center gap-3 bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-4 py-3 rounded-xl shadow-lg border border-outline-variant/20 transition-colors whitespace-nowrap group w-full text-left">
+                        <div className="w-8 h-8 rounded-full bg-secondary/10 text-secondary flex items-center justify-center group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
+                            <span className="material-symbols-outlined text-[18px]">remove</span>
                         </div>
-                    </div>
-                ) : (
-                    <span className="font-semibold">Total</span>
-                )}
+                        <span className="font-semibold text-sm">Log Expense</span>
+                    </button>
+                </AddExpenseDialog>
+            </div>
+
+            {/* Main FAB showing Net Balance */}
+            <div className="bg-primary text-on-primary rounded-2xl flex items-center justify-center shadow-[0px_8px_32px_rgba(var(--primary-rgb),0.3)] cursor-pointer h-16 px-6 relative z-10 hover:shadow-[0px_12px_40px_rgba(var(--primary-rgb),0.4)] transition-shadow">
+                <div className="flex flex-col text-center leading-tight">
+                    <span className="text-[10px] uppercase font-bold tracking-widest opacity-80">Net Balance</span>
+                    <span className="font-bold text-xl">{totalNet >= 0 ? '+' : ''}{formatCurrency(totalNet, currency)}</span>
+                </div>
             </div>
         </div>
     );
@@ -164,13 +180,13 @@ const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
 
 function TransactionsPageContent() {
     const { transactions, loading } = useTransactions();
-    const { categories } = useCategories();
+    const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
+    const { categories } = useCategories(selectedProjectId === 'all' ? undefined : selectedProjectId);
     const { projects } = useProjects();
     const isMobile = useIsMobile();
     const { toast } = useToast();
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
     const { currency } = useCurrency();
 
     // Filter States
@@ -229,13 +245,12 @@ function TransactionsPageContent() {
         .filter(t => {
             const searchTermLower = searchTerm.toLowerCase();
             const matchesSearch = searchTerm.trim() === '' ||
-                t.title.toLowerCase().includes(searchTermLower) ||
-                t.vendor.toLowerCase().includes(searchTermLower) ||
-                (t.description && t.description.toLowerCase().includes(searchTermLower));
+                (t.description && t.description.toLowerCase().includes(searchTermLower)) ||
+                (t.category && t.category.toLowerCase().includes(searchTermLower));
 
             const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(t.category);
             const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(t.status) || (selectedStatuses.includes('income') && t.type === 'income') || (selectedStatuses.includes('expense') && t.type === 'expense');
-            const matchesProject = currentProjects.length === 0 || currentProjects.includes(t.projectId);
+            const matchesProject = currentProjects.length === 0 || currentProjects.includes(t.projectid);
             
             const tDate = new Date(t.date);
             const matchesDate = !selectedDate || (
@@ -248,7 +263,7 @@ function TransactionsPageContent() {
         })
         .sort((a, b) => {
             if (sortBy === 'createdAt') {
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
             }
             if (sortBy === 'amountDesc') {
                 return b.amount - a.amount;
@@ -257,8 +272,8 @@ function TransactionsPageContent() {
                 return a.amount - b.amount;
             }
             if (sortBy === 'project') {
-                const projectA = projects.find(p => p.id === a.projectId)?.name || '';
-                const projectB = projects.find(p => p.id === b.projectId)?.name || '';
+                const projectA = projects.find(p => p.id === a.projectid)?.name || '';
+                const projectB = projects.find(p => p.id === b.projectid)?.name || '';
                 return projectA.localeCompare(projectB);
             }
             // Default: sort by transaction date desc
@@ -353,10 +368,10 @@ function TransactionsPageContent() {
         return Object.entries(groupedByDate).flatMap(([date, dailyTransactions]) => {
             
             const completedIncome = dailyTransactions
-                .filter(t => t.type === 'income' && t.status === 'completed')
+                .filter(t => t.type === 'income' && (!t.status || t.status === 'completed'))
                 .reduce((sum, t) => sum + t.amount, 0);
             const completedExpense = dailyTransactions
-                .filter(t => t.type === 'expense' && t.status === 'completed')
+                .filter(t => t.type === 'expense' && (!t.status || t.status === 'completed'))
                 .reduce((sum, t) => sum + t.amount, 0);
             const completedNet = completedIncome - completedExpense;
 
@@ -407,15 +422,13 @@ function TransactionsPageContent() {
                             <CardContent className={`p-4 ${getCategoryColorClass(t.category)}`}>
                                <div className="flex justify-between items-center py-3">
                                   <div className="flex-1">
-                                      <div className="font-medium flex items-center gap-2">{t.title} {t.type === 'expense' && getStatusBadge(t.status)}</div>
-                                      <div className="text-sm text-muted-foreground">{t.vendor}</div>
+                                      <div className="font-medium flex items-center gap-2">{t.description || 'Transaction'} {t.type === 'expense' && getStatusBadge(t.status)}</div>
                                       <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                                           <div className="flex items-center gap-2">
-                                              {isToday(t.createdAt) && (
+                                              {isToday(t.created_at) && (
                                                   <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>
                                               )}
                                           </div>
-                                          <span className='flex items-center gap-1'><User className='h-3 w-3' />{t.createdBy}</span>
                                       </div>
                                   </div>
                                   <div className="flex flex-col items-end ml-4">
@@ -432,14 +445,10 @@ function TransactionsPageContent() {
                         <TableRow key={t.id} onClick={handleRowClick} className={cn("cursor-pointer", getCategoryColorClass(t.category))}>
                             <TableCell>
                                 <div className="font-medium flex items-center gap-2">
-                                    {t.title} 
+                                    {t.description || 'Transaction'} 
                                     {getStatusBadge(t.status)}
                                 </div>
-                                <div className="hidden text-sm text-muted-foreground md:inline">
-                                    {t.vendor}
-                                </div>
                             </TableCell>
-                            <TableCell>{t.createdBy}</TableCell>
                             <TableCell>
                                 <Badge variant="outline" className={getCategoryBadgeColorClass(t.category)}>{t.category}</Badge>
                             </TableCell>
@@ -447,7 +456,7 @@ function TransactionsPageContent() {
                                  {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount, currency)}
                             </TableCell>
                              <TableCell className="text-center">
-                                {isToday(t.createdAt) && <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>}
+                                {isToday(t.created_at) && <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Today</Badge>}
                             </TableCell>
                              <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex justify-center">
@@ -466,211 +475,282 @@ function TransactionsPageContent() {
         });
     }
 
+  const [isAddRecordOpen, setIsAddRecordOpen] = useState(false);
+
   return (
-    <div>
-      <PageHeader
-        title="Transactions"
-        description="A detailed list of all your expenses."
-      />
+    <div className="flex-1 flex flex-col min-h-screen relative w-full lg:max-w-[calc(100vw-256px)] xl:max-w-[calc(100vw-280px)]">
+      <LiveFeedTicker />
+      <div className="p-4 md:p-6 lg:p-10 space-y-8 w-full max-w-[1400px] mx-auto">
+        {/* Page Header Area */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+          <div>
+            <h2 className="text-3xl lg:text-4xl font-headline font-bold text-on-surface tracking-tight">Transactions</h2>
+            <p className="text-on-surface-variant mt-1 text-lg">A detailed list of all your financial movements</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" className="px-5 py-2.5 bg-surface-container-lowest text-on-surface font-semibold rounded-xl flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow h-auto">
+              <span className="material-symbols-outlined text-[20px]">file_download</span>
+              Export
+            </Button>
+            <AddExpenseDialog>
+              <Button className="px-5 py-2.5 bg-primary text-on-primary font-semibold rounded-xl flex items-center gap-2 shadow-lg shadow-primary/15 hover:opacity-90 transition-opacity h-auto">
+                <span className="material-symbols-outlined text-[20px]">add</span>
+                Add Record
+              </Button>
+            </AddExpenseDialog>
+          </div>
+        </div>
 
-    <Card className="mb-6">
-        <CardContent className="p-4 flex flex-col md:flex-row items-center gap-4">
-             <Input 
-                placeholder="Search by title, vendor..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 w-full"
+        {/* Precision Prism Search & Filter Bar */}
+        <div className="bg-surface-container-lowest p-2 rounded-2xl shadow-sm flex flex-col md:flex-row items-center gap-2">
+          <div className="relative flex-1 w-full">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline">search</span>
+            <input 
+              className="w-full pl-12 pr-4 py-3 bg-transparent border-none focus:ring-2 focus:ring-primary/20 rounded-xl text-on-surface outline-none"
+              placeholder="Search by title, vendor..." 
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <div className="flex gap-2 w-full md:w-auto">
-             <Select value={selectedProjectId} onValueChange={handleSingleProjectSelect}>
-                <SelectTrigger className="w-full md:w-[180px] bg-card">
-                    <SelectValue placeholder="Select a project" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All Projects</SelectItem>
-                    {projects.map((project: Project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                            {project.name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            <Popover open={isFilterMenuOpen} onOpenChange={setIsFilterMenuOpen}>
-                <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn(isFilterActive && "border-yellow-400 bg-yellow-50 text-yellow-900 hover:bg-yellow-100")}>
-                        <SlidersHorizontal className="mr-2 h-4 w-4" />
-                        Filter
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80" align="end">
-                    <ScrollArea className="h-96">
-                        <div className="grid gap-4 p-4">
-                            <h4 className="font-medium leading-none">Filters & Sort</h4>
-                            
-                            <div className="grid gap-2">
-                                <Label>Status</Label>
-                                <div className="flex flex-wrap gap-2">
-                                    {['income', 'expense', 'credit', 'expected'].map(status => (
-                                        <div key={status} className="flex items-center space-x-2">
-                                            <Checkbox id={`status-${status}`} checked={selectedStatuses.includes(status)} onCheckedChange={() => handleMultiSelect(setSelectedStatuses)(status)} />
-                                            <Label htmlFor={`status-${status}`} className="font-normal capitalize">{status}</Label>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <Separator />
-                             <div className="grid gap-2">
-                                <Label>Date</Label>
-                                <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={(date) => {
-                                        setSelectedDate(date || undefined);
-                                        // setIsFilterMenuOpen(false);
-                                    }}
-                                    className="p-0"
-                                />
-                                {selectedDate && <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>Clear Date</Button>}
-                            </div>
-                            <Separator />
-                            <div className="grid gap-2">
-                                <Label>Projects</Label>
-                                <div className="flex flex-col gap-2">
-                                {projects.map((project: Project) => (
-                                    <div key={project.id} className="flex items-center space-x-2">
-                                        <Checkbox id={`project-${project.id}`} checked={popoverSelectedProjects.includes(project.id)} onCheckedChange={() => handleMultiSelect(setPopoverSelectedProjects)(project.id)} />
-                                        <Label htmlFor={`project-${project.id}`} className="font-normal">{project.name}</Label>
-                                    </div>
-                                ))}
-                                </div>
-                            </div>
+          </div>
+          <div className="h-10 w-[1px] bg-outline-variant/30 hidden md:block"></div>
+          <div className="relative w-full md:w-64">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline">location_on</span>
+            <select 
+              className="w-full pl-12 pr-10 py-3 bg-transparent border-none focus:ring-2 focus:ring-primary/20 rounded-xl appearance-none text-on-surface font-medium cursor-pointer outline-none"
+              value={selectedProjectId}
+              onChange={(e) => handleSingleProjectSelect(e.target.value)}
+            >
+              <option value="all">All Projects</option>
+              {projects.map((p: Project) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline pointer-events-none">expand_more</span>
+          </div>
 
-                             <Separator />
-
-                             <div className="grid gap-2">
-                                <Label>Categories</Label>
-                                <div className="flex flex-col gap-2">
-                                {categories.map(cat => (
-                                    <div key={cat} className="flex items-center space-x-2">
-                                        <Checkbox id={`cat-${cat}`} checked={selectedCategories.includes(cat)} onCheckedChange={() => handleMultiSelect(setSelectedCategories)(cat)} />
-                                        <Label htmlFor={`cat-${cat}`} className="font-normal">{cat}</Label>
-                                    </div>
-                                ))}
-                                </div>
-                            </div>
-
-                             <Separator />
-
-                             <div className="grid gap-2">
-                                <Label className="text-sm font-semibold">Sort By</Label>
-                                <RadioGroup value={sortBy} onValueChange={setSortBy} className="gap-1">
-                                    <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
-                                        <RadioGroupItem value="date" id="sort-date" />
-                                        <Label htmlFor="sort-date" className="font-normal cursor-pointer">Transaction Date (newest first)</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
-                                        <RadioGroupItem value="createdAt" id="sort-createdAt" />
-                                        <Label htmlFor="sort-createdAt" className="font-normal cursor-pointer">Date Added (newest first)</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
-                                        <RadioGroupItem value="amountDesc" id="sort-amountDesc" />
-                                        <Label htmlFor="sort-amountDesc" className="font-normal cursor-pointer">Amount (highest first)</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
-                                        <RadioGroupItem value="amountAsc" id="sort-amountAsc" />
-                                        <Label htmlFor="sort-amountAsc" className="font-normal cursor-pointer">Amount (lowest first)</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
-                                        <RadioGroupItem value="project" id="sort-project" />
-                                        <Label htmlFor="sort-project" className="font-normal cursor-pointer">Project (A–Z)</Label>
-                                    </div>
-                                </RadioGroup>
-                            </div>
-
+          <Popover open={isFilterMenuOpen} onOpenChange={setIsFilterMenuOpen}>
+            <PopoverTrigger asChild>
+              <button className={cn("w-full md:w-auto px-6 py-3 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors", 
+                  isFilterActive ? "bg-primary/10 text-primary border border-primary/20" : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest")}>
+                <span className="material-symbols-outlined">tune</span>
+                Filter
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <ScrollArea className="h-96">
+                <div className="grid gap-4 p-4">
+                  <h4 className="font-medium leading-none">Filters & Sort</h4>
+                  <div className="grid gap-2">
+                    <Label>Status</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {['income', 'expense', 'credit', 'expected'].map(status => (
+                        <div key={status} className="flex items-center space-x-2">
+                          <Checkbox id={`status-${status}`} checked={selectedStatuses.includes(status)} onCheckedChange={() => handleMultiSelect(setSelectedStatuses)(status)} />
+                          <Label htmlFor={`status-${status}`} className="font-normal capitalize">{status}</Label>
                         </div>
-                    </ScrollArea>
-                    <Separator />
-                     <div className="p-4 flex justify-between items-center">
-                        <Button variant="ghost" onClick={resetFilters} disabled={!isFilterActive}>
-                            <X className="mr-2 h-4 w-4"/>
-                            Reset
-                        </Button>
-                        <p className="text-sm text-muted-foreground">{filteredTransactions.length} results</p>
+                      ))}
                     </div>
-                </PopoverContent>
-            </Popover>
-            </div>
-        </CardContent>
-    </Card>
+                  </div>
+                  <Separator />
+                  <div className="grid gap-2">
+                    <Label>Date</Label>
+                    <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                            setSelectedDate(date || undefined);
+                        }}
+                        className="p-0"
+                    />
+                    {selectedDate && <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>Clear Date</Button>}
+                  </div>
+                  <Separator />
+                  <div className="grid gap-2">
+                    <Label>Projects</Label>
+                    <div className="flex flex-col gap-2">
+                    {projects.map((project: Project) => (
+                        <div key={project.id} className="flex items-center space-x-2">
+                            <Checkbox id={`project-${project.id}`} checked={popoverSelectedProjects.includes(project.id)} onCheckedChange={() => handleMultiSelect(setPopoverSelectedProjects)(project.id)} />
+                            <Label htmlFor={`project-${project.id}`} className="font-normal">{project.name}</Label>
+                        </div>
+                    ))}
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="grid gap-2">
+                    <Label>Categories</Label>
+                    <div className="flex flex-col gap-2">
+                    {categories.map(cat => (
+                        <div key={cat} className="flex items-center space-x-2">
+                            <Checkbox id={`cat-${cat}`} checked={selectedCategories.includes(cat)} onCheckedChange={() => handleMultiSelect(setSelectedCategories)(cat)} />
+                            <Label htmlFor={`cat-${cat}`} className="font-normal">{cat}</Label>
+                        </div>
+                    ))}
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="grid gap-2">
+                    <Label className="text-sm font-semibold">Sort By</Label>
+                    <RadioGroup value={sortBy} onValueChange={setSortBy} className="gap-1">
+                      <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
+                          <RadioGroupItem value="date" id="sort-date" />
+                          <Label htmlFor="sort-date" className="font-normal cursor-pointer">Transaction Date (newest first)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
+                          <RadioGroupItem value="createdAt" id="sort-createdAt" />
+                          <Label htmlFor="sort-createdAt" className="font-normal cursor-pointer">Date Added (newest first)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
+                          <RadioGroupItem value="amountDesc" id="sort-amountDesc" />
+                          <Label htmlFor="sort-amountDesc" className="font-normal cursor-pointer">Amount (highest first)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
+                          <RadioGroupItem value="amountAsc" id="sort-amountAsc" />
+                          <Label htmlFor="sort-amountAsc" className="font-normal cursor-pointer">Amount (lowest first)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted cursor-pointer">
+                          <RadioGroupItem value="project" id="sort-project" />
+                          <Label htmlFor="sort-project" className="font-normal cursor-pointer">Project (A–Z)</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
+              </ScrollArea>
+              <Separator />
+              <div className="p-4 flex justify-between items-center">
+                <Button variant="ghost" onClick={resetFilters} disabled={!isFilterActive}>
+                    <X className="mr-2 h-4 w-4"/>
+                    Reset
+                </Button>
+                <p className="text-sm text-muted-foreground">{filteredTransactions.length} results</p>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
-      {isMobile ? (
-         <div className="space-y-4">
-            {loading ? (
-                Array.from({ length: 10 }).map((_, i) => (
-                    <Card key={i}><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
-                ))
-            ) : (
-                renderGroupedTransactions(visibleTransactions)
-            )}
-             {visibleCount < filteredTransactions.length && (
-                <div className="text-center mt-4">
-                <Button onClick={loadMore} variant="secondary" className="w-full bg-card">Load More</Button>
-                </div>
-            )}
-            {!loading && filteredTransactions.length === 0 && (
-                <div className="text-center py-10 text-muted-foreground">
-                    No transactions match your filters.
-                </div>
-            )}
-         </div>
-      ) : (
-        <Card>
-            <CardContent>
-            <Table>
-                <TableHeader>
-                <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-center">Date Added</TableHead>
-                    <TableHead className="text-center w-12">Receipt</TableHead>
-                    <TableHead className="text-center w-12">Actions</TableHead>
-                </TableRow>
-                </TableHeader>
-                <TableBody>
+        {/* Transaction Table (Glass & Tonal Layering) */}
+        <div className="bg-surface-container-lowest rounded-3xl overflow-hidden shadow-[0px_8px_32px_rgba(25,28,32,0.04)]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-surface-container-low/50">
+                  <th className="px-6 py-5 text-xs font-bold uppercase tracking-[0.1em] text-outline">Description</th>
+                  <th className="px-6 py-5 text-xs font-bold uppercase tracking-[0.1em] text-outline hidden md:table-cell">Category</th>
+                  <th className="px-6 py-5 text-xs font-bold uppercase tracking-[0.1em] text-outline">Amount</th>
+                  <th className="px-6 py-5 text-xs font-bold uppercase tracking-[0.1em] text-outline hidden sm:table-cell">Date Added</th>
+                  <th className="px-6 py-5 text-xs font-bold uppercase tracking-[0.1em] text-outline hidden lg:table-cell w-20">Receipt</th>
+                  <th className="px-6 py-5 text-xs font-bold uppercase tracking-[0.1em] text-outline text-right w-20">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-container-low">
                 {loading ? (
-                    Array.from({ length: 10 }).map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-5 w-16 float-right" /></TableCell>
-                         <TableCell />
-                        <TableCell />
-                        <TableCell />
-                    </TableRow>
-                    ))
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                       <td className="px-6 py-6"><Skeleton className="h-10 w-40" /></td>
+                       <td className="px-6 py-6 hidden md:table-cell"><Skeleton className="h-6 w-24 rounded-full" /></td>
+                       <td className="px-6 py-6"><Skeleton className="h-8 w-24" /></td>
+                       <td className="px-6 py-6 hidden sm:table-cell"><Skeleton className="h-4 w-20" /></td>
+                       <td className="px-6 py-6 hidden lg:table-cell"><Skeleton className="h-8 w-8" /></td>
+                       <td className="px-6 py-6 text-right"><Skeleton className="h-8 w-8 ml-auto" /></td>
+                    </tr>
+                  ))
+                ) : visibleTransactions.length === 0 ? (
+                  <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-outline-variant font-medium">No transactions found matching your filters.</td>
+                  </tr>
                 ) : (
-                    renderGroupedTransactions(visibleTransactions)
+                  visibleTransactions.map(t => {
+                    const isIncome = t.type === 'income';
+                    
+                    let iconName = 'receipt_long';
+                    if (isIncome) iconName = 'payments';
+                    else if (t.category?.toLowerCase().includes('feed')) iconName = 'restaurant';
+                    else if (t.category?.toLowerCase().includes('util')) iconName = 'bolt';
+                    else if (t.category?.toLowerCase().includes('maint')) iconName = 'build';
+                    else if (t.category?.toLowerCase().includes('tech')) iconName = 'devices';
+                    else if (t.category?.toLowerCase().includes('sec')) iconName = 'security';
+
+                    const colorTheme = isIncome 
+                        ? { bg: 'bg-primary-container/10', text: 'text-primary', badge: 'bg-primary-container/10 text-primary border-primary/10' }
+                        : { bg: 'bg-secondary-container/10', text: 'text-secondary', badge: 'bg-surface-container text-on-surface-variant border-outline-variant/20' };
+
+                    return (
+                        <tr key={t.id} className="hover:bg-surface-container-low/30 transition-colors group cursor-pointer" onClick={() => router.push(`/transactions/${t.id}`)}>
+                            <td className="px-6 py-6">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-10 h-10 rounded-full flex shrink-0 items-center justify-center ${colorTheme.bg} ${colorTheme.text}`}>
+                                        <span className="material-symbols-outlined">{iconName}</span>
+                                    </div>
+                                    <div className="truncate max-w-[200px] sm:max-w-xs md:max-w-[250px]">
+                                        <p className="font-semibold text-on-surface truncate">{t.description || t.category || (isIncome ? 'Income' : 'Expense')} {t.status === 'credit' && <Badge variant="destructive" className="ml-2 text-[10px]">Credit</Badge>}</p>
+                                        <p className="text-xs text-on-surface-variant max-w-[200px] truncate">{t.title || t.vendor || t.notes}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-6 py-6 hidden md:table-cell">
+                                <span className={`px-3 py-1 text-[11px] font-bold rounded-full border truncate max-w-[150px] inline-block ${colorTheme.badge}`}>
+                                    {t.category || (isIncome ? 'Income' : 'Uncategorized')}
+                                </span>
+                            </td>
+                            <td className="px-6 py-6">
+                                <span className={`font-headline font-bold whitespace-nowrap ${colorTheme.text}`}>
+                                    {isIncome ? '+' : '-'}{formatCurrency(t.amount, currency)}
+                                </span>
+                            </td>
+                            <td className="px-6 py-6 text-sm text-on-surface-variant font-medium hidden sm:table-cell whitespace-nowrap">
+                                {new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </td>
+                            <td className="px-6 py-6 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
+                                {t.receiptUrl ? (
+                                    <a href={t.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:bg-primary/5 p-2 rounded-lg transition-colors inline-flex">
+                                        <span className="material-symbols-outlined">receipt</span>
+                                    </a>
+                                ) : (
+                                    <span className="text-outline-variant/40 font-semibold tracking-widest text-xs flex items-center gap-1 cursor-not-allowed">
+                                        <X className="w-3 h-3" /> N/A
+                                    </span>
+                                )}
+                            </td>
+                            <td className="px-6 py-6 text-right" onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="material-symbols-outlined text-outline">more_vert</span>
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onSelect={() => setEditingTransaction(t)}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        <span>Edit</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onSelect={() => setDeletingTransaction(t)} className="text-red-600">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <span>Delete</span>
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </td>
+                        </tr>
+                    )
+                  })
                 )}
-                {!loading && filteredTransactions.length === 0 && (
-                     <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center">
-                            No transactions match your filters.
-                        </TableCell>
-                    </TableRow>
-                )}
-                </TableBody>
-            </Table>
-            {visibleCount < filteredTransactions.length && !loading && (
-                <div className="text-center mt-4 pt-4 border-t">
-                <Button onClick={loadMore} variant="outline" className="w-full bg-card">Load More</Button>
-                </div>
-            )}
-            </CardContent>
-        </Card>
-      )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface-container-low/30 rounded-xl">
+          <p className="text-sm text-on-surface-variant">Showing <span className="font-semibold text-on-surface">{Math.min(visibleCount, filteredTransactions.length)}</span> of {filteredTransactions.length} results</p>
+          {visibleCount < filteredTransactions.length && (
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button variant="secondary" className="w-full sm:w-auto" onClick={loadMore}>
+                  Load More
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {!loading && <FloatingSum transactions={filteredTransactions} />}
 
@@ -681,6 +761,7 @@ function TransactionsPageContent() {
             onOpenChange={(isOpen) => {
                 if (!isOpen) setEditingTransaction(null);
             }}
+            allTransactions={transactions}
         />
       )}
       {deletingTransaction && (

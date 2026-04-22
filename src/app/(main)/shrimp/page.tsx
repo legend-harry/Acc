@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
 import {
   Plus, AlertTriangle, TrendingUp, FileText, BookOpen, Image,
   LayoutDashboard, Route, ClipboardList, Utensils, FolderOpen,
@@ -111,71 +112,53 @@ export default function ShrimpFarmingPage() {
 
   return (
     <div className="space-y-4 md:space-y-6 px-2 md:px-0">
-      {/* === Hero Header === */}
-      <div className="rounded-2xl overflow-hidden relative">
-        <div className="absolute inset-0 aqua-gradient-bg opacity-60" />
-        <div className="relative px-5 py-5 md:px-8 md:py-6">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-md">
-                  <Shell className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                    Shrimp Farm Manager
-                  </h1>
-                  <p className="text-gray-600 text-sm">Complete aquaculture operations & lifecycle tracking</p>
-                </div>
-              </div>
-
-              {/* Farm-wide stats pills */}
-              {ponds.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <Badge className="bg-white/70 text-gray-700 border border-white/50 backdrop-blur-sm">
-                    <Fish className="h-3 w-3 mr-1" /> {farmStats.activePonds}/{farmStats.totalPonds} ponds active
-                  </Badge>
-                  <Badge className="bg-white/70 text-gray-700 border border-white/50 backdrop-blur-sm">
-                    <Activity className="h-3 w-3 mr-1" /> {(farmStats.totalStock || 0).toLocaleString()} total stock
-                  </Badge>
-                  {farmStats.criticalAlerts > 0 && (
-                    <Badge className="bg-red-100 text-red-700 border border-red-200 animate-pulse-glow">
-                      <AlertTriangle className="h-3 w-3 mr-1" /> {farmStats.criticalAlerts} alert{farmStats.criticalAlerts > 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 flex-shrink-0 flex-wrap">
-              <Button
-                onClick={() => setShowImageUpload(true)}
-                variant="outline"
-                className="gap-1.5 bg-white/80 hover:bg-white border-white/60 backdrop-blur-sm text-sm"
-              >
-                <Image className="h-4 w-4" />
-                <span className="hidden sm:inline">Analyze Image</span>
-              </Button>
-              <Button
-                onClick={() => setShowQuickSeed(true)}
-                variant="outline"
-                className="gap-1.5 bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-800 text-sm"
-              >
-                <Zap className="h-4 w-4" />
-                <span className="hidden sm:inline">Quick Seed</span>
-              </Button>
-              <Button
-                onClick={() => setShowAddPond(true)}
-                className="gap-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-md text-sm"
-              >
-                <Plus className="h-4 w-4" />
-                Add Pond
-              </Button>
-            </div>
-          </div>
+      <PageHeader 
+        title="Shrimp Farm Manager" 
+        description="Complete aquaculture operations & lifecycle tracking"
+      >
+        <div className="flex gap-2 flex-shrink-0 flex-wrap">
+          <Button
+            onClick={() => setShowImageUpload(true)}
+            variant="outline"
+            className="gap-1.5 text-sm"
+          >
+            <Image className="h-4 w-4" />
+            <span className="hidden sm:inline">Analyze Image</span>
+          </Button>
+          <Button
+            onClick={() => setShowQuickSeed(true)}
+            variant="outline"
+            className="gap-1.5 bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-800 text-sm"
+          >
+            <Zap className="h-4 w-4" />
+            <span className="hidden sm:inline">Quick Seed</span>
+          </Button>
+          <Button
+            onClick={() => setShowAddPond(true)}
+            className="gap-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-4 w-4" />
+            Add Pond
+          </Button>
         </div>
-      </div>
+      </PageHeader>
+      
+      {/* Farm-wide stats pills */}
+      {ponds.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Badge variant="outline" className="text-gray-600">
+            <Fish className="h-3 w-3 mr-1" /> {farmStats.activePonds}/{farmStats.totalPonds} ponds active
+          </Badge>
+          <Badge variant="outline" className="text-gray-600">
+            <Activity className="h-3 w-3 mr-1" /> {(farmStats.totalStock || 0).toLocaleString()} total stock
+          </Badge>
+          {farmStats.criticalAlerts > 0 && (
+            <Badge variant="destructive" className="animate-pulse">
+              <AlertTriangle className="h-3 w-3 mr-1" /> {farmStats.criticalAlerts} alert{farmStats.criticalAlerts > 1 ? 's' : ''}
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* === Active Pond Context Bar === */}
       {activePondData && (
@@ -204,43 +187,42 @@ export default function ShrimpFarmingPage() {
 
       {/* === Empty State === */}
       {ponds.length === 0 && (
-        <Card className="border-2 border-dashed border-cyan-300 bg-gradient-to-br from-cyan-50/50 via-sky-50/50 to-emerald-50/50 overflow-hidden relative">
+        <Card className="overflow-hidden relative">
           <CardContent className="pt-10 pb-12 text-center px-6">
             <div className="space-y-6">
               <div className="relative inline-block">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center animate-float shadow-lg">
-                  <Fish className="h-8 w-8 md:h-10 md:w-10 text-white" />
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-blue-100 flex items-center justify-center animate-float shadow-sm mx-auto">
+                  <Fish className="h-8 w-8 md:h-10 md:w-10 text-blue-600" />
                 </div>
-                <Sparkles className="absolute -top-2 -right-2 h-6 w-6 text-amber-400 animate-pulse" />
               </div>
               <div className="space-y-2 max-w-lg mx-auto">
-                <h3 className="text-2xl md:text-3xl font-bold text-gray-900">Welcome to Your Farm</h3>
-                <p className="text-sm md:text-base text-gray-600">
+                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Welcome to Your Farm</h3>
+                <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
                   Start by adding your first pond. Our system will help you track feed, growth, expenses, and find the optimal harvest window.
                 </p>
               </div>
 
               {/* Onboarding steps */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm text-gray-600 max-w-xl mx-auto">
-                <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2 border border-cyan-200">
-                  <span className="w-6 h-6 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center text-xs font-bold">1</span>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
+                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-700">
+                  <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-bold">1</span>
                   <span>Add Pond</span>
                 </div>
-                <ArrowRight className="h-4 w-4 text-gray-400 hidden sm:block" />
-                <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2 border border-gray-200">
-                  <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">2</span>
+                <ArrowRight className="h-4 w-4 text-gray-400 dark:text-gray-500 hidden sm:block" />
+                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-700">
+                  <span className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs font-bold">2</span>
                   <span>Log Daily Data</span>
                 </div>
-                <ArrowRight className="h-4 w-4 text-gray-400 hidden sm:block" />
-                <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2 border border-gray-200">
-                  <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">3</span>
+                <ArrowRight className="h-4 w-4 text-gray-400 dark:text-gray-500 hidden sm:block" />
+                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-700">
+                  <span className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs font-bold">3</span>
                   <span>Track & Harvest</span>
                 </div>
               </div>
 
               <Button
                 onClick={() => setShowAddPond(true)}
-                className="gap-2 px-8 py-5 text-base bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 shadow-lg shadow-cyan-200"
+                className="gap-2 px-8 py-5 text-base bg-blue-600 hover:bg-blue-700 mt-4"
               >
                 <Plus className="h-5 w-5" />
                 Add Your First Pond

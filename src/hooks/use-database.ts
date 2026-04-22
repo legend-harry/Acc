@@ -22,6 +22,7 @@ export function useProjects() {
         }
 
         const fetchProjects = async () => {
+            setLoading(true);
             const { data } = await supabase
                 .from('projects')
                 .select('*')
@@ -51,26 +52,37 @@ export function useTransactions() {
     const supabase = createClient();
 
     useEffect(() => {
-        if (!clientId || !selectedProfile) {
+        if (!clientId) {
             setTransactions([]);
             setLoading(false);
             return;
         }
 
         const fetchTx = async () => {
-            const { data } = await supabase
+            setLoading(true);
+            let query = supabase
                 .from('transactions')
                 .select('*')
                 .eq('client_id', clientId)
-                .eq('profile_id', selectedProfile)
                 .order('date', { ascending: false });
+
+            if (selectedProfile) {
+                query = query.eq('profile_id', selectedProfile);
+            }
+
+            const { data } = await query;
                 
             if (data) {
-                 setTransactions(data.map(d => ({
-                     ...d,
-                     date: new Date(d.date),
-                     createdAt: new Date(d.created_at)
-                 })) as unknown as Transaction[]);
+                setTransactions(data.map(d => ({
+                    ...d,
+                    projectid: d.projectid ?? d.project_id ?? '',
+                    date: new Date(d.date),
+                    created_at: new Date(d.created_at),
+                    createdBy: d.created_by ?? d.createdBy ?? '',
+                    invoiceNo: d.invoice_no ?? d.invoiceNo ?? '',
+                    ratePerUnit: d.rate_per_unit ?? d.ratePerUnit ?? 0,
+                    receiptUrl: d.receipt_url ?? d.receiptUrl ?? '',
+                })) as unknown as Transaction[]);
             }
             setLoading(false);
         };
@@ -95,21 +107,32 @@ export function useBudgets() {
     const supabase = createClient();
 
     useEffect(() => {
-        if (!clientId || !selectedProfile) {
+        if (!clientId) {
             setBudgets([]);
             setLoading(false);
             return;
         }
 
         const fetchBudgets = async () => {
-            const { data } = await supabase
+            setLoading(true);
+            let query = supabase
                 .from('budgets')
                 .select('*')
-                .eq('client_id', clientId)
-                .eq('profile_id', selectedProfile);
+                .eq('client_id', clientId);
+
+            if (selectedProfile) {
+                query = query.eq('profile_id', selectedProfile);
+            }
+
+            const { data } = await query;
             
             if (data) {
-                const sorted = data.sort((a, b) => a.category.localeCompare(b.category));
+                const mapped = data.map(b => ({
+                    ...b,
+                    // Try both column names for the budget limit
+                    budget: b.amount ?? b.budget_amount ?? b.budget ?? b.limit_amount ?? 0,
+                }));
+                const sorted = mapped.sort((a: any, b: any) => a.category.localeCompare(b.category));
                 setBudgets(sorted as BudgetSummary[]);
             }
             setLoading(false);
@@ -132,7 +155,7 @@ export function useCategories(projectId?: string) {
     
     const categories = loading 
         ? [] 
-        : [...new Set(budgets.filter(b => !projectId || b.projectId === projectId).map(b => b.category))].sort();
+        : [...new Set(budgets.filter(b => !projectId || b.projectid === projectId).map(b => b.category))].sort();
 
     return { categories, loading };
 }
@@ -145,18 +168,24 @@ export function useEmployees() {
     const supabase = createClient();
 
     useEffect(() => {
-        if (!clientId || !selectedProfile) {
+        if (!clientId) {
             setEmployees([]);
             setLoading(false);
             return;
         }
 
         const fetchEmployees = async () => {
-            const { data } = await supabase
+            setLoading(true);
+            let query = supabase
                 .from('employees')
                 .select('*')
-                .eq('client_id', clientId)
-                .eq('profile_id', selectedProfile);
+                .eq('client_id', clientId);
+
+            if (selectedProfile) {
+                query = query.eq('profile_id', selectedProfile);
+            }
+
+            const { data } = await query;
             
             if (data) setEmployees(data as Employee[]);
             setLoading(false);
@@ -189,6 +218,7 @@ export function useAttendanceForDates() {
         }
 
         const fetchAttendance = async () => {
+            setLoading(true);
             const { data } = await supabase
                 .from('attendance')
                 .select('*')
@@ -242,6 +272,7 @@ export function useEmployeeAttendance(employeeId: string) {
         }
 
         const fetchAtt = async () => {
+            setLoading(true);
             const { data } = await supabase
                 .from('attendance')
                 .select('*')

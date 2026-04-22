@@ -40,8 +40,8 @@ export default function DashboardPage() {
       };
     }
     return {
-      transactions: transactions.filter((t) => t.projectId === selectedProjectId),
-      budgets: budgets.filter((b) => b.projectId === selectedProjectId),
+      transactions: transactions.filter((t: any) => t.projectid === selectedProjectId),
+      budgets: budgets.filter((b: any) => b.projectid === selectedProjectId),
     };
   }, [transactions, budgets, selectedProjectId]);
 

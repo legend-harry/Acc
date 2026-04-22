@@ -16,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { usePonds } from '@/hooks/use-shrimp';
 import { useProjects } from '@/hooks/use-database';
 import { createClient } from '@/lib/supabase/client';
+import { useClient } from '@/context/client-context';
+import { useUser } from '@/context/user-context';
 
 interface AddPondDialogProps {
   open: boolean;
@@ -27,6 +29,8 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
   const { toast } = useToast();
   const { addPond } = usePonds();
   const { projects } = useProjects();
+  const { clientId } = useClient();
+  const { selectedProfile } = useUser();
   const [step, setStep] = useState(1); // 1: Basic Info, 2: Progress Assessment, 3: Design, 4: Review
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -46,13 +50,13 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
     width: '' as any,
     depth: '' as any,
     species: 'vannamei',
-    shrimpType: 'white' as 'white' | 'tiger' | 'giant',
-    farmingType: 'intensive' as 'extensive' | 'semi-intensive' | 'intensive',
+    shrimptype: 'white' as 'white' | 'tiger' | 'giant',
+    farmingtype: 'intensive' as 'extensive' | 'semi-intensive' | 'intensive',
     targetDensity: '' as any,
     seedAmount: '' as any,
     expectedCount: '' as any,
     waterSource: 'well',
-    linkedProjectId: 'none',
+    linkedprojectid: 'none',
     // Progress Assessment fields
     currentStage: 'planning' as 'planning' | 'preparation' | 'stocking' | 'operation' | 'harvest',
     daysInCycle: '' as any,
@@ -197,10 +201,10 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
       }
       
       if (detectedType !== formData.farmingType) {
-        setFormData(prev => ({ ...prev, farmingType: detectedType, targetDensity: Math.round(densityPerM2) }));
+        setFormData(prev => ({ ...prev, farmingtype: detectedType, targetDensity: Math.round(densityPerM2) }));
       }
     }
-  }, [formData.length, formData.width, formData.seedAmount, formData.farmingType]);
+  }, [formData.length, formData.width, formData.seedAmount, formData.farmingtype]);
 
   const calculateExpectedCount = () => {
     // Expected harvest will be calculated from actual survival data during the cycle
@@ -216,8 +220,12 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
   };
 
   const createProjectWithName = async (name: string) => {
-    const supabase = (await import('@/lib/supabase/client')).createClient();
-    const { data, error } = await supabase.from('projects').insert({ name, archived: false }).select('id').single();
+    const supabase = createClient();
+    const { data, error } = await supabase.from('projects').insert({ 
+      name,
+      client_id: clientId,
+      profile_id: selectedProfile
+    }).select('id').single();
     if (error) throw error;
     return data?.id || '';
   };
@@ -241,7 +249,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         description: `${newProjectName} has been created successfully`,
       });
 
-      setFormData({ ...formData, linkedProjectId: newId });
+      setFormData({ ...formData, linkedprojectid: newId });
       setNewProjectName('');
       setShowCreateProject(false);
     } catch (error) {
@@ -295,9 +303,9 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
     setIsSaving(true);
     try {
       // Ensure a project is linked: if user left as standalone, auto-create a project with pond name
-      let projectId = formData.linkedProjectId;
-      if (projectId === 'none') {
-        projectId = await createProjectWithName(formData.pondName.trim() || 'New Pond Project');
+      let projectid = formData.linkedprojectid;
+      if (projectid === 'none') {
+        projectid = await createProjectWithName(formData.pondName.trim() || 'New Pond Project');
       }
 
       const area = calculateArea();
@@ -313,8 +321,8 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         length: Number(formData.length) || 0,
         width: Number(formData.width) || 0,
         depth: Number(formData.depth) || 0,
-        shrimpType: formData.shrimpType,
-        farmingType: formData.farmingType,
+        shrimptype: formData.shrimptype,
+        farmingtype: formData.farmingtype,
         targetDensity: Number(formData.targetDensity) || 0,
         seedAmount: Number(formData.seedAmount) || 0,
         expectedCount: expected,
@@ -322,9 +330,9 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         currentStock: Number(formData.seedAmount) || 0,
         status: 'preparing',
         currentStage: formData.currentStage,
-        stockingDate: stockingDate.toISOString(),
+        stockingdate: stockingDate.toISOString(),
         cycleDay: Number(formData.daysInCycle) || 0,
-        linkedProjectId: projectId || null,
+        linkedprojectid: projectid || null,
       });
 
       // Notify parent so it can select the new pond immediately
@@ -364,6 +372,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
       setProgressAnalysis(null);
       setUpcomingSteps([]);
       onOpenChange(false);
+      window.location.reload();
     } catch (error) {
       toast({
         variant: "destructive",

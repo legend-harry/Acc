@@ -17,7 +17,7 @@ type SubscriptionContextType = {
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-    const [isPremium, setIsPremium] = useState(false);
+    const [isPremium, setIsPremium] = useState(true);
     const [isUpgradeDialogVisible, setUpgradeDialogVisible] = useState(false);
     const [upgradeSource, setUpgradeSource] = useState<UpgradeSource | null>(null);
 

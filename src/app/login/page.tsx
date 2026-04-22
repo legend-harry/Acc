@@ -22,30 +22,30 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       
       {/* Background Decor */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 dark:bg-blue-600/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 dark:bg-purple-600/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-secondary/8 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/6 rounded-full blur-3xl" />
       </div>
 
-      <Card className="w-full max-w-md relative z-10 border-0 shadow-2xl glass-card">
+      <Card className="w-full max-w-md relative z-10 border-border/20 shadow-ambient-lg glass-card rounded-2xl animate-scale-in">
         <CardHeader className="space-y-4 text-center pb-8 pt-10">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-6">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary-container rounded-2xl flex items-center justify-center shadow-ambient transform -rotate-6 transition-transform duration-300 hover:rotate-0 hover:scale-105">
             <Fish className="w-8 h-8 text-white transform rotate-6" />
           </div>
           <div className="space-y-2">
-            <CardTitle className="text-3xl font-bold tracking-tight">Acc Platform</CardTitle>
-            <CardDescription className="text-base text-zinc-500 dark:text-zinc-400">
-              Aquaculture Management & Finance Dashboard
+            <CardTitle className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>ExpenseWise</CardTitle>
+            <CardDescription className="text-base text-muted-foreground/70">
+              Intelligent Wealth Management
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-6 pb-10 px-8">
           
           <Button 
-            className="w-full h-12 text-base font-medium bg-white text-zinc-900 border border-zinc-200 shadow-sm hover:bg-zinc-50 hover:text-zinc-900 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300"
+            className="w-full h-12 text-base font-medium bg-card text-foreground border border-border/40 shadow-ambient-sm hover:shadow-ambient hover:bg-muted/50 transition-all duration-200 ease-precision active:scale-[0.98] rounded-xl"
             onClick={handleGoogleLogin}
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5 mr-3" aria-hidden="true" fill="currentColor">
@@ -54,8 +54,8 @@ export default function LoginPage() {
             Continue with Google
           </Button>
 
-          <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
-            Secure, scalable enterprise authentication via Supabase standard RLS.
+          <p className="text-center text-sm text-muted-foreground/60">
+            Secure enterprise authentication powered by Supabase.
           </p>
 
         </CardContent>

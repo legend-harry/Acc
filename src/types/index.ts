@@ -2,7 +2,7 @@
 export type Transaction = {
   id: string;
   date: Date;
-  createdAt: Date;
+  created_at: Date;
   invoiceNo: string;
   title:string;
   amount: number;
@@ -17,7 +17,7 @@ export type Transaction = {
   createdBy: string;
   type: 'expense' | 'income';
   status: 'completed' | 'credit' | 'expected';
-  projectId: string;
+  projectid: string;
 };
 
 export type Budget = {
@@ -28,8 +28,8 @@ export type Budget = {
 export type BudgetSummary = {
   id: string;
   category: string;
-  budget: number;
-  projectId: string;
+  budget: number; // Keep UI property 'budget' for now, but map from 'amount' in hooks
+  projectid: string;
 };
 
 export type Project = {

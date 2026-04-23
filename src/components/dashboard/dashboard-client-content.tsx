@@ -20,31 +20,33 @@ export function DashboardClientContent({
   budgets,
   isProjectView = false,
 }: {
-  transactions: Transaction[];
-  budgets: BudgetSummary[];
+  transactions?: Transaction[];
+  budgets?: BudgetSummary[];
   isProjectView?: boolean;
 }) {
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+  const safeBudgets = Array.isArray(budgets) ? budgets : [];
   const [filterYear, setFilterYear] = useState<string>("all");
   const [filterMonth, setFilterMonth] = useState<string>("all");
 
   const filteredTransactions = useMemo(() => {
-     return transactions.filter(t => {
+     return safeTransactions.filter(t => {
         const d = new Date(t.date);
         if (isNaN(d.getTime())) return false;
         const yearMatch = filterYear === "all" || d.getFullYear().toString() === filterYear;
         const monthMatch = filterMonth === "all" || (d.getMonth() + 1).toString() === filterMonth;
         return yearMatch && monthMatch;
      });
-  }, [transactions, filterYear, filterMonth]);
+  }, [safeTransactions, filterYear, filterMonth]);
 
   const availableYears = useMemo(() => {
      const years = new Set<string>();
-     transactions.forEach(t => {
+     safeTransactions.forEach(t => {
         const d = new Date(t.date);
         if (!isNaN(d.getTime())) years.add(d.getFullYear().toString());
      });
      return Array.from(years).sort((a,b) => parseInt(b) - parseInt(a));
-  }, [transactions]);
+  }, [safeTransactions]);
 
   return (
     <div className="flex flex-col gap-8 -mt-6">
@@ -124,7 +126,7 @@ export function DashboardClientContent({
         </div>
 
         <div className="animate-fade-up bg-white rounded-3xl p-8 shadow-[0px_8px_32px_rgba(25,28,32,0.04)] border border-outline-variant/10" style={{ animationDelay: '500ms' }}>
-          <NewBudgetIntelligence transactions={filteredTransactions} budgets={budgets} />
+               <NewBudgetIntelligence transactions={filteredTransactions} budgets={safeBudgets} />
         </div>
 
         {/* SECTION 3: Stream & Velocity */}
@@ -134,7 +136,7 @@ export function DashboardClientContent({
 
         {/* FOOTER: Asset Sparklines */}
         <div className="animate-fade-up" style={{ animationDelay: '700ms' }}>
-          <StitchMiniSparklines budgets={budgets} />
+               <StitchMiniSparklines budgets={safeBudgets} />
         </div>
       </div>
     </div>

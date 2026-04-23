@@ -28,10 +28,12 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<FinancialMetrics | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const safeProjects = Array.isArray(projects) ? projects : [];
+  const safePonds = Array.isArray(ponds) ? ponds : [];
 
-  const activePondData = ponds.find(p => p.id === pondId);
-  const linkedProject = projects.find(p => p.id === linkedProjectId);
-  const activeProjects = projects.filter(p => !p.archived);
+  const activePondData = safePonds.find(p => p.id === pondId);
+  const linkedProject = safeProjects.find(p => p.id === linkedProjectId);
+  const activeProjects = safeProjects.filter(p => !p.archived);
 
   const { transactions, loading: txLoading } = useTransactions();
 
@@ -46,7 +48,8 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
       return;
     }
 
-    const projectTransactions = transactions.filter(t => t.projectid === linkedProjectId);
+    const safeTransactions = Array.isArray(transactions) ? transactions : [];
+    const projectTransactions = safeTransactions.filter(t => t.projectid === linkedProjectId);
 
     if (projectTransactions.length === 0) {
       setMetrics(null);
@@ -144,7 +147,7 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
                     size="sm"
                     variant="outline"
                     className="border-amber-400 text-amber-900"
-                    onClick={() => updatePond(pondId, { linkedProjectId: p.id })}
+                    onClick={() => updatePond(pondId, { linkedprojectid: p.id })}
                   >
                     Link to {p.name}
                   </Button>
@@ -183,7 +186,7 @@ export function FinancialDashboard({ pondId, linkedProjectId }: { pondId: string
   const costDataArray = Object.entries(metrics.costByCategory).map(([name, value]) => ({
     name,
     value,
-    percentage: Math.round((value / metrics.totalExpenses) * 100),
+    percentage: metrics.totalExpenses > 0 ? Math.round((value / metrics.totalExpenses) * 100) : 0,
   }));
 
   return (

@@ -37,6 +37,10 @@ self.addEventListener('activate', event => {
 
 // Cache and return requests
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
     if (event.request.mode === 'navigate') {
         event.respondWith(
             fetch(event.request).catch(() => caches.match('/offline.html'))

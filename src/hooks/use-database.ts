@@ -75,7 +75,7 @@ export function useTransactions() {
             if (data) {
                 setTransactions(data.map(d => ({
                     ...d,
-                    projectid: d.projectid ?? d.project_id ?? '',
+                    projectid: d.projectid ?? d.projectId ?? d.project_id ?? '',
                     date: new Date(d.date),
                     created_at: new Date(d.created_at),
                     createdBy: d.created_by ?? d.createdBy ?? '',
@@ -129,6 +129,7 @@ export function useBudgets() {
             if (data) {
                 const mapped = data.map(b => ({
                     ...b,
+                    projectid: b.projectid ?? b.projectId ?? b.project_id ?? '',
                     // Try both column names for the budget limit
                     budget: b.amount ?? b.budget_amount ?? b.budget ?? b.limit_amount ?? 0,
                 }));

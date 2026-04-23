@@ -31,6 +31,9 @@ import { useUser } from "@/context/user-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import type { Transaction } from "@/types";
 import { useCurrency } from "@/context/currency-context";
+import { Edit, Receipt } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 export function EditTransactionDialog({
   transaction,
@@ -75,7 +78,7 @@ export function EditTransactionDialog({
     if (isOpen && transaction) {
         setReceiptPreview(transaction.receiptUrl || null);
         setTransactionType(transaction.type);
-        setSelectedProjectId(transaction.projectId);
+        setSelectedProjectId(transaction.projectid);
         setIsInitialized(true);
     } else if (!isOpen) {
         setIsInitialized(false);
@@ -125,7 +128,7 @@ export function EditTransactionDialog({
         type: data.type,
         status: data.type === 'income' ? 'completed' : data.status,
         category: data.type === 'income' ? 'Income' : data.category,
-        projectId: data.projectId
+        projectid: data.projectId
     };
     
     try {
@@ -144,7 +147,7 @@ export function EditTransactionDialog({
             unit: updatedTransaction.unit,
             notes: updatedTransaction.notes,
             status: updatedTransaction.status,
-            projectid: updatedTransaction.projectId,
+            projectid: updatedTransaction.projectid,
             receipt_url: updatedTransaction.receiptUrl,
         };
         // Core update (base schema only)
@@ -211,7 +214,7 @@ export function EditTransactionDialog({
                   <Label htmlFor="project" className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">
                     Project
                   </Label>
-                  <Select name="projectId" defaultValue={transaction.projectId} required onValueChange={setSelectedProjectId}>
+                  <Select name="projectId" defaultValue={transaction.projectid} required onValueChange={setSelectedProjectId}>
                     <SelectTrigger className="col-span-3 bg-surface-container-low border-none shadow-none font-medium">
                       <SelectValue placeholder="Select a project" />
                     </SelectTrigger>

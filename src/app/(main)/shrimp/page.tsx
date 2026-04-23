@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -30,8 +30,9 @@ import { FeedingSchedulePlanner } from "@/components/shrimp/feeding-schedule-pla
 import { HarvestEstimator } from "@/components/shrimp/harvest-estimator";
 import { FCREngine } from "@/components/shrimp/fcr-engine";
 import { GrowthBiomassTracker } from "@/components/shrimp/growth-biomass-tracker";
-import { DataCompletenessPanel } from "@/components/data-completeness-panel";
+import { FinancialSummaryCards } from "@/components/dashboard/financial-summary-cards";
 import { usePonds, useAlerts } from '@/hooks/use-shrimp';
+import { useTransactions } from '@/hooks/use-database';
 import { useUser } from '@/context/user-context';
 
 const TAB_CONFIG = [
@@ -57,16 +58,20 @@ export default function ShrimpFarmingPage() {
 
   const { ponds, loading: pondsLoading, deletePond } = usePonds();
   const { alerts, loading: alertsLoading } = useAlerts();
+  const { transactions, loading: transactionsLoading } = useTransactions();
+  const safePonds = Array.isArray(ponds) ? ponds : [];
+  const safeAlerts = Array.isArray(alerts) ? alerts : [];
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
 
   // Set first pond as active if none selected
-  useMemo(() => {
-    if (!activePond && ponds.length > 0) {
-      setActivePond(ponds[0].id);
+  useEffect(() => {
+    if (!activePond && safePonds.length > 0) {
+      setActivePond(safePonds[0].id);
     }
-  }, [ponds, activePond]);
+  }, [safePonds, activePond]);
 
   // Get current phase from active pond
-  const activePondData = ponds.find(p => p.id === activePond);
+  const activePondData = safePonds.find(p => p.id === activePond);
   const currentPhase = useMemo(() => {
     const day = activePondData?.cycleDay || 0;
     const totalDays = 120;
@@ -88,14 +93,21 @@ export default function ShrimpFarmingPage() {
   // Farm-wide stats
   const farmStats = useMemo(() => {
     return {
-      totalPonds: ponds.length,
-      activePonds: ponds.filter(p => p.status === 'active').length,
-      totalStock: ponds.reduce((sum, p) => sum + (p.currentStock || 0), 0),
-      criticalAlerts: alerts.filter((a: any) => a.level === 'critical').length,
+      totalPonds: safePonds.length,
+      activePonds: safePonds.filter(p => p.status === 'active').length,
+      totalStock: safePonds.reduce((sum, p) => sum + (p.currentStock || 0), 0),
+      criticalAlerts: safeAlerts.filter((a: any) => a.level === 'critical').length,
     };
-  }, [ponds, alerts]);
+  }, [safePonds, safeAlerts]);
 
-  if (pondsLoading || alertsLoading) {
+  const shrimpDashboardTransactions = useMemo(() => {
+    if (!activePondData) return safeTransactions;
+    const linkedProjectId = activePondData.linkedprojectid;
+    if (!linkedProjectId) return safeTransactions;
+    return safeTransactions.filter((t) => t.projectid === linkedProjectId);
+  }, [safeTransactions, activePondData]);
+
+  if (pondsLoading || alertsLoading || transactionsLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center space-y-4">
@@ -144,7 +156,7 @@ export default function ShrimpFarmingPage() {
       </PageHeader>
       
       {/* Farm-wide stats pills */}
-      {ponds.length > 0 && (
+      {safePonds.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           <Badge variant="outline" className="text-gray-600">
             <Fish className="h-3 w-3 mr-1" /> {farmStats.activePonds}/{farmStats.totalPonds} ponds active
@@ -167,17 +179,17 @@ export default function ShrimpFarmingPage() {
             <div className={`w-2 h-2 rounded-full ${activePondData.status === 'active' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
             <span className="text-sm font-semibold text-gray-800 truncate">{activePondData.name}</span>
             <span className="text-xs text-gray-500">•</span>
-            <span className="text-xs text-gray-500 capitalize">{activePondData.shrimpType}</span>
+            <span className="text-xs text-gray-500 capitalize">{activePondData.shrimptype}</span>
             <span className="text-xs text-gray-500">•</span>
             <span className="text-xs text-gray-500">Day {activePondData.cycleDay || 0}</span>
           </div>
-          {ponds.length > 1 && (
+          {safePonds.length > 1 && (
             <select
               className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-600"
               value={activePond}
               onChange={(e) => setActivePond(e.target.value)}
             >
-              {ponds.map((p: any) => (
+              {safePonds.map((p: any) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
@@ -186,7 +198,7 @@ export default function ShrimpFarmingPage() {
       )}
 
       {/* === Empty State === */}
-      {ponds.length === 0 && (
+      {safePonds.length === 0 && (
         <Card className="overflow-hidden relative">
           <CardContent className="pt-10 pb-12 text-center px-6">
             <div className="space-y-6">
@@ -233,9 +245,9 @@ export default function ShrimpFarmingPage() {
       )}
 
       {/* === Critical Alerts === */}
-      {alerts.length > 0 && (
+      {safeAlerts.length > 0 && (
         <div className="space-y-2">
-          {alerts.slice(0, 3).map((alert: any) => (
+          {safeAlerts.slice(0, 3).map((alert: any) => (
             <div
               key={alert.id}
               className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl px-4 py-3 border animate-fade-up ${
@@ -259,14 +271,9 @@ export default function ShrimpFarmingPage() {
       )}
 
       {/* === Main Content Tabs === */}
-      {ponds.length > 0 && (
+      {safePonds.length > 0 && (
         <div className="space-y-4">
-          <DataCompletenessPanel
-            activePondId={activePond}
-            showFinance
-            showShrimp
-            onNavigateToTab={setActiveTab}
-          />
+          <FinancialSummaryCards transactions={shrimpDashboardTransactions} />
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <div className="overflow-x-auto -mx-2 px-2 md:mx-0 md:px-0 pb-1">
@@ -288,9 +295,9 @@ export default function ShrimpFarmingPage() {
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-4 animate-in fade-in duration-300">
               <ShrimpDashboard
-                ponds={ponds}
+                ponds={safePonds}
                 currentPhase={currentPhase}
-                alerts={alerts}
+                alerts={safeAlerts}
                 activePond={activePond}
                 onPondSelect={setActivePond}
                 onDeletePond={deletePond}
@@ -302,7 +309,7 @@ export default function ShrimpFarmingPage() {
               {activePond && activePondData ? (
                 <HarvestEstimator
                   pondName={activePondData.name}
-                  shrimpType={activePondData.shrimpType || 'white'}
+                  shrimpType={activePondData.shrimptype || 'white'}
                   initialStock={activePondData.currentStock || 0}
                   pondArea={activePondData.area || 0}
                   cycleDay={activePondData.cycleDay || 0}
@@ -322,7 +329,7 @@ export default function ShrimpFarmingPage() {
               {activePond && activePondData ? (
                 <FCREngine
                   pondName={activePondData.name}
-                  shrimpType={activePondData.shrimpType || 'white'}
+                  shrimpType={activePondData.shrimptype || 'white'}
                   initialStock={activePondData.currentStock || 0}
                   pondArea={activePondData.area || 0}
                   cycleDay={activePondData.cycleDay || 0}
@@ -342,11 +349,11 @@ export default function ShrimpFarmingPage() {
               {activePond && activePondData ? (
                 <GrowthBiomassTracker
                   pondName={activePondData.name}
-                  shrimpType={activePondData.shrimpType || 'white'}
+                  shrimpType={activePondData.shrimptype || 'white'}
                   initialStock={activePondData.currentStock || 0}
                   cycleDay={activePondData.cycleDay || 0}
                   pondId={activePond}
-                  farmingType={activePondData.farmingType}
+                  farmingType={activePondData.farmingtype}
                 />
               ) : (
                 <Card>
@@ -361,9 +368,9 @@ export default function ShrimpFarmingPage() {
             <TabsContent value="journey" className="space-y-4 animate-in fade-in duration-300">
               <ProjectJourneyMap
                 projectPhase={currentPhase.name}
-                currentStage={ponds.find(p => p.id === activePond)?.currentStage || 'operation'}
-                pondName={ponds.find(p => p.id === activePond)?.name || ''}
-                cycleDay={ponds.find(p => p.id === activePond)?.cycleDay || 0}
+                currentStage={safePonds.find(p => p.id === activePond)?.currentStage || 'operation'}
+                pondName={safePonds.find(p => p.id === activePond)?.name || ''}
+                cycleDay={safePonds.find(p => p.id === activePond)?.cycleDay || 0}
                 totalCycleDays={120}
               />
             </TabsContent>
@@ -377,7 +384,7 @@ export default function ShrimpFarmingPage() {
                     Daily Operations
                   </h2>
                   <div className="grid gap-2 mb-6">
-                    {ponds.map((pond: any) => (
+                    {safePonds.map((pond: any) => (
                       <div
                         key={pond.id}
                         className={`rounded-xl p-3 cursor-pointer transition-all duration-200 ${
@@ -405,7 +412,7 @@ export default function ShrimpFarmingPage() {
                 {activePond && (
                   <DailyLogForm
                     pondId={activePond}
-                    pondName={ponds.find(p => p.id === activePond)?.name || ''}
+                    pondName={safePonds.find(p => p.id === activePond)?.name || ''}
                   />
                 )}
               </div>
@@ -432,7 +439,7 @@ export default function ShrimpFarmingPage() {
               {activePond ? (
                 <DocumentUploadComponent
                   pondId={activePond}
-                  pondName={ponds.find(p => p.id === activePond)?.name || ''}
+                    pondName={safePonds.find(p => p.id === activePond)?.name || ''}
                 />
               ) : (
                 <Card>
@@ -464,7 +471,7 @@ export default function ShrimpFarmingPage() {
               {activePond && activePondData ? (
                 <FinancialDashboard
                   pondId={activePond}
-                  linkedProjectId={activePondData.linkedProjectId}
+                  linkedProjectId={activePondData.linkedprojectid ?? null}
                 />
               ) : (
                 <Card>

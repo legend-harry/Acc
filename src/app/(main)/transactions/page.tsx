@@ -119,7 +119,6 @@ const getStatusBadge = (status: 'completed' | 'credit' | 'expected') => {
 }
 
 const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
-    const [isHovered, setIsHovered] = useState(false);
     const { currency } = useCurrency();
 
     const { totalNet } = useMemo(() => {
@@ -137,40 +136,12 @@ const FloatingSum = ({ transactions }: { transactions: Transaction[] }) => {
     if (transactions.length === 0) return null;
 
     return (
-        <div 
-            className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-3"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            {/* Quick Actions Menu (Revealed on Hover) */}
-            <div className={cn(
-                "flex flex-col gap-2 transition-all duration-300 origin-bottom right-0 absolute bottom-20",
-                isHovered ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 translate-y-4 pointer-events-none"
-            )}>
-                <AddExpenseDialog defaultType="income">
-                    <button className="flex items-center gap-3 bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-4 py-3 rounded-xl shadow-lg border border-outline-variant/20 transition-colors whitespace-nowrap group w-full text-left">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-on-primary transition-colors">
-                            <span className="material-symbols-outlined text-[18px]">add</span>
-                        </div>
-                        <span className="font-semibold text-sm">Log Income</span>
-                    </button>
-                </AddExpenseDialog>
-                
-                <AddExpenseDialog defaultType="expense">
-                    <button className="flex items-center gap-3 bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-4 py-3 rounded-xl shadow-lg border border-outline-variant/20 transition-colors whitespace-nowrap group w-full text-left">
-                        <div className="w-8 h-8 rounded-full bg-secondary/10 text-secondary flex items-center justify-center group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
-                            <span className="material-symbols-outlined text-[18px]">remove</span>
-                        </div>
-                        <span className="font-semibold text-sm">Log Expense</span>
-                    </button>
-                </AddExpenseDialog>
-            </div>
-
+      <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-3">
             {/* Main FAB showing Net Balance */}
-            <div className="bg-primary text-on-primary rounded-2xl flex items-center justify-center shadow-[0px_8px_32px_rgba(var(--primary-rgb),0.3)] cursor-pointer h-16 px-6 relative z-10 hover:shadow-[0px_12px_40px_rgba(var(--primary-rgb),0.4)] transition-shadow">
+        <div className="bg-primary text-white rounded-2xl flex items-center justify-center shadow-[0px_8px_32px_rgba(var(--primary-rgb),0.3)] cursor-pointer h-16 px-6 relative z-10 hover:shadow-[0px_12px_40px_rgba(var(--primary-rgb),0.4)] transition-shadow">
                 <div className="flex flex-col text-center leading-tight">
-                    <span className="text-[10px] uppercase font-bold tracking-widest opacity-80">Net Balance</span>
-                    <span className="font-bold text-xl">{totalNet >= 0 ? '+' : ''}{formatCurrency(totalNet, currency)}</span>
+            <span className="text-[10px] uppercase font-bold tracking-widest opacity-90 text-white">Net Balance</span>
+            <span className="font-bold text-xl text-white">{totalNet >= 0 ? '+' : ''}{formatCurrency(totalNet, currency)}</span>
                 </div>
             </div>
         </div>
@@ -478,7 +449,7 @@ function TransactionsPageContent() {
   const [isAddRecordOpen, setIsAddRecordOpen] = useState(false);
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen relative w-full lg:max-w-[calc(100vw-256px)] xl:max-w-[calc(100vw-280px)]">
+    <div className="flex-1 flex flex-col min-h-screen relative w-full lg:max-w-[calc(100vw-256px)] xl:max-w-[calc(100vw-280px)] mx-auto">
       <LiveFeedTicker />
       <div className="p-4 md:p-6 lg:p-10 space-y-8 w-full max-w-[1400px] mx-auto">
         {/* Page Header Area */}
@@ -493,7 +464,7 @@ function TransactionsPageContent() {
               Export
             </Button>
             <AddExpenseDialog>
-              <Button className="px-5 py-2.5 bg-primary text-on-primary font-semibold rounded-xl flex items-center gap-2 shadow-lg shadow-primary/15 hover:opacity-90 transition-opacity h-auto">
+              <Button className="px-5 py-2.5 bg-primary text-white font-semibold rounded-xl flex items-center gap-2 shadow-lg shadow-primary/15 hover:opacity-90 transition-opacity h-auto">
                 <span className="material-symbols-outlined text-[20px]">add</span>
                 Add Record
               </Button>

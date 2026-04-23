@@ -1,30 +1,51 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { formatCurrency } from "@/lib/data";
 import { useCurrency } from "@/context/currency-context";
 import { TrendingUp, Move } from "lucide-react";
 import type { Transaction } from "@/types";
+import { format } from "date-fns";
 
 interface StitchLiveCashPositionProps {
-  transactions: Transaction[];
+  transactions?: Transaction[];
 }
 
 export function StitchLiveCashPosition({ transactions }: StitchLiveCashPositionProps) {
   const { currency } = useCurrency();
+  const [selectedWindow, setSelectedWindow] = useState<"all" | "1w" | "1m" | "1y">("all");
 
   const { chartData, currentBalance, growthPercentage } = useMemo(() => {
-    // Generate hourly or daily data for the chart
-    // For now, let's group by day to show a meaningful trend
-    const data: Record<string, { income: number; expense: number; net: number }> = {};
-    const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const safeTransactions = Array.isArray(transactions) ? transactions : [];
+    const resolvedTransactions = [...safeTransactions]
+      .map((transaction) => {
+        const timestamp = new Date(transaction.created_at || transaction.date).getTime();
+        return { ...transaction, timestamp };
+      })
+      .filter((transaction) => !Number.isNaN(transaction.timestamp))
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    const latestTimestamp = resolvedTransactions.length > 0
+      ? resolvedTransactions[resolvedTransactions.length - 1].timestamp
+      : Date.now();
+    const windowMs: Record<"1w" | "1m" | "1y", number> = {
+      "1w": 7 * 24 * 60 * 60 * 1000,
+      "1m": 30 * 24 * 60 * 60 * 1000,
+      "1y": 365 * 24 * 60 * 60 * 1000,
+    };
+    const visibleTransactions = selectedWindow === "all"
+      ? resolvedTransactions
+      : resolvedTransactions.filter((transaction) => transaction.timestamp >= latestTimestamp - windowMs[selectedWindow]);
     
     let cumulative = 0;
-    const chartData = sorted.slice(-15).map((t, i) => {
+    const chartData = visibleTransactions.map((t) => {
       cumulative += t.type === 'income' ? t.amount : -t.amount;
       return {
-        time: new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: format(
+          new Date(t.timestamp),
+          selectedWindow === "1w" ? "EEE, h:mm a" : selectedWindow === "1m" ? "MMM d" : "MMM yyyy"
+        ),
         value: cumulative,
         income: t.type === 'income' ? t.amount : 0,
         expense: t.type === 'expense' ? t.amount : 0,
@@ -36,7 +57,7 @@ export function StitchLiveCashPosition({ transactions }: StitchLiveCashPositionP
     const growthPercentage = prevBalance !== 0 ? ((currentBalance - prevBalance) / Math.abs(prevBalance)) * 100 : 0;
 
     return { chartData, currentBalance, growthPercentage };
-  }, [transactions]);
+  }, [transactions, selectedWindow]);
 
   return (
     <section className="w-full rounded-2xl bg-surface-container-lowest/40 backdrop-blur-[20px] shadow-[0_8px_32px_0_rgba(25,28,32,0.06)] border border-outline-variant/15 relative overflow-hidden flex flex-col p-6">
@@ -55,9 +76,25 @@ export function StitchLiveCashPosition({ transactions }: StitchLiveCashPositionP
         </div>
         <div className="flex items-center gap-4">
           <div className="flex bg-surface-container-low rounded-lg p-1">
-            <button className="px-3 py-1.5 text-xs font-semibold rounded-md bg-surface-container-lowest shadow-sm text-on-surface">1H</button>
-            <button className="px-3 py-1.5 text-xs font-medium rounded-md text-on-surface-variant hover:text-on-surface">6H</button>
-            <button className="px-3 py-1.5 text-xs font-medium rounded-md text-on-surface-variant hover:text-on-surface">24H</button>
+            {[
+              { value: "all", label: "All" },
+              { value: "1w", label: "1W" },
+              { value: "1m", label: "1M" },
+              { value: "1y", label: "1Y" },
+            ].map((windowOption) => (
+              <button
+                key={windowOption.value}
+                type="button"
+                onClick={() => setSelectedWindow(windowOption.value as "all" | "1w" | "1m" | "1y")}
+                className={
+                  windowOption.value === selectedWindow
+                    ? "px-3 py-1.5 text-xs font-semibold rounded-md bg-surface-container-lowest shadow-sm text-on-surface"
+                    : "px-3 py-1.5 text-xs font-medium rounded-md text-on-surface-variant hover:text-on-surface"
+                }
+              >
+                {windowOption.label}
+              </button>
+            ))}
           </div>
           <button className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors">
             <Move className="w-4 h-4" />
@@ -81,6 +118,7 @@ export function StitchLiveCashPosition({ transactions }: StitchLiveCashPositionP
               tickLine={false} 
               tick={{ fontSize: 10, fill: 'hsl(var(--outline))' }} 
               dy={10}
+              minTickGap={28}
             />
             <YAxis hide domain={['auto', 'auto']} />
             <Tooltip 

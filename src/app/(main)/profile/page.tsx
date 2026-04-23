@@ -51,6 +51,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Project, Employee } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { useLayout } from "@/context/layout-context";
+import { DataImportTab } from "@/components/profile/data-import-tab";
 
 const currencies: { value: Currency; label: string }[] = [
   { value: "INR", label: "INR (Indian Rupee)" },
@@ -394,6 +395,7 @@ export default function ProfilePage() {
         <TabsList>
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="data-import">Data Import</TabsTrigger>
           <TabsTrigger value="profile" disabled>
             Profile
           </TabsTrigger>
@@ -403,6 +405,9 @@ export default function ProfilePage() {
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
           <SettingsTab />
+        </TabsContent>
+        <TabsContent value="data-import" className="mt-6">
+          <DataImportTab />
         </TabsContent>
         <TabsContent value="profile">
           <p>Profile details coming soon.</p>

@@ -361,7 +361,7 @@ function AddCategoryDialog({ onSave, projectId }: { onSave: () => void, projectI
             amount: parseFloat(budget) || 0,
             projectid: projectId !== 'all' ? projectId : null,
             client_id: clientId,
-            profile_id: selectedProfile
+          profile_id: selectedProfile || null
         });
         if (error) throw error;
         toast({
@@ -492,16 +492,13 @@ export default function PlannerPage() {
 
   const handleSave = async () => {
     setIsLoading(true);
-    
-    const updates: Record<string, any> = {};
-    Object.keys(localBudgets).forEach(category => {
-        const budgetItem = projectBudgets.find(b => b.category === category);
-        if (budgetItem && budgetItem.id && budgetItem.budget !== localBudgets[category]) {
-            updates[`/budgets/${budgetItem.id}/budget`] = localBudgets[category];
-        }
+
+    const budgetChanges = Object.entries(localBudgets).filter(([category, amount]) => {
+      const budgetItem = projectBudgets.find(b => b.category === category);
+      return !!budgetItem && budgetItem.budget !== amount;
     });
 
-    if (Object.keys(updates).length === 0) {
+    if (budgetChanges.length === 0) {
         toast({
             title: "No Changes",
             description: "There were no changes to save.",
@@ -511,11 +508,24 @@ export default function PlannerPage() {
     }
 
     try {
-        /* TODO: migrate db update */
+        const supabase = (await import('@/lib/supabase/client')).createClient();
+        for (const [category, amount] of budgetChanges) {
+          const budgetItem = projectBudgets.find(b => b.category === category);
+          if (!budgetItem) continue;
+
+          const { error } = await supabase
+            .from('budgets')
+            .update({ amount })
+            .eq('id', budgetItem.id);
+
+          if (error) throw error;
+        }
+
         toast({
             title: "Planner Saved",
             description: "Your new budget goals have been updated.",
         });
+        setRefreshKey(key => key + 1);
     } catch (error) {
         console.error("Failed to save budgets:", error);
         toast({

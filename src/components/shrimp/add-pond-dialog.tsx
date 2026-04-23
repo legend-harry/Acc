@@ -95,7 +95,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         body: JSON.stringify({
           pondName: formData.pondName,
           area: formData.area,
-          productionModel: formData.farmingType,
+          productionModel: formData.farmingtype,
           species: formData.species,
           waterSource: formData.waterSource,
         }),
@@ -135,7 +135,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
           stockHealth: formData.currentStockHealth,
           waterQuality: formData.waterQuality,
           feedingStatus: formData.feedingStatus,
-          farmingType: formData.farmingType,
+          farmingType: formData.farmingtype,
           observations: formData.observations,
         }),
       });
@@ -200,17 +200,33 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         detectedType = 'intensive';
       }
       
-      if (detectedType !== formData.farmingType) {
+      if (detectedType !== formData.farmingtype) {
         setFormData(prev => ({ ...prev, farmingtype: detectedType, targetDensity: Math.round(densityPerM2) }));
       }
     }
   }, [formData.length, formData.width, formData.seedAmount, formData.farmingtype]);
 
   const calculateExpectedCount = () => {
-    // Expected harvest will be calculated from actual survival data during the cycle
-    // Don't assume survival rates upfront
-    return 0;
+    const seedAmount = Number(formData.seedAmount) || 0;
+    if (seedAmount <= 0) return 0;
+
+    const survivalRateByType: Record<'extensive' | 'semi-intensive' | 'intensive', number> = {
+      extensive: 0.7,
+      'semi-intensive': 0.8,
+      intensive: 0.85,
+    };
+
+    const survivalRate = survivalRateByType[formData.farmingtype] ?? 0.8;
+    return Math.round(seedAmount * survivalRate);
   };
+
+  useEffect(() => {
+    setFormData(prev => {
+      const nextExpected = calculateExpectedCount();
+      if (Number(prev.expectedCount) === nextExpected) return prev;
+      return { ...prev, expectedCount: nextExpected };
+    });
+  }, [formData.seedAmount, formData.farmingtype]);
 
   const calculateArea = () => {
     // Calculate area from dimensions (length × width in meters → hectares)
@@ -320,7 +336,6 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         area,
         length: Number(formData.length) || 0,
         width: Number(formData.width) || 0,
-        depth: Number(formData.depth) || 0,
         shrimptype: formData.shrimptype,
         farmingtype: formData.farmingtype,
         targetDensity: Number(formData.targetDensity) || 0,
@@ -354,13 +369,13 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
         width: 40,
         depth: 1.5,
         species: 'vannamei',
-        shrimpType: 'white',
-        farmingType: 'intensive',
+        shrimptype: 'white',
+        farmingtype: 'intensive',
         targetDensity: 80,
         seedAmount: 50000,
         expectedCount: 42500,
         waterSource: 'well',
-        linkedProjectId: 'none',
+        linkedprojectid: 'none',
         currentStage: 'planning',
         daysInCycle: 0,
         currentStockHealth: 'good',
@@ -393,7 +408,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
           <DialogDescription>
             Step {step} of 4 - 
             {step === 1 && ' Enter pond details'}
-            {step === 2 && ' Assess farm progress'}
+            {step === 2 && ' Optional farm status and next steps'}
             {step === 3 && ' Configure design'}
             {step === 4 && ' Review and create'}
           </DialogDescription>
@@ -530,12 +545,7 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                       value={formData.seedAmount}
                       onChange={(e) => {
                         const seedAmount = e.target.value;
-                        // Don't pre-calculate expectedCount - it will be based on actual survival data
-                        setFormData({ 
-                          ...formData, 
-                          seedAmount,
-                          expectedCount: 0
-                        });
+                        setFormData({ ...formData, seedAmount });
                         setValidationErrors({ ...validationErrors, seedAmount: '' });
                       }}
                       className={`text-gray-900 ${validationErrors.seedAmount ? 'border-red-500' : ''}`}
@@ -553,7 +563,6 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                       id="expected-count"
                       type="number"
                       value={formData.expectedCount}
-                      onChange={(e) => setFormData({ ...formData, expectedCount: e.target.value })}
                       className="text-gray-900 bg-gray-50"
                       readOnly
                     />
@@ -562,19 +571,19 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                 <div className="space-y-2">
                   <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
                     <p className="text-xs text-gray-700">
-                      💡 Based on {formData.farmingType} farming, expected survival rate: {
-                        formData.farmingType === 'extensive' ? '70%' :
-                        formData.farmingType === 'semi-intensive' ? '80%' : '85%'
+                      💡 Based on {formData.farmingtype} farming, expected survival rate: {
+                        formData.farmingtype === 'extensive' ? '70%' :
+                        formData.farmingtype === 'semi-intensive' ? '80%' : '85%'
                       }
                     </p>
                   </div>
                   {calculateArea() > 0 && Number(formData.seedAmount) > 0 && formData.targetDensity && (
                     <div className={`rounded p-2 text-xs font-medium ${
-                      formData.farmingType === 'extensive' ? 'bg-green-100 text-green-900' :
-                      formData.farmingType === 'semi-intensive' ? 'bg-blue-100 text-blue-900' :
+                      formData.farmingtype === 'extensive' ? 'bg-green-100 text-green-900' :
+                      formData.farmingtype === 'semi-intensive' ? 'bg-blue-100 text-blue-900' :
                       'bg-orange-100 text-orange-900'
                     }`}>
-                      🤖 Auto-detected: <span className="font-bold capitalize">{formData.farmingType}</span> farming
+                      🤖 Auto-detected: <span className="font-bold capitalize">{formData.farmingtype}</span> farming
                       ({formData.targetDensity} PL/m²)
                     </div>
                   )}
@@ -589,9 +598,9 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                 {shrimpTypes.map(type => (
                   <button
                     key={type.id}
-                    onClick={() => setFormData({ ...formData, shrimpType: type.id as 'white' | 'tiger' | 'giant' })}
+                    onClick={() => setFormData({ ...formData, shrimptype: type.id as 'white' | 'tiger' | 'giant' })}
                     className={`p-3 rounded border-2 text-left transition-all ${
-                      formData.shrimpType === type.id
+                      formData.shrimptype === type.id
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-300 bg-white hover:border-gray-400'
                     }`}
@@ -613,9 +622,9 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                 {productionModels.map(model => (
                   <button
                     key={model.id}
-                    onClick={() => setFormData({ ...formData, farmingType: model.id as 'extensive' | 'semi-intensive' | 'intensive' })}
+                    onClick={() => setFormData({ ...formData, farmingtype: model.id as 'extensive' | 'semi-intensive' | 'intensive' })}
                     className={`p-3 rounded border-2 text-center transition-all text-sm ${
-                      formData.farmingType === model.id
+                      formData.farmingtype === model.id
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-300 bg-white'
                     }`}
@@ -761,6 +770,9 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                     </>
                   )}
                 </Button>
+                <p className="text-xs text-gray-600">
+                  This step is optional. You can continue without running analysis and update it later.
+                </p>
 
                 {progressAnalysis && (
                   <Card className="border-green-200 bg-green-50 mt-4">
@@ -930,9 +942,9 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                 {productionModels.map(model => (
                   <button
                     key={model.id}
-                    onClick={() => setFormData({ ...formData, farmingType: model.id as 'extensive' | 'semi-intensive' | 'intensive' })}
+                    onClick={() => setFormData({ ...formData, farmingtype: model.id as 'extensive' | 'semi-intensive' | 'intensive' })}
                     className={`p-3 rounded border-2 text-left transition-all ${
-                      formData.farmingType === model.id
+                      formData.farmingtype === model.id
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-300 hover:border-gray-400 bg-white'
                     }`}
@@ -977,12 +989,12 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
               <CardContent className="space-y-3">
                 <div className="flex gap-2">
                   <Select
-                    value={formData.linkedProjectId}
+                    value={formData.linkedprojectid}
                     onValueChange={(value) => {
                       if (value === '__create_new__') {
                         setShowCreateProject(true);
                       } else {
-                        setFormData({ ...formData, linkedProjectId: value });
+                        setFormData({ ...formData, linkedprojectid: value });
                       }
                     }}
                   >
@@ -1109,11 +1121,11 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Shrimp Type</p>
-                    <p className="font-semibold text-lg text-gray-900 capitalize">{formData.shrimpType}</p>
+                    <p className="font-semibold text-lg text-gray-900 capitalize">{formData.shrimptype}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Farming Type</p>
-                    <p className="font-semibold text-lg text-gray-900 capitalize">{formData.farmingType}</p>
+                    <p className="font-semibold text-lg text-gray-900 capitalize">{formData.farmingtype}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Seed Amount</p>
@@ -1131,11 +1143,11 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
                     <p className="text-sm text-gray-600">Water Source</p>
                     <p className="font-semibold text-lg text-gray-900 capitalize">{formData.waterSource.replace('-', ' ')}</p>
                   </div>
-                  {formData.linkedProjectId && (
+                  {formData.linkedprojectid && (
                     <div className="col-span-2">
                       <p className="text-sm text-gray-600">Linked Project</p>
                       <p className="font-semibold text-lg text-gray-900">
-                        {projects.find(p => p.id === formData.linkedProjectId)?.name || 'Unknown'}
+                        {projects.find(p => p.id === formData.linkedprojectid)?.name || 'Unknown'}
                       </p>
                     </div>
                   )}
@@ -1162,9 +1174,8 @@ export function AddPondDialog({ open, onOpenChange, onCreated }: AddPondDialogPr
             <Button
               onClick={() => setStep(step + 1)}
               className="gap-2"
-              disabled={step === 2 && !progressAnalysis}
             >
-              Continue
+              {step === 2 && !progressAnalysis ? 'Continue (Skip)' : 'Continue'}
             </Button>
           ) : (
             <Button

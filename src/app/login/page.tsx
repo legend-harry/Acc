@@ -5,12 +5,17 @@ import { FormEvent } from "react";
 
 export default function LoginPage() {
   const supabase = createClient();
+  const getRedirectUrl = () => {
+    const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+    const baseUrl = configuredUrl && configuredUrl.length > 0 ? configuredUrl : window.location.origin;
+    return `${baseUrl.replace(/\/$/, "")}/dashboard`;
+  };
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: getRedirectUrl(),
       },
     });
     
@@ -23,7 +28,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: getRedirectUrl(),
       },
     });
 

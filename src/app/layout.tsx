@@ -46,11 +46,18 @@ export default function RootLayout({
               (function() {
                 try {
                   var theme = localStorage.getItem('theme-mode') || 'light';
+                  var specialThemeEnabled = localStorage.getItem('special-theme-enabled') === 'true';
                   var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   if (theme === 'dark' || (theme === 'system' && supportDarkMode)) {
                     document.documentElement.classList.add('dark');
                   } else {
                     document.documentElement.classList.remove('dark');
+                  }
+
+                  if (specialThemeEnabled) {
+                    document.documentElement.classList.add('theme-special');
+                  } else {
+                    document.documentElement.classList.remove('theme-special');
                   }
                 } catch (e) {}
                 

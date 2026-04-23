@@ -155,7 +155,7 @@ function UserNav() {
 
 function ThemeSwitcher() {
   const { t } = useLanguage();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, specialThemeEnabled, setSpecialThemeEnabled } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
   const { isPremium, openUpgradeDialog } = useSubscription();
 
@@ -169,9 +169,10 @@ function ThemeSwitcher() {
       return;
     }
     if (selectedTheme === "special") {
-      document.documentElement.classList.toggle("theme-special");
+      setSpecialThemeEnabled(!specialThemeEnabled);
       return;
     }
+    setSpecialThemeEnabled(false);
     setTheme(selectedTheme as any);
   };
 
@@ -212,7 +213,7 @@ function ThemeSwitcher() {
         
         <DropdownMenuItem onClick={() => handleThemeChange("special")} disabled={!isPremium}>
           <Sparkles className={cn("mr-2 h-4 w-4", !isPremium ? "text-yellow-400" : "text-purple-500")} />
-          <span>{t("Special Theme")}</span>
+          <span>{specialThemeEnabled ? `Disable ${t("Special Theme")}` : t("Special Theme")}</span>
           {!isPremium && <Crown className="ml-auto h-3 w-3 text-yellow-500" />}
         </DropdownMenuItem>
       </DropdownMenuContent>

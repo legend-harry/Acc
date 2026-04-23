@@ -40,12 +40,18 @@ import {
 
 export function AddExpenseDialog({
   children,
-  defaultType = "expense"
+  defaultType = "expense",
+  open,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   children: React.ReactNode;
   defaultType?: "expense" | "income";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { currency } = useCurrency();
@@ -72,14 +78,18 @@ export function AddExpenseDialog({
 
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const isControlled = typeof open === 'boolean' && typeof onOpenChange === 'function';
+  const dialogOpen = isControlled ? open : internalOpen;
+  const setDialogOpen = isControlled ? onOpenChange : setInternalOpen;
+
   useEffect(() => {
-    if (open) {
+    if (dialogOpen) {
       const defaultProjectId = localStorage.getItem("defaultProjectId");
       if (defaultProjectId && defaultProjectId !== "all") {
         setSelectedProjectId(defaultProjectId);
       }
     }
-  }, [open]);
+  }, [dialogOpen]);
 
   const resetDialog = () => {
     setSelectedProjectId("");
@@ -170,7 +180,7 @@ export function AddExpenseDialog({
       }
 
       setIsLoading(false);
-      setOpen(false);
+      setDialogOpen(false);
       resetDialog();
       window.location.reload();
 
@@ -188,13 +198,13 @@ export function AddExpenseDialog({
   return (
     <>
       <Dialog
-        open={open}
+        open={dialogOpen}
         onOpenChange={(isOpen) => {
-          setOpen(isOpen);
+          setDialogOpen(isOpen);
           if (!isOpen) resetDialog();
         }}
       >
-        <div onClick={() => setOpen(true)}>{children}</div>
+        {!hideTrigger && <div onClick={() => setDialogOpen(true)}>{children}</div>}
 
         <DialogContent className="sm:max-w-md p-0 rounded-[24px] border-0 shadow-2xl bg-background text-foreground">
           <DialogDescription className="sr-only">Add a new financial transaction</DialogDescription>

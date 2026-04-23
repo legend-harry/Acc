@@ -14,6 +14,7 @@ import { LayoutProvider, useLayout } from "@/context/layout-context";
 import { UpgradeDialog } from "@/components/upgrade-dialog";
 import { AIOnboardingFlow } from "@/components/ai-onboarding-flow";
 import { LanguageProvider } from "@/context/language-context";
+import { FloatingTransactionAction } from "@/components/floating-transaction-action";
 
 function LayoutShell({ children }: { children: ReactNode }) {
   const { layout } = useLayout();
@@ -72,6 +73,7 @@ function LayoutShell({ children }: { children: ReactNode }) {
             <div className="animate-fade-up">
               {children}
             </div>
+            <FloatingTransactionAction />
             {showOnboarding && <AIOnboardingFlow open={showOnboarding} onOpenChange={setShowOnboarding} />}
           </main>
         </div>
@@ -85,6 +87,7 @@ function LayoutShell({ children }: { children: ReactNode }) {
       <Header />
       <main className="flex-1 p-4 md:p-6 lg:p-8">
         {children}
+        <FloatingTransactionAction />
         {showOnboarding && <AIOnboardingFlow open={showOnboarding} onOpenChange={setShowOnboarding} />}
       </main>
     </div>

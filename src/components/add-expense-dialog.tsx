@@ -196,26 +196,26 @@ export function AddExpenseDialog({
       >
         <div onClick={() => setOpen(true)}>{children}</div>
 
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-[24px] border-0 shadow-2xl bg-white text-slate-900">
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-[24px] border-0 shadow-2xl bg-background text-foreground">
           <DialogDescription className="sr-only">Add a new financial transaction</DialogDescription>
           
           {/* Header */}
           <div className="px-6 pt-6 pb-2 flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold tracking-tight text-slate-900">
+            <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
               New Entry
             </DialogTitle>
-            <DialogClose className="rounded-full w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors">
-              <X className="w-4 h-4 text-slate-500" />
+            <DialogClose className="rounded-full w-8 h-8 flex items-center justify-center bg-muted hover:bg-muted-foreground/10 transition-colors">
+              <X className="w-4 h-4 text-muted-foreground" />
             </DialogClose>
           </div>
 
           {!selectedProjectId ? (
             <div className="p-8 text-center pb-12">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Brain className="w-8 h-8 text-slate-400" />
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                <Brain className="w-8 h-8 text-muted-foreground/60" />
               </div>
-              <h3 className="text-lg font-bold mb-2 text-slate-900">Select Project</h3>
-              <p className="text-sm text-slate-500 mb-8 max-w-xs mx-auto">
+              <h3 className="text-lg font-bold mb-2 text-foreground">Select Project</h3>
+              <p className="text-sm text-muted-foreground mb-8 max-w-xs mx-auto">
                 Choose a project to load relevant categories and tags for this transaction.
               </p>
               
@@ -227,7 +227,7 @@ export function AddExpenseDialog({
                     <button 
                       key={p.id}
                       onClick={() => setSelectedProjectId(p.id)}
-                      className="px-6 py-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left font-semibold text-slate-700 transition flex justify-between items-center group"
+                      className="px-6 py-4 bg-muted/40 hover:bg-muted border border-border rounded-xl text-left font-semibold text-foreground transition flex justify-between items-center group"
                     >
                       {p.name}
                       <ArrowRight className="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity transform -translate-x-2 group-hover:translate-x-0" />
@@ -243,11 +243,11 @@ export function AddExpenseDialog({
                   
                   {/* Amount Region */}
                   <div>
-                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">
+                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 block">
                       Transaction Amount
                     </Label>
                     <div className="flex items-center">
-                      <span className="text-5xl font-bold text-slate-300 mr-2 -mt-1">
+                      <span className="text-5xl font-bold text-muted-foreground/30 mr-2 -mt-1">
                         {currency === "INR" ? "₹" : currency === "USD" ? "$" : currency}
                       </span>
                       <input
@@ -257,7 +257,7 @@ export function AddExpenseDialog({
                         placeholder="0.00"
                         value={amountValue}
                         onChange={(e) => setAmountValue(e.target.value)}
-                        className="text-6xl font-bold bg-transparent border-0 p-0 text-slate-900 focus:ring-0 placeholder:text-slate-300 w-full outline-none"
+                        className="text-6xl font-bold bg-transparent border-0 p-0 text-foreground focus:ring-0 placeholder:text-muted/30 w-full outline-none"
                       />
                     </div>
                   </div>
@@ -265,16 +265,16 @@ export function AddExpenseDialog({
                   {/* Type and Date Row */}
                   <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">
+                      <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 block">
                         Type
                       </Label>
-                      <div className="bg-slate-100/80 p-[3px] rounded-[14px] flex">
+                       <div className="bg-muted p-[3px] rounded-[14px] flex">
                         <button
                           type="button"
                           onClick={() => setTransactionType("expense")}
                           className={cn(
                             "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all",
-                            transactionType === "expense" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                            transactionType === "expense" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                           )}
                         >
                           Expense
@@ -284,7 +284,7 @@ export function AddExpenseDialog({
                           onClick={() => setTransactionType("income")}
                           className={cn(
                             "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all",
-                            transactionType === "income" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                            transactionType === "income" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                           )}
                         >
                           Income
@@ -293,17 +293,17 @@ export function AddExpenseDialog({
                     </div>
                     
                     <div>
-                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">
+                      <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 block">
                         Date
                       </Label>
-                      <div className="relative bg-slate-100/80 rounded-[14px] overflow-hidden flex items-center h-[46px]">
-                        <Calendar className="absolute left-4 z-10 w-4 h-4 text-slate-500 pointer-events-none" />
+                      <div className="relative bg-muted rounded-[14px] overflow-hidden flex items-center h-[46px]">
+                        <Calendar className="absolute left-4 z-10 w-4 h-4 text-muted-foreground" />
                         <Input 
                           type="date"
                           required
                           value={dateValue}
                           onChange={(e) => setDateValue(e.target.value)}
-                          className="pl-10 relative z-0 bg-transparent border-0 h-full w-full text-sm font-semibold text-slate-700 shadow-none focus-visible:ring-0" 
+                          className="pl-10 relative z-0 bg-transparent border-0 h-full w-full text-sm font-semibold text-foreground shadow-none focus-visible:ring-0" 
                         />
                       </div>
                     </div>
@@ -311,7 +311,7 @@ export function AddExpenseDialog({
 
                   {/* Description */}
                   <div>
-                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">
+                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 block">
                       Description
                     </Label>
                     <Input
@@ -319,7 +319,7 @@ export function AddExpenseDialog({
                       required
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="What was this for?"
-                      className="bg-slate-100/80 border-0 rounded-[14px] h-[52px] px-5 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-emerald-500/20"
+                      className="bg-muted border-0 rounded-[14px] h-[52px] px-5 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-emerald-500/20"
                     />
                   </div>
 

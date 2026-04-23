@@ -129,6 +129,22 @@
     --sidebar-ring: 222 20% 65%;
   }
 
+  /* Adaptive utility overrides for dark mode */
+  .dark {
+    .text-slate-900, .text-gray-900, .text-black { color: hsl(var(--foreground)); }
+    .text-slate-700, .text-gray-700 { color: hsl(var(--foreground) / 0.9); }
+    .text-slate-600, .text-gray-600 { color: hsl(var(--foreground) / 0.8); }
+    .text-slate-500, .text-gray-500 { color: hsl(var(--muted-foreground)); }
+    .text-slate-400, .text-gray-400 { color: hsl(var(--muted-foreground) / 0.7); }
+    
+    .bg-white { background-color: hsl(var(--card)); }
+    .bg-slate-50, .bg-gray-50 { background-color: hsl(var(--muted) / 0.5); }
+    .bg-slate-100, .bg-gray-100 { background-color: hsl(var(--muted)); }
+    
+    .border-slate-100, .border-gray-100 { border-color: hsl(var(--border) / 0.5); }
+    .border-slate-200, .border-gray-200 { border-color: hsl(var(--border)); }
+  }
+
   .dark.theme-special {
     --background: 343 20% 10%;
     --foreground: 0 0% 98%;

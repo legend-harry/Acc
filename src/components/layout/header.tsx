@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import { useTheme } from "@/context/theme-context";
 import {
   PlusCircle,
   LayoutDashboard,
@@ -159,44 +160,24 @@ function UserNav() {
 }
 
 function ThemeSwitcher() {
-  const [mode, setMode] = useState("light");
-  const [theme, setTheme] = useState("default");
+  const { theme, setTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
   const { isPremium, openUpgradeDialog } = useSubscription();
 
   useEffect(() => {
     setIsMounted(true);
-    if (typeof window !== "undefined") {
-      const storedMode = localStorage.getItem("theme-mode") || "light";
-      const storedTheme = localStorage.getItem("theme-base") || "default";
-      setMode(storedMode);
-      setTheme(storedTheme);
-    }
   }, []);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    document.documentElement.classList.remove("light", "dark", "theme-special");
-    document.documentElement.classList.add(mode);
-
-    if (theme === "special" && isPremium) {
-      document.documentElement.classList.add("theme-special");
-    }
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("theme-mode", mode);
-      localStorage.setItem("theme-base", theme);
-    }
-  }, [mode, theme, isPremium]);
-
-  const toggleMode = () => setMode((previous) => (previous === "light" ? "dark" : "light"));
 
   const handleThemeChange = (selectedTheme: string) => {
     if (selectedTheme === "special" && !isPremium) {
       openUpgradeDialog("special-theme");
       return;
     }
-    setTheme(selectedTheme);
+    if (selectedTheme === "special") {
+      document.documentElement.classList.toggle("theme-special");
+      return;
+    }
+    setTheme(selectedTheme as any);
   };
 
   if (!isMounted) {
@@ -216,21 +197,29 @@ function ThemeSwitcher() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={toggleMode}>
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="ml-2">Toggle Dark Mode</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
-          <DropdownMenuRadioItem value="default">Default Theme</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="special" disabled={!isPremium}>
-            <span className="flex items-center">
-              {!isPremium && <Sparkles className="mr-2 h-4 w-4 text-yellow-400" />}
-              Special Theme
-            </span>
+        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={theme} onValueChange={(val) => handleThemeChange(val)}>
+          <DropdownMenuRadioItem value="light">
+            <Sun className="mr-2 h-4 w-4" />
+            <span>Light</span>
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="dark">
+            <Moon className="mr-2 h-4 w-4" />
+            <span>Dark</span>
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="system">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>System</span>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuItem onClick={() => handleThemeChange("special")} disabled={!isPremium}>
+          <Sparkles className={cn("mr-2 h-4 w-4", !isPremium ? "text-yellow-400" : "text-purple-500")} />
+          <span>Special Theme</span>
+          {!isPremium && <Crown className="ml-auto h-3 w-3 text-yellow-500" />}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
 import { PwaAssets } from '@/components/pwa-assets';
 
+import { ThemeProvider } from '@/context/theme-context';
+
 export const metadata: Metadata = {
   title: 'ExpenseWise',
   description: 'Budgeting and expense tracking simplified.',
@@ -41,21 +43,35 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js').then(registration => {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                  }, err => {
-                    console.log('ServiceWorker registration failed: ', err);
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme-mode') || 'system';
+                  var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  if (theme === 'dark' || (theme === 'system' && supportDarkMode)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+                
+                if ('serviceWorker' in navigator) {
+                  window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js').then(registration => {
+                      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, err => {
+                      console.log('ServiceWorker registration failed: ', err);
+                    });
                   });
-                });
-              }
+                }
+              })();
             `,
           }}
         />
       </head>
       <body className={cn("font-body antialiased", "min-h-screen bg-background font-sans")}>
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
         <Toaster />
       </body>
     </html>

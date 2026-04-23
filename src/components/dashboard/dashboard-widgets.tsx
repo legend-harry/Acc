@@ -196,7 +196,7 @@ export function TopVendors({ transactions }: WidgetProps) {
               <span className="text-sm font-semibold text-on-surface truncate max-w-[60%]">{v.name}</span>
               <span className="text-sm font-bold text-on-surface">{formatCurrency(v.spend, currency)}</span>
             </div>
-            <div className="w-full h-2.5 bg-[#f0f2f5] rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
@@ -261,8 +261,8 @@ export function NewBudgetIntelligence({ transactions, budgets }: BudgetWidgetPro
           <div
             key={b.name}
             className={cn(
-              "bg-white rounded-2xl p-5 flex flex-col items-start border shadow-sm",
-              b.over ? "border-red-100 bg-red-50/10" : "border-outline-variant/10",
+              "bg-card rounded-2xl p-5 flex flex-col items-start border shadow-sm",
+              b.over ? "border-red-100 bg-red-50/10 dark:border-red-900/30 dark:bg-red-900/10" : "border-outline-variant/10",
             )}
           >
             <span className={cn("text-xs font-semibold mb-4 truncate w-full leading-tight", b.over ? "text-red-600" : "text-on-surface")}>
@@ -270,7 +270,7 @@ export function NewBudgetIntelligence({ transactions, budgets }: BudgetWidgetPro
             </span>
             <div className="relative w-24 h-24 self-center">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#f0f2f5" strokeWidth="12" />
+                <circle cx="50" cy="50" r="42" fill="none" className="stroke-muted" strokeWidth="12" />
                 <circle
                   cx="50" cy="50" r="42"
                   fill="none"
@@ -398,8 +398,14 @@ export function CashFlowAnalysis({ transactions }: WidgetProps) {
                 width={40}
               />
               <Tooltip
-                contentStyle={{ borderRadius: "16px", border: "none", boxShadow: "0 10px 40px -10px rgba(0,0,0,0.1)", padding: "16px" }}
-                itemStyle={{ fontWeight: 600 }}
+                contentStyle={{ 
+                  borderRadius: "16px", 
+                  border: "none", 
+                  boxShadow: "0 10px 40px -10px rgba(0,0,0,0.1)", 
+                  padding: "16px",
+                  backgroundColor: "hsl(var(--card))",
+                  color: "hsl(var(--foreground))"
+                }}
                 labelStyle={{ color: "#8b939c", fontWeight: 600, fontSize: "11px", marginBottom: "8px" }}
                 formatter={(val: number) => [val.toLocaleString(), undefined]}
               />
@@ -543,7 +549,7 @@ export function TopExpenseBreakdown({ transactions }: WidgetProps) {
               <span className="text-sm font-semibold text-on-surface truncate max-w-[60%]">{c.name}</span>
               <span className="text-sm font-bold text-on-surface">{formatCurrency(c.spend, currency)}</span>
             </div>
-            <div className="w-full h-2.5 bg-[#f0f2f5] rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{ width: `${(c.spend / c.max) * 100}%`, backgroundColor: c.color }}

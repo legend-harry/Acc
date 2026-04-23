@@ -74,6 +74,9 @@ export default {
         'on-primary-container': 'hsl(var(--on-primary-container))',
         'on-secondary-container': 'hsl(var(--on-secondary-container))',
         'on-tertiary-container': 'hsl(var(--on-tertiary-container))',
+        'on-surface': 'hsl(var(--foreground))',
+        'on-surface-variant': 'hsl(var(--muted-foreground))',
+        'outline-variant': 'hsl(var(--outline-variant))',
         'error-container': 'hsl(var(--error-container))',
         'on-error-container': 'hsl(var(--on-error-container))',
         tertiary: {

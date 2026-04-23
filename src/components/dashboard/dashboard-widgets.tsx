@@ -37,8 +37,46 @@ const TILE_SUBTEXT_DARK = [
 const DONUT_COLORS = ["#0a5232", "#168a53", "#1eb570", "#5ce198", "#d93826", "#f59e0b"];
 const BAR_COLORS   = ["#1eb570", "#d93826", "#0a5232", "#f59e0b", "#5c82e1"];
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
-const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function startOfDay(date: Date) {
+  const nextDate = new Date(date);
+  nextDate.setHours(0, 0, 0, 0);
+  return nextDate;
+}
+
+function startOfWeek(date: Date) {
+  const nextDate = startOfDay(date);
+  const dayIndex = (nextDate.getDay() + 6) % 7;
+  nextDate.setDate(nextDate.getDate() - dayIndex);
+  return nextDate;
+}
+
+function startOfMonth(date: Date) {
+  const nextDate = startOfDay(date);
+  nextDate.setDate(1);
+  return nextDate;
+}
+
+function formatShortDate(date: Date) {
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+}
+
+function formatShortMonth(date: Date) {
+  return new Intl.DateTimeFormat('en-US', { month: 'short', year: '2-digit' }).format(date);
+}
+
+function getGranularity(spanDays: number) {
+  if (spanDays > 90) {
+    return 'month';
+  }
+
+  if (spanDays > 30) {
+    return 'week';
+  }
+
+  return 'day';
+}
 
 interface WidgetProps {
   transactions: Transaction[];
@@ -230,16 +268,34 @@ export function NewBudgetIntelligence({ transactions, budgets }: BudgetWidgetPro
       }
     });
 
-    return budgets.map((b, idx) => {
+    const budgetedCategories = new Set<string>();
+    const items = budgets
+      .map((b, idx) => {
       const key = (b.category ?? "").trim().toLowerCase();
       const spent = expenseByCategory[key] ?? 0;
       const limit = b.budget ?? 0;
       const hasLimit = limit > 0;
+      budgetedCategories.add(key);
       // When no limit, show how much was spent relative to itself (ring always full if spent > 0)
       const pct = hasLimit ? Math.min(150, (spent / limit) * 100) : (spent > 0 ? 100 : 0);
       const over = hasLimit && spent > limit;
       return { name: b.category, spent, limit, pct, over, hasLimit, stroke: BUDGET_STROKES[idx % BUDGET_STROKES.length] };
-    });
+      })
+      .filter((item) => item.hasLimit || item.spent > 0);
+
+    const transactionOnlyItems = Object.entries(expenseByCategory)
+      .filter(([categoryKey, spent]) => spent > 0 && categoryKey && !budgetedCategories.has(categoryKey))
+      .map(([categoryKey, spent], idx) => ({
+        name: categoryKey.replace(/\b\w/g, (match) => match.toUpperCase()),
+        spent,
+        limit: 0,
+        pct: 100,
+        over: false,
+        hasLimit: false,
+        stroke: BUDGET_STROKES[(items.length + idx) % BUDGET_STROKES.length],
+      }));
+
+    return [...items, ...transactionOnlyItems];
   }, [transactions, budgets]);
 
   if (budgetItems.length === 0) {
@@ -312,43 +368,98 @@ export function NewBudgetIntelligence({ transactions, budgets }: BudgetWidgetPro
 }
 
 // ╔══════════════════════════════════════════════════════════════╗
-//  4. Cash Flow Analysis  — monthly income vs expense area chart
+//  4. Cash Flow Analysis  — adaptive income vs expense area chart
 // ╚══════════════════════════════════════════════════════════════╝
 export function CashFlowAnalysis({ transactions }: WidgetProps) {
-  const cashFlowData = useMemo(() => {
-    // Build a map of year-month → { income, expense }
-    const map: Record<string, { income: number; expense: number }> = {};
+  const { cashFlowData, granularity } = useMemo(() => {
+    const validTransactions = transactions
+      .map((transaction) => ({ ...transaction, parsedDate: new Date(transaction.date) }))
+      .filter((transaction) => !isNaN(transaction.parsedDate.getTime()))
+      .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime());
 
-    transactions.forEach((t) => {
-      const d = new Date(t.date);
-      if (isNaN(d.getTime())) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      if (!map[key]) map[key] = { income: 0, expense: 0 };
-      if (t.type === "income") map[key].income += t.amount;
-      else map[key].expense += t.amount;
+    if (validTransactions.length === 0) {
+      return { cashFlowData: [], granularity: 'day' as const };
+    }
+
+    const firstDate = validTransactions[0].parsedDate;
+    const lastDate = validTransactions[validTransactions.length - 1].parsedDate;
+    const spanDays = Math.max(0, Math.ceil((lastDate.getTime() - firstDate.getTime()) / DAY_MS));
+    const granularity = getGranularity(spanDays);
+
+    const bucketMap = new Map<string, { sortKey: number; name: string; income: number; expense: number }>();
+
+    validTransactions.forEach((transaction) => {
+      const currentDate = transaction.parsedDate;
+      let bucketKey = '';
+      let bucketName = '';
+      let sortKey = 0;
+
+      if (granularity === 'day') {
+        const day = startOfDay(currentDate);
+        bucketKey = day.toISOString().slice(0, 10);
+        bucketName = formatShortDate(day);
+        sortKey = day.getTime();
+      } else if (granularity === 'week') {
+        const weekStart = startOfWeek(currentDate);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        bucketKey = weekStart.toISOString().slice(0, 10);
+        bucketName = `${formatShortDate(weekStart)} - ${formatShortDate(weekEnd)}`;
+        sortKey = weekStart.getTime();
+      } else {
+        const monthStart = startOfMonth(currentDate);
+        bucketKey = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`;
+        bucketName = formatShortMonth(monthStart);
+        sortKey = monthStart.getTime();
+      }
+
+      if (!bucketMap.has(bucketKey)) {
+        bucketMap.set(bucketKey, {
+          sortKey,
+          name: bucketName,
+          income: 0,
+          expense: 0,
+        });
+      }
+
+      const bucket = bucketMap.get(bucketKey)!;
+      if (transaction.type === 'income') {
+        bucket.income += transaction.amount;
+      } else {
+        bucket.expense += transaction.amount;
+      }
     });
 
-    return Object.entries(map)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, vals]) => {
-        const [year, month] = key.split("-");
-        const label = MONTHS[parseInt(month, 10) - 1];
-        // For multi-year data, show year too
-        const hasMultiYear = Object.keys(map).some(k => k.split("-")[0] !== year);
-        return {
-          name: hasMultiYear ? `${label} '${year.slice(2)}` : label,
-          income: vals.income,
-          expense: vals.expense,
-        };
-      });
+    return {
+      granularity,
+      cashFlowData: Array.from(bucketMap.values())
+      .sort((a, b) => a.sortKey - b.sortKey)
+      .map(({ name, income, expense }) => ({
+        name,
+        income,
+        expense,
+      })),
+    };
   }, [transactions]);
+
+  const chartLabel = useMemo(() => {
+    if (granularity === 'month') {
+      return 'Monthly income vs expense trend';
+    }
+
+    if (granularity === 'week') {
+      return 'Weekly income vs expense trend';
+    }
+
+    return 'Daily income vs expense trend';
+  }, [granularity]);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-bold text-on-surface font-headline text-lg">Cash Flow Analysis</h3>
-          <p className="text-sm text-outline-variant font-medium mt-1">Monthly income vs expense trend</p>
+          <p className="text-sm text-outline-variant font-medium mt-1">{chartLabel}</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -386,6 +497,7 @@ export function CashFlowAnalysis({ transactions }: WidgetProps) {
                 tickLine={false}
                 tick={{ fontSize: 10, fill: "#8b939c", fontWeight: 600 }}
                 dy={10}
+                interval="preserveStartEnd"
               />
               <YAxis
                 axisLine={false}

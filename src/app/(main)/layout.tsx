@@ -13,12 +13,13 @@ import { CurrencyProvider } from "@/context/currency-context";
 import { LayoutProvider, useLayout } from "@/context/layout-context";
 import { UpgradeDialog } from "@/components/upgrade-dialog";
 import { AIOnboardingFlow } from "@/components/ai-onboarding-flow";
+import { LanguageProvider } from "@/context/language-context";
 
 function LayoutShell({ children }: { children: ReactNode }) {
   const { layout } = useLayout();
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
-  const { user, isLoading } = useUser();
+  const { user, userData, isLoading } = useUser();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -26,12 +27,20 @@ function LayoutShell({ children }: { children: ReactNode }) {
     if (!isLoading && !user) {
       router.push('/login');
     } else if (user) {
-       const isComplete = localStorage.getItem('onboardingComplete');
-       if (isComplete !== 'true') {
-           setShowOnboarding(true);
-       }
+      const onboardingKey = `onboardingComplete:${user}`;
+      const promptKey = `projectSetupPromptShown:${user}`;
+      const onboardingComplete = localStorage.getItem(onboardingKey) === 'true' || localStorage.getItem('onboardingComplete') === 'true';
+      const promptShown = localStorage.getItem(promptKey) === 'true';
+      const accountCreatedAt = userData?.created_at ? new Date(userData.created_at).getTime() : Number.NaN;
+      const isFreshAccount = localStorage.getItem('newAccountJustCreated') === 'true' || (Number.isFinite(accountCreatedAt) && Date.now() - accountCreatedAt < 24 * 60 * 60 * 1000);
+
+      if (!onboardingComplete && isFreshAccount && !promptShown) {
+          setShowOnboarding(true);
+          localStorage.setItem(promptKey, 'true');
+          localStorage.removeItem('newAccountJustCreated');
+      }
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, userData]);
 
   if (isLoading) {
     return (
@@ -85,17 +94,19 @@ function LayoutShell({ children }: { children: ReactNode }) {
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <ClientProvider>
-      <UserProvider>
-        <SubscriptionProvider>
-          <CurrencyProvider>
-            <ProjectFilterProvider>
-              <LayoutProvider>
-                <LayoutShell>{children}</LayoutShell>
-              </LayoutProvider>
-            </ProjectFilterProvider>
-          </CurrencyProvider>
-        </SubscriptionProvider>
-      </UserProvider>
+      <LanguageProvider>
+        <UserProvider>
+          <SubscriptionProvider>
+            <CurrencyProvider>
+              <ProjectFilterProvider>
+                <LayoutProvider>
+                  <LayoutShell>{children}</LayoutShell>
+                </LayoutProvider>
+              </ProjectFilterProvider>
+            </CurrencyProvider>
+          </SubscriptionProvider>
+        </UserProvider>
+      </LanguageProvider>
     </ClientProvider>
   );
 }

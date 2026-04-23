@@ -7,31 +7,101 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronRight, ChevronLeft, Sparkles, CheckCircle2, Plus, Briefcase, LandPlot } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ChevronRight, ChevronLeft, Sparkles, Plus, Briefcase, LandPlot, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FARM_TYPES, BUSINESS_CATEGORIES } from '@/lib/onboarding-data';
-import { useRouter } from 'next/navigation';
 import { useClient } from '@/context/client-context';
 import { useUser } from '@/context/user-context';
+import { useLanguage } from '@/context/language-context';
 
 type OnboardingState = {
+   projectName: string;
   primaryFocus: 'farm' | 'business' | null;
   industryId: string | null;
   selectedCategories: string[];
 };
 
+const DEFAULT_COPY = {
+   title: 'Welcome to Acc Platform',
+   description: 'Professional onboarding & configuration.',
+   focusTitle: 'What will you be managing?',
+   focusDescription: 'Choose your primary operational focus.',
+   farmTitle: 'Farm Management',
+   farmDescription: 'Dedicated templates for Agriculture, Aquaculture, and Livestock with specialized industrial tagging.',
+   businessTitle: 'Business Operations',
+   businessDescription: 'Standard enterprise templates for corporate accounting, services, and payroll management.',
+   farmStepTitle: 'Select Industrial Sector',
+   farmStepDescription: 'We will initialize your ledger with categories specific to your field.',
+   businessStepTitle: 'Accounting Template',
+   businessStepDescription: 'Choose a starter ledger or create a custom one.',
+   customFarmTitle: 'Custom Setup',
+   customFarmDescription: 'Define your own tags from scratch.',
+   customBusinessTitle: 'Blank Slate',
+   customBusinessDescription: 'Start with zero categories and build your own budget.',
+   categoryStepTitle: 'Refine Budget Categories',
+   categoryStepDescription: 'Deselect any category you do not need and add your own below.',
+   customCategoryLabel: 'Add custom category',
+   customCategoryPlaceholder: 'e.g. Electricity, Co-op Fees, Fertilizer',
+   customCategoryButton: 'Add category',
+   noCategoriesSelected: 'No categories selected yet. Add one to continue.',
+   back: 'Back',
+   continue: 'Continue',
+   startManaging: 'Start Managing',
+   finalizing: 'Finalizing...',
+};
+
 export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
-  const router = useRouter();
   const { clientId } = useClient();
   const { selectedProfile } = useUser();
+   const { language, translateBatch } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+   const [categoryDraft, setCategoryDraft] = useState('');
+   const [copy, setCopy] = useState(DEFAULT_COPY);
   const [state, setState] = useState<OnboardingState>({
+      projectName: '',
     primaryFocus: null,
     industryId: null,
     selectedCategories: [],
   });
+
+   useEffect(() => {
+      let isActive = true;
+
+      const translateCopy = async () => {
+         if (language === 'en') {
+            setCopy(DEFAULT_COPY);
+            return;
+         }
+
+         try {
+            const translated = await translateBatch(Object.values(DEFAULT_COPY));
+            if (!isActive) {
+               return;
+            }
+
+            const nextCopy = Object.fromEntries(
+               Object.keys(DEFAULT_COPY).map((key, index) => [key, translated[index] ?? DEFAULT_COPY[key as keyof typeof DEFAULT_COPY]])
+            ) as typeof DEFAULT_COPY;
+
+            setCopy(nextCopy);
+         } catch (error) {
+            console.error('Failed to translate onboarding copy:', error);
+            if (isActive) {
+               setCopy(DEFAULT_COPY);
+            }
+         }
+      };
+
+      translateCopy();
+
+      return () => {
+         isActive = false;
+      };
+   }, [language, translateBatch]);
 
   // Effect to sync categories when industry changes
   useEffect(() => {
@@ -46,6 +116,10 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
   }, [state.industryId, state.primaryFocus]);
 
   const handleNext = () => {
+      if (currentStep === 0 && !state.projectName.trim()) {
+         toast({ variant: 'destructive', description: 'Please enter a project name.' });
+         return;
+      }
     if (currentStep === 0 && !state.primaryFocus) {
       toast({ variant: 'destructive', description: 'Please select a primary focus.' });
       return;
@@ -54,12 +128,6 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
       toast({ variant: 'destructive', description: 'Please select a template.' });
       return;
     }
-    
-    // Custom options skip categories
-    if (currentStep === 1 && (state.industryId === 'custom')) {
-       completeOnboarding();
-       return;
-    }
 
     if (currentStep < 2) {
        setCurrentStep(prev => prev + 1);
@@ -67,6 +135,27 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
        completeOnboarding();
     }
   };
+
+   const addCustomCategory = () => {
+      const nextCategory = categoryDraft.trim();
+
+      if (!nextCategory) {
+         return;
+      }
+
+      setState((current) => {
+         if (current.selectedCategories.some((category) => category.toLowerCase() === nextCategory.toLowerCase())) {
+            return current;
+         }
+
+         return {
+            ...current,
+            selectedCategories: [...current.selectedCategories, nextCategory],
+         };
+      });
+
+      setCategoryDraft('');
+   };
 
   const toggleCategory = (category: string) => {
     setState(s => ({
@@ -84,6 +173,7 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+         projectName: state.projectName,
             primaryFocus: state.primaryFocus,
             industryId: state.industryId,
             selectedCategories: state.selectedCategories,
@@ -92,15 +182,17 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
         }),
       });
 
-      localStorage.setItem('onboardingComplete', 'true');
-      toast({ title: 'Setup Complete', description: 'Your workspace has been customized!' });
+         if (typeof window !== 'undefined') {
+            const onboardingKey = `onboardingComplete:${selectedProfile || clientId || 'default'}`;
+            localStorage.setItem('onboardingComplete', 'true');
+            localStorage.setItem(onboardingKey, 'true');
+            localStorage.removeItem('newAccountJustCreated');
+         }
+
+         toast({ title: 'Setup Complete', description: 'Your workspace has been customized!' });
       onOpenChange(false);
-      
-      if (state.industryId === 'custom') {
-         router.push('/planner');
-      } else {
+
          window.location.reload();
-      }
     } catch (error) {
       console.error('Onboarding error:', error);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to complete setup.' });
@@ -109,19 +201,19 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
     }
   };
 
-  const stepsCount = state.industryId === 'custom' ? 2 : 3;
+   const stepsCount = 3;
   const progress = ((currentStep + 1) / stepsCount) * 100;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-[95vw] sm:w-[85vw] max-h-[90vh] flex flex-col p-0">
+         <DialogContent className="max-w-4xl w-[95vw] sm:w-[85vw] max-h-[92dvh] flex flex-col overflow-hidden p-0">
         <DialogHeader className="p-6 pb-0">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-indigo-500" />
-            <DialogTitle className="text-2xl">Welcome to Acc Platform</DialogTitle>
+                  <DialogTitle className="text-2xl">{copy.title}</DialogTitle>
           </div>
           <DialogDescription className="text-base text-muted-foreground mt-2">
-            Professional onboarding & configuration.
+                  {copy.description}
           </DialogDescription>
         </DialogHeader>
 
@@ -135,13 +227,28 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
             <Progress value={progress} className="h-1 bg-slate-100 dark:bg-slate-800" />
         </div>
 
-        <ScrollArea className="flex-1 px-6 pb-6">
+            <ScrollArea className="flex-1 min-h-0 px-6 pb-6">
           {currentStep === 0 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                <div>
-                 <h3 className="text-xl font-bold">What will you be managing?</h3>
-                 <p className="text-slate-500 text-sm">Choose your primary operational focus.</p>
+                                     <h3 className="text-xl font-bold">Project Name</h3>
+                                     <p className="text-slate-500 text-sm">Name the project before choosing how you want to organize it.</p>
                </div>
+
+                      <div className="space-y-2">
+                         <Input
+                            value={state.projectName}
+                            onChange={(event) => setState((current) => ({ ...current, projectName: event.target.value }))}
+                            placeholder="e.g. Q2 Harvest Plan or West Wing Office"
+                            className="h-12 text-base"
+                         />
+                         <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Give your ledger a professional title</p>
+                      </div>
+
+                      <div>
+                                     <h3 className="text-xl font-bold">{copy.focusTitle}</h3>
+                                     <p className="text-slate-500 text-sm">{copy.focusDescription}</p>
+                      </div>
                
                <div className="grid sm:grid-cols-2 gap-4">
                   <div 
@@ -151,8 +258,8 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
                      <div className={`p-4 rounded-xl w-fit mb-6 transition-colors ${state.primaryFocus === 'farm' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600'}`}>
                         <LandPlot size={28} />
                      </div>
-                     <h4 className="text-lg font-bold mb-2">Farm Management</h4>
-                     <p className="text-slate-500 text-xs leading-relaxed">Dedicated templates for Agriculture, Aquaculture, and Livestock with specialized industrial tagging.</p>
+                     <h4 className="text-lg font-bold mb-2">{copy.farmTitle}</h4>
+                     <p className="text-slate-500 text-xs leading-relaxed">{copy.farmDescription}</p>
                   </div>
 
                   <div 
@@ -162,8 +269,8 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
                      <div className={`p-4 rounded-xl w-fit mb-6 transition-colors ${state.primaryFocus === 'business' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600'}`}>
                         <Briefcase size={28} />
                      </div>
-                     <h4 className="text-lg font-bold mb-2">Business Operations</h4>
-                     <p className="text-slate-500 text-xs leading-relaxed">Standard enterprise templates for corporate accounting, services, and payroll management.</p>
+                     <h4 className="text-lg font-bold mb-2">{copy.businessTitle}</h4>
+                     <p className="text-slate-500 text-xs leading-relaxed">{copy.businessDescription}</p>
                   </div>
                </div>
             </div>
@@ -172,8 +279,8 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
           {currentStep === 1 && state.primaryFocus === 'farm' && (
              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div>
-                 <h3 className="text-xl font-bold">Select Industrial Sector</h3>
-                 <p className="text-slate-500 text-sm">We'll initialize your ledger with categories specific to your field.</p>
+                 <h3 className="text-xl font-bold">{copy.farmStepTitle}</h3>
+                 <p className="text-slate-500 text-sm">{copy.farmStepDescription}</p>
                </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -198,8 +305,8 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
                          className={`p-4 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 transition-all ${state.industryId === 'custom' ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-200'}`}
                       >
                          <Plus size={20} className="mb-2 text-slate-400" />
-                         <span className="font-bold text-sm">Custom Setup</span>
-                         <span className="text-[10px] text-slate-400">Define your own tags</span>
+                         <span className="font-bold text-sm">{copy.customFarmTitle}</span>
+                         <span className="text-[10px] text-slate-400">{copy.customFarmDescription}</span>
                    </div>
                 </div>
              </div>
@@ -207,7 +314,10 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
 
           {currentStep === 1 && state.primaryFocus === 'business' && (
              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h3 className="text-xl font-bold">Accounting Template</h3>
+                <div>
+                  <h3 className="text-xl font-bold">{copy.businessStepTitle}</h3>
+                  <p className="text-slate-500 text-sm">{copy.businessStepDescription}</p>
+                </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                      <div 
                          onClick={() => setState({ ...state, industryId: 'standard' })}
@@ -223,8 +333,8 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
                          className={`p-6 rounded-xl border-2 border-dashed cursor-pointer transition-all ${state.industryId === 'custom' ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-100 dark:border-slate-800'}`}
                       >
                          <div className="font-bold mb-2 uppercase text-xs tracking-widest text-slate-400">Custom</div>
-                         <h4 className="font-bold mb-2">Blank Slate</h4>
-                         <p className="text-xs text-slate-500">Start with zero categories and manually build your budget.</p>
+                         <h4 className="font-bold mb-2">{copy.customBusinessTitle}</h4>
+                         <p className="text-xs text-slate-500">{copy.customBusinessDescription}</p>
                       </div>
                 </div>
              </div>
@@ -233,29 +343,55 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
           {currentStep === 2 && (
              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div>
-                    <h3 className="text-xl font-bold">Refine Budget Categories</h3>
-                    <p className="text-slate-500 text-sm">We've pre-selected recommended categories. Deselect any you don't need.</p>
+                     <h3 className="text-xl font-bold">{copy.categoryStepTitle}</h3>
+                     <p className="text-slate-500 text-sm">{copy.categoryStepDescription}</p>
                 </div>
 
                 <Card className="border-slate-100 dark:border-slate-800 shadow-none">
-                    <CardContent className="p-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                            {state.selectedCategories.map((cat) => (
-                                <div key={cat} className="flex items-center space-x-3">
-                                    <Checkbox 
-                                        id={cat} 
-                                        checked={state.selectedCategories.includes(cat)}
-                                        onCheckedChange={() => toggleCategory(cat)}
-                                        className="border-slate-300 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
-                                    />
-                                    <label htmlFor={cat} className="text-sm font-medium leading-none cursor-pointer hover:text-indigo-600 transition-colors">
-                                        {cat}
-                                    </label>
+                     <CardContent className="p-4 space-y-4">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                           <Input
+                              value={categoryDraft}
+                              onChange={(event) => setCategoryDraft(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                 event.preventDefault();
+                                 addCustomCategory();
+                                }
+                              }}
+                              placeholder={copy.customCategoryPlaceholder}
+                              className="h-11"
+                           />
+                           <Button type="button" onClick={addCustomCategory} className="shrink-0">
+                              <Plus className="mr-2 h-4 w-4" />
+                              {copy.customCategoryButton}
+                           </Button>
+                        </div>
+
+                        <div className="max-h-[42vh] overflow-y-auto pr-1">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                             {state.selectedCategories.map((cat) => (
+                                <div key={cat} className="flex items-center space-x-3 rounded-lg px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                                   <Checkbox 
+                                      id={cat} 
+                                      checked={state.selectedCategories.includes(cat)}
+                                      onCheckedChange={() => toggleCategory(cat)}
+                                      className="border-slate-300 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                                   />
+                                   <label htmlFor={cat} className="text-sm font-medium leading-none cursor-pointer hover:text-indigo-600 transition-colors flex-1">
+                                      {cat}
+                                   </label>
+                                   {state.industryId === 'custom' && (
+                                    <Badge variant="secondary" className="rounded-full px-2 py-0 text-[10px] uppercase tracking-widest text-slate-500">
+                                      custom
+                                    </Badge>
+                                   )}
                                 </div>
-                            ))}
-                            {state.selectedCategories.length === 0 && (
-                                <p className="col-span-full text-center py-8 text-slate-400 italic">No categories selected. Your project will be empty.</p>
-                            )}
+                             ))}
+                             {state.selectedCategories.length === 0 && (
+                                <p className="col-span-full text-center py-8 text-slate-400 italic">{copy.noCategoriesSelected}</p>
+                             )}
+                          </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -264,11 +400,11 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
         </ScrollArea>
 
         <div className="p-6 border-t bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center">
-            <Button variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0 || isSubmitting} className="font-bold">
-                <ChevronLeft className="mr-2 h-4 w-4" /> Back
+               <Button variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0 || isSubmitting} className="font-bold">
+                  <ChevronLeft className="mr-2 h-4 w-4" /> {copy.back}
             </Button>
             <Button onClick={handleNext} disabled={isSubmitting} size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 shadow-lg shadow-indigo-200 dark:shadow-none">
-                {isSubmitting ? 'Finalizing...' : currentStep === stepsCount - 1 ? 'Start Managing' : 'Continue'}
+                  {isSubmitting ? copy.finalizing : currentStep === stepsCount - 1 ? copy.startManaging : copy.continue}
                 {!isSubmitting && currentStep < stepsCount - 1 && <ChevronRight className="ml-2 h-4 w-4" />}
             </Button>
         </div>

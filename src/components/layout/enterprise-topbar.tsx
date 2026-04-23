@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Bell, Settings, PlusCircle, Menu, User } from "lucide-react";
+import { Search, Settings, PlusCircle, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
-import { NotificationBell } from "@/components/notification-bell";
 import { useUser } from "@/context/user-context";
 import { createClient } from '@/lib/supabase/client';
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useLanguage } from "@/context/language-context";
 
 interface EnterpriseTopbarProps {
   onMobileMenuToggle?: () => void;
@@ -15,6 +16,7 @@ interface EnterpriseTopbarProps {
 
 export function EnterpriseTopbar({ onMobileMenuToggle }: EnterpriseTopbarProps) {
   const { user } = useUser();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
@@ -36,7 +38,7 @@ export function EnterpriseTopbar({ onMobileMenuToggle }: EnterpriseTopbarProps) 
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search transactions..."
+            placeholder={t("Search transactions...")}
             className="w-full bg-muted/50 dark:bg-muted/30 border-none ring-1 ring-border/30 focus:ring-2 focus:ring-primary/30 rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 transition-all duration-200 ease-precision outline-none"
           />
         </div>
@@ -44,7 +46,7 @@ export function EnterpriseTopbar({ onMobileMenuToggle }: EnterpriseTopbarProps) 
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2 sm:gap-4 ml-4">
-        <NotificationBell />
+        <LanguageSwitcher />
 
         <Link href="/profile">
           <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
@@ -56,7 +58,7 @@ export function EnterpriseTopbar({ onMobileMenuToggle }: EnterpriseTopbarProps) 
         <AddExpenseDialog>
           <Button className="bg-gradient-to-br from-primary to-primary-container text-white hover:opacity-90 px-4 sm:px-6 py-2.5 rounded-xl text-sm font-bold shadow-ambient active:scale-[0.97] transition-all duration-200 ease-precision">
             <PlusCircle className="h-4 w-4 mr-0 sm:mr-2" />
-            <span className="hidden sm:inline">Add Transaction</span>
+            <span className="hidden sm:inline">{t("Add Transaction")}</span>
           </Button>
         </AddExpenseDialog>
 

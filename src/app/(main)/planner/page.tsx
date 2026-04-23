@@ -21,7 +21,7 @@ import { useClient } from "@/context/client-context";
 import { useUser } from "@/context/user-context";
 import { useBudgets, useProjects } from "@/hooks/use-database";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PlusCircle, Trash2, Sparkles, Settings, LandPlot, Briefcase, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react";
+import { PlusCircle, Plus, Trash2, Sparkles, Settings, LandPlot, Briefcase, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FARM_TYPES, BUSINESS_CATEGORIES } from "@/lib/onboarding-data";
@@ -90,6 +90,7 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
   const [projectName, setProjectName] = useState("");
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [categoryDraft, setCategoryDraft] = useState("");
   
   const { toast } = useToast();
   const { isPremium, openUpgradeDialog } = useSubscription();
@@ -103,6 +104,7 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
       setProjectName("");
       setTemplateId(null);
       setSelectedCategories([]);
+      setCategoryDraft("");
     }
   }, [open]);
 
@@ -132,14 +134,51 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
         toast({ variant: "destructive", title: "Error", description: "Please select a template or 'Custom'." });
         return;
       }
-      if (templateId === 'custom') {
-        handleSave();
-      } else {
-        setCurrentStep(2);
-      }
+      setCurrentStep(2);
     } else {
       handleSave();
     }
+  };
+
+  const currentTemplateCategories = useMemo(() => {
+    if (templateId === 'business') {
+      return [...BUSINESS_CATEGORIES];
+    }
+
+    if (templateId) {
+      return [...(FARM_TYPES.find(f => f.id === templateId)?.presetCategories || [])];
+    }
+
+    return [];
+  }, [templateId]);
+
+  const displayCategories = useMemo(() => {
+    const merged = [...currentTemplateCategories];
+    selectedCategories.forEach((category) => {
+      if (!merged.some((existing) => existing.toLowerCase() === category.toLowerCase())) {
+        merged.push(category);
+      }
+    });
+
+    return merged;
+  }, [currentTemplateCategories, selectedCategories]);
+
+  const addCustomCategory = () => {
+    const nextCategory = categoryDraft.trim();
+
+    if (!nextCategory) {
+      return;
+    }
+
+    setSelectedCategories((current) => {
+      if (current.some((category) => category.toLowerCase() === nextCategory.toLowerCase())) {
+        return current;
+      }
+
+      return [...current, nextCategory];
+    });
+
+    setCategoryDraft("");
   };
 
   const handleSave = async () => {
@@ -231,7 +270,7 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
             </div>
             <DialogTitle>New Project</DialogTitle>
           </div>
-          <DialogDescription>Step {currentStep + 1} of {templateId === 'custom' ? 2 : 3}</DialogDescription>
+          <DialogDescription>Step {currentStep + 1} of 3</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -294,12 +333,31 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
              <div className="space-y-4 py-2 animate-in fade-in slide-in-from-bottom-2">
                 <div className="flex justify-between items-center mb-2">
                     <Label className="text-base font-bold">Refine Categories</Label>
-                    <Button variant="link" size="sm" onClick={() => setSelectedCategories(templateId === 'business' ? [...BUSINESS_CATEGORIES] : FARM_TYPES.find(f => f.id === templateId)?.presetCategories || [])} className="text-xs h-auto p-0">Reset All</Button>
+                    <Button variant="link" size="sm" onClick={() => setSelectedCategories([...currentTemplateCategories])} className="text-xs h-auto p-0">Reset All</Button>
                 </div>
                 <Card className="border-slate-100 shadow-none">
                     <ScrollArea className="h-[250px] p-4">
-                        <div className="grid grid-cols-2 gap-y-4 gap-x-6">
-                            { (templateId === 'business' ? BUSINESS_CATEGORIES : (FARM_TYPES.find(f => f.id === templateId)?.presetCategories || [])).map(cat => (
+                        <div className="space-y-4">
+                          <div className="flex gap-2">
+                            <Input
+                              value={categoryDraft}
+                              onChange={(e) => setCategoryDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  addCustomCategory();
+                                }
+                              }}
+                              placeholder="Add custom tag"
+                            />
+                            <Button type="button" onClick={addCustomCategory} className="shrink-0">
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-y-4 gap-x-6">
+                            {displayCategories.map(cat => (
                                 <div key={cat} className="flex items-center space-x-2">
                                     <Checkbox 
                                         id={`proj-${cat}`} 
@@ -311,6 +369,10 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
                                     </label>
                                 </div>
                             ))}
+                            {displayCategories.length === 0 && (
+                              <p className="col-span-full text-sm text-muted-foreground italic">Add a custom tag to start building this project.</p>
+                            )}
+                          </div>
                         </div>
                     </ScrollArea>
                 </Card>
@@ -323,8 +385,8 @@ function AddProjectDialog({ onSave }: { onSave: () => void }) {
                 {currentStep === 0 ? "Cancel" : "Back"}
             </Button>
             <Button onClick={handleNext} disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 min-w-[120px]">
-                {isLoading ? "Creating..." : currentStep === (templateId === 'custom' ? 1 : 2) ? "Finish" : "Continue"}
-                {!isLoading && currentStep < (templateId === 'custom' ? 1 : 2) && <ChevronRight className="ml-2 h-4 w-4" />}
+            {isLoading ? "Creating..." : currentStep === 2 ? "Finish" : "Continue"}
+            {!isLoading && currentStep < 2 && <ChevronRight className="ml-2 h-4 w-4" />}
             </Button>
         </DialogFooter>
       </DialogContent>

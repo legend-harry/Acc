@@ -14,23 +14,20 @@ const TYPE_NAMES: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { primaryFocus, industryId, selectedCategories, clientId, profileId } = await request.json();
+    const { projectName, primaryFocus, industryId, selectedCategories, clientId, profileId } = await request.json();
     const supabase = await createClient();
 
     if (!clientId || !profileId) {
         return NextResponse.json({ error: 'Missing auth context' }, { status: 400 });
     }
 
-    if (industryId === 'custom') {
-        // Just return success, redirection happens on frontend
-        return NextResponse.json({ success: true });
-    }
-
-    const projectName = TYPE_NAMES[industryId] || (primaryFocus === 'farm' ? "My Farm" : "Business Ledger");
+    const resolvedProjectName = typeof projectName === 'string' && projectName.trim().length > 0
+      ? projectName.trim()
+      : TYPE_NAMES[industryId] || (primaryFocus === 'farm' ? "My Farm" : "Business Ledger");
 
     // 1. Create Project
     const { data: project, error: projError } = await supabase.from('projects').insert({
-        name: projectName,
+      name: resolvedProjectName,
         client_id: clientId,
         profile_id: profileId
     }).select().single();

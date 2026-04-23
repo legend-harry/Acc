@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTheme } from "@/context/theme-context";
+import { useLanguage } from "@/context/language-context";
 import {
   PlusCircle,
   LayoutDashboard,
@@ -21,7 +22,6 @@ import {
   Crown,
   Settings,
   FolderKanban,
-  Bell,
   Archive,
   Fish,
   Menu,
@@ -48,21 +48,13 @@ import { useSubscription } from "@/context/subscription-context";
 import { InstallPwaButton } from "@/components/install-pwa-button";
 import { useProjects } from "@/hooks/use-database";
 import { useProjectFilter } from "@/context/project-filter-context";
-import { NotificationBell } from "../notification-bell";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Home" },
-  { href: "/transactions", icon: ArrowLeftRight, label: "Cash Flow" },
-  { href: "/planner", icon: Wallet, label: "Budget" },
-  { href: "/employees", icon: Users, label: "Manage" },
-  { href: "/reports", icon: PieChart, label: "Reports" },
-  { href: "/shrimp", icon: Fish, label: "Aqua" },
-];
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 const profiles = ["Ammu", "Vijay", "Divyesh", "Anvika", "Guest"];
 
 function GlobalProjectSwitcher() {
+  const { t } = useLanguage();
   const { projects } = useProjects();
   const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
   const [defaultProject, setDefaultProject] = useState("");
@@ -96,17 +88,17 @@ function GlobalProjectSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon">
           <FolderKanban className="h-[1.2rem] w-[1.2rem]" />
-          <span className="sr-only">Switch Project</span>
+          <span className="sr-only">{t("Switch Project")}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>
-          {selectedProject ? `Project: ${selectedProject.name}` : "Select a Project"}
+          {selectedProject ? `Project: ${selectedProject.name}` : t("Select a Project")}
         </DropdownMenuLabel>
         <DropdownMenuRadioGroup value={selectedProjectId} onValueChange={setSelectedProjectId}>
           <DropdownMenuRadioItem value="all">
             <FolderKanban className="mr-2 h-4 w-4" />
-            <span>All Projects</span>
+            <span>{t("All Projects")}</span>
           </DropdownMenuRadioItem>
           <DropdownMenuSeparator />
           {activeProjects.map((project) => (
@@ -131,6 +123,7 @@ function GlobalProjectSwitcher() {
 }
 
 function UserNav() {
+  const { t } = useLanguage();
   const { userData } = useUser();
   const displayName = userData?.user_metadata?.full_name || userData?.email || "User";
   const initial = displayName.charAt(0).toUpperCase();
@@ -152,7 +145,7 @@ function UserNav() {
         <DropdownMenuItem asChild>
           <Link href="/profile">
             <Settings className="mr-2 h-4 w-4" />
-            <span>Profile & Settings</span>
+            <span>{t("Profile & Settings")}</span>
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -161,6 +154,7 @@ function UserNav() {
 }
 
 function ThemeSwitcher() {
+  const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
   const { isPremium, openUpgradeDialog } = useSubscription();
@@ -198,19 +192,19 @@ function ThemeSwitcher() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("Appearance")}</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={theme} onValueChange={(val) => handleThemeChange(val)}>
           <DropdownMenuRadioItem value="light">
             <Sun className="mr-2 h-4 w-4" />
-            <span>Light</span>
+            <span>{t("Light")}</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="dark">
             <Moon className="mr-2 h-4 w-4" />
-            <span>Dark</span>
+            <span>{t("Dark")}</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="system">
             <Settings className="mr-2 h-4 w-4" />
-            <span>System</span>
+            <span>{t("System")}</span>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         
@@ -218,7 +212,7 @@ function ThemeSwitcher() {
         
         <DropdownMenuItem onClick={() => handleThemeChange("special")} disabled={!isPremium}>
           <Sparkles className={cn("mr-2 h-4 w-4", !isPremium ? "text-yellow-400" : "text-purple-500")} />
-          <span>Special Theme</span>
+          <span>{t("Special Theme")}</span>
           {!isPremium && <Crown className="ml-auto h-3 w-3 text-yellow-500" />}
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -227,9 +221,18 @@ function ThemeSwitcher() {
 }
 
 export function Header() {
+  const { t } = useLanguage();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isPremium } = useSubscription();
+  const navItems = [
+    { href: "/dashboard", icon: LayoutDashboard, label: t("Home") },
+    { href: "/transactions", icon: ArrowLeftRight, label: t("Cash Flow") },
+    { href: "/planner", icon: Wallet, label: t("Budget") },
+    { href: "/employees", icon: Users, label: t("Manage") },
+    { href: "/reports", icon: PieChart, label: t("Reports") },
+    { href: "/shrimp", icon: Fish, label: t("Aqua") },
+  ];
 
   const currentPath = pathname ?? "";
 
@@ -303,12 +306,12 @@ export function Header() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search data..."
+              placeholder={t("Search data...")}
               className="w-full bg-slate-100 dark:bg-slate-900 border-none ring-1 ring-slate-200/50 dark:ring-slate-700/50 focus:ring-2 focus:ring-primary/30 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 transition-all outline-none"
             />
           </div>
 
-          <NotificationBell />
+          <LanguageSwitcher />
           <ThemeSwitcher />
           <GlobalProjectSwitcher />
 
@@ -316,7 +319,7 @@ export function Header() {
           <AddExpenseDialog>
             <button className="hidden md:flex items-center bg-primary text-primary-foreground px-4 lg:px-5 py-2 lg:py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-primary/10 active:scale-95 transition-all duration-200">
               <PlusCircle className="h-4 w-4 mr-2" />
-              Add Transaction
+              {t("Add Transaction")}
             </button>
           </AddExpenseDialog>
 

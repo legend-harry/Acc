@@ -48,6 +48,8 @@ export default function RegisterClientPage() {
       "activeClientId",
       formData.businessName.toLowerCase().replace(/\s+/g, "-")
     );
+    localStorage.setItem("newAccountJustCreated", "true");
+    localStorage.removeItem("onboardingComplete");
 
     toast({
       title: "Registration Successful",

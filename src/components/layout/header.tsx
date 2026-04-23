@@ -49,6 +49,7 @@ import { InstallPwaButton } from "@/components/install-pwa-button";
 import { useProjects } from "@/hooks/use-database";
 import { useProjectFilter } from "@/context/project-filter-context";
 import { NotificationBell } from "../notification-bell";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Home" },

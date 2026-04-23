@@ -45,7 +45,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('theme-mode') || 'system';
+                  var theme = localStorage.getItem('theme-mode') || 'light';
                   var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   if (theme === 'dark' || (theme === 'system' && supportDarkMode)) {
                     document.documentElement.classList.add('dark');

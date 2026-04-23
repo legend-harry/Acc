@@ -127,6 +127,15 @@
     --sidebar-accent-foreground: 218 60% 85%;
     --sidebar-border: 220 12% 20%;
     --sidebar-ring: 222 20% 65%;
+
+    /* Keep surface utility tokens in dark palette to avoid white-on-white */
+    --surface: 220 20% 7%;
+    --surface-container: 220 15% 12%;
+    --surface-container-low: 220 14% 10%;
+    --surface-container-lowest: 220 16% 9%;
+    --surface-container-high: 220 15% 15%;
+    --surface-container-highest: 220 14% 18%;
+    --outline-variant: 220 10% 30%;
   }
 
   /* Adaptive utility overrides for dark mode */
@@ -493,7 +502,7 @@
   }
 
   ::selection {
-    background-color: color-mix(in srgb, var(--primary) 60%, transparent);
+    background-color: hsl(var(--primary) / 0.35);
     color: hsl(var(--primary-foreground));
   }
   .day-today {

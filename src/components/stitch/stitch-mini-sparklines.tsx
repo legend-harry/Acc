@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/data";
 import { useCurrency } from "@/context/currency-context";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { BudgetSummary } from "@/types";
+import { cn } from "@/lib/utils";
 
 interface StitchMiniSparklinesProps {
   budgets: BudgetSummary[];
@@ -46,10 +47,4 @@ export function StitchMiniSparklines({ budgets }: StitchMiniSparklinesProps) {
       })}
     </div>
   );
-}
-
-// Utility function for conditional classes inside the component if needed, 
-// though cn is imported from @/lib/utils
-function cn(...classes: any[]) {
-    return classes.filter(Boolean).join(' ');
 }

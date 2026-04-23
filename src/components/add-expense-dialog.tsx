@@ -196,7 +196,7 @@ export function AddExpenseDialog({
       >
         <div onClick={() => setOpen(true)}>{children}</div>
 
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-[24px] border-0 shadow-2xl bg-background text-foreground">
+        <DialogContent className="sm:max-w-md p-0 rounded-[24px] border-0 shadow-2xl bg-background text-foreground">
           <DialogDescription className="sr-only">Add a new financial transaction</DialogDescription>
           
           {/* Header */}

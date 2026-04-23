@@ -304,20 +304,20 @@ export default function EmployeesPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start mb-6">
         <PageHeader
           title="Employees"
           description="Track attendance and manage your team."
           className="mb-0"
         />
-        <div className="flex gap-2">
+        <div className="flex w-full sm:w-auto gap-2">
             <AddEmployeeDialog>
-                <Button variant="secondary">
+                <Button variant="secondary" className="flex-1 sm:flex-none">
                     <User className="mr-2 h-4 w-4" /> Add Employee
                 </Button>
             </AddEmployeeDialog>
             <LogTimeDialog>
-              <Button>Log Time</Button>
+              <Button className="flex-1 sm:flex-none">Log Time</Button>
             </LogTimeDialog>
         </div>
       </div>
@@ -340,7 +340,7 @@ export default function EmployeesPage() {
               </div>
               <div>
                 {bulkEditMode ? (
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 max-w-full">
                     <Button variant="outline" size="sm" onClick={() => setIsBulkLogTimeOpen(true)}>
                       Bulk Log Time
                     </Button>
@@ -382,7 +382,7 @@ export default function EmployeesPage() {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[640px]">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left p-3 font-medium">

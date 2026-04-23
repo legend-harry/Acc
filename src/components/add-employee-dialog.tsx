@@ -147,7 +147,7 @@ export function AddEmployeeDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <div onClick={() => setOpen(true)}>{children}</div>
-      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-surface rounded-3xl border-none shadow-2xl [&>button:last-child]:hidden">
+      <DialogContent className="sm:max-w-2xl p-0 bg-surface rounded-3xl border-none shadow-2xl [&>button:last-child]:hidden">
         <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[85vh]">
           {/* Header Area */}
           <div className="flex items-start gap-4 p-8 pb-6 bg-[#f0f2f5]">

@@ -286,8 +286,10 @@ export default function ReportsPage() {
                 {sortedTransactions.slice(0, 10).map(t => (
                     <li key={t.id} className="flex justify-between items-center">
                         <div>
-                            <p className="font-medium">{t.title}</p>
-                            <p className="text-sm text-muted-foreground">{new Date(t.date).toLocaleDateString()}</p>
+                            <p className="font-medium">{t.title || t.description || t.vendor || "Untitled transaction"}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(t.date).toLocaleDateString()} • {t.category || "Uncategorized"}
+                            </p>
                         </div>
                         <p className="font-mono text-sm">{formatCurrency(t.amount, currency)}</p>
                     </li>

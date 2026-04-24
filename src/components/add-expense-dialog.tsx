@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +23,6 @@ import { useCurrency } from "@/context/currency-context";
 import { cn } from "@/lib/utils";
 import {
   Calendar,
-  X,
   CreditCard,
   ShoppingCart,
   Plane,
@@ -35,9 +33,10 @@ import {
   Loader2,
   Brain,
   AlertCircle,
-  ChevronDown,
   ArrowRight
 } from "lucide-react";
+
+const VENDOR_HISTORY_KEY = "vendor-history-v1";
 
 export function AddExpenseDialog({
   children,
@@ -77,6 +76,9 @@ export function AddExpenseDialog({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [vendor, setVendor] = useState("");
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [vendorHistory, setVendorHistory] = useState<string[]>([]);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -89,6 +91,14 @@ export function AddExpenseDialog({
       const defaultProjectId = localStorage.getItem("defaultProjectId");
       if (defaultProjectId && defaultProjectId !== "all") {
         setSelectedProjectId(defaultProjectId);
+      }
+
+      try {
+        const raw = localStorage.getItem(VENDOR_HISTORY_KEY);
+        const parsed = raw ? (JSON.parse(raw) as string[]) : [];
+        setVendorHistory(Array.isArray(parsed) ? parsed : []);
+      } catch {
+        setVendorHistory([]);
       }
     }
   }, [dialogOpen]);
@@ -104,6 +114,17 @@ export function AddExpenseDialog({
     setVendor("");
     setReceiptPreview(null);
     setSubmitError(null);
+    setIsAddingCategory(false);
+    setNewCategoryName("");
+  };
+
+  const persistVendorHistory = (value: string) => {
+    const clean = value.trim();
+    if (!clean) return;
+
+    const next = [clean, ...vendorHistory.filter((v) => v.toLowerCase() !== clean.toLowerCase())].slice(0, 8);
+    setVendorHistory(next);
+    localStorage.setItem(VENDOR_HISTORY_KEY, JSON.stringify(next));
   };
 
   const getIconForCategory = (cat: string) => {
@@ -181,6 +202,8 @@ export function AddExpenseDialog({
         if (coreError) throw coreError;
       }
 
+      persistVendorHistory(vendor);
+
       setIsLoading(false);
       setDialogOpen(false);
       resetDialog();
@@ -197,6 +220,55 @@ export function AddExpenseDialog({
     }
   };
 
+  const handleAddCategory = async () => {
+    if (!selectedProjectId) {
+      setSubmitError("Please select a project first.");
+      return;
+    }
+
+    if (!isAddingCategory) {
+      setIsAddingCategory(true);
+      setNewCategoryName("");
+      return;
+    }
+
+    const categoryName = newCategoryName.trim();
+    if (!categoryName) {
+      setSubmitError("Please enter a category name.");
+      return;
+    }
+
+    const existing = categories.find((c) => c.toLowerCase() === categoryName.toLowerCase());
+    if (existing) {
+      setSelectedCategory(existing);
+      setIsAddingCategory(false);
+      setNewCategoryName("");
+      toast({ title: "Category Selected", description: `Using existing category \"${existing}\".` });
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from('budgets').insert([{
+        client_id: clientId,
+        profile_id: selectedProfile || '',
+        category: categoryName,
+        amount: 0,
+        projectid: selectedProjectId,
+      }]);
+
+      if (error) throw error;
+
+      setSelectedCategory(categoryName);
+      setIsAddingCategory(false);
+      setNewCategoryName("");
+      toast({ title: "Category Added", description: `\"${categoryName}\" is ready to use.` });
+    } catch (error) {
+      console.error("Failed to add category:", error);
+      toast({ variant: "destructive", title: "Error", description: "Could not add category." });
+    }
+  };
+
   return (
     <>
       <Dialog
@@ -208,7 +280,7 @@ export function AddExpenseDialog({
       >
         {!hideTrigger && <div onClick={() => setDialogOpen(true)}>{children}</div>}
 
-        <DialogContent className="sm:max-w-md p-0 rounded-[24px] border-0 shadow-2xl bg-background text-foreground flex flex-col max-h-[90dvh] overflow-hidden">
+        <DialogContent hideCloseButton className="sm:max-w-md p-0 rounded-[24px] border-0 shadow-2xl bg-background text-foreground flex max-h-[90dvh] flex-col overflow-hidden">
           <DialogDescription className="sr-only">Add a new financial transaction</DialogDescription>
           
           {/* Header */}
@@ -216,9 +288,6 @@ export function AddExpenseDialog({
             <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
               New Entry
             </DialogTitle>
-            <DialogClose className="rounded-full w-8 h-8 flex items-center justify-center bg-muted hover:bg-muted-foreground/10 transition-colors">
-              <X className="w-4 h-4 text-muted-foreground" />
-            </DialogClose>
           </div>
 
           {!selectedProjectId ? (
@@ -250,7 +319,7 @@ export function AddExpenseDialog({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-              <ScrollArea className="min-h-0 flex-1 px-6">
+              <ScrollArea className="h-[calc(90dvh-190px)] px-6 pb-28">
                 <div className="space-y-8 py-4">
                   
                   {/* Amount Region */}
@@ -335,6 +404,24 @@ export function AddExpenseDialog({
                     />
                   </div>
 
+                  <div>
+                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 block">
+                      Vendor
+                    </Label>
+                    <Input
+                      list="vendor-history"
+                      value={vendor}
+                      onChange={(e) => setVendor(e.target.value)}
+                      placeholder="Vendor / Supplier"
+                      className="bg-muted border-0 rounded-[14px] h-[52px] px-5 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-emerald-500/20"
+                    />
+                    <datalist id="vendor-history">
+                      {vendorHistory.map((item) => (
+                        <option key={item} value={item} />
+                      ))}
+                    </datalist>
+                  </div>
+
                   {/* Category Chips */}
                   {transactionType === "expense" && (
                     <div>
@@ -361,10 +448,41 @@ export function AddExpenseDialog({
                             {getIconForCategory(cat)} {cat}
                           </button>
                         ))}
-                        <button type="button" className="w-[42px] h-[42px] rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-400 hover:bg-slate-50 transition-colors">
+                        <button
+                          type="button"
+                          onClick={handleAddCategory}
+                          aria-label="Add category"
+                          className="w-[42px] h-[42px] rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-400 hover:bg-slate-50 transition-colors"
+                        >
                           <Plus className="w-4 h-4" />
                         </button>
                       </div>
+
+                      {isAddingCategory && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <Input
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            placeholder="New category name"
+                            className="h-10 rounded-xl bg-muted border-0 text-sm"
+                          />
+                          <Button type="button" size="sm" onClick={handleAddCategory} className="rounded-xl">
+                            Add
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setIsAddingCategory(false);
+                              setNewCategoryName("");
+                            }}
+                            className="rounded-xl"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -393,7 +511,7 @@ export function AddExpenseDialog({
                 </div>
               )}
 
-              <div className="shrink-0 sticky bottom-0 px-6 py-6 pb-8 bg-background/95 backdrop-blur border-t border-border/60">
+              <div className="shrink-0 sticky bottom-0 z-10 px-6 py-6 pb-8 bg-background/95 backdrop-blur border-t border-border/60">
                 <Button
                   type="submit"
                   disabled={isLoading || categoriesLoading}

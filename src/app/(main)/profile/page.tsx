@@ -301,9 +301,34 @@ function ProjectSettings() {
 
     const handleDeleteProject = async () => {
         if (!deletingProject) return;
-        // TODO: Migrate to Supabase delete
-        toast({ title: "Coming Soon", description: "Project deletion will be available after full Supabase migration." });
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('projects')
+          .delete()
+          .eq('id', deletingProject.id);
+
+        if (error) throw error;
+
+        if (defaultProject === deletingProject.id) {
+          localStorage.removeItem("defaultProjectId");
+          setDefaultProject("");
+        }
+
+        toast({
+          title: "Project Deleted",
+          description: `The project "${deletingProject.name}" was deleted.`,
+        });
+      } catch (error) {
+        console.error("Failed to delete project:", error);
+        toast({
+          variant: "destructive",
+          title: "Delete Failed",
+          description: "Could not delete this project.",
+        });
+      } finally {
         setDeletingProject(null);
+      }
     }
 
 

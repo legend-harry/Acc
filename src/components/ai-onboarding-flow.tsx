@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ChevronRight, ChevronLeft, Sparkles, Plus, Briefcase, LandPlot, X } from 'lucide-react';
@@ -14,11 +14,13 @@ import { useToast } from '@/hooks/use-toast';
 import { FARM_TYPES, BUSINESS_CATEGORIES } from '@/lib/onboarding-data';
 import { useClient } from '@/context/client-context';
 import { useUser } from '@/context/user-context';
-import { useLanguage } from '@/context/language-context';
+import { useLanguage, SUPPORTED_LANGUAGES, SupportedLanguage } from '@/context/language-context';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type OnboardingState = {
    projectName: string;
   primaryFocus: 'farm' | 'business' | null;
+  preferredLanguage: SupportedLanguage;
   industryId: string | null;
   selectedCategories: string[];
 };
@@ -28,6 +30,8 @@ const DEFAULT_COPY = {
    description: 'Professional onboarding & configuration.',
    focusTitle: 'What will you be managing?',
    focusDescription: 'Choose your primary operational focus.',
+   languageTitle: 'Preferred Language',
+   languageDescription: 'Set your language for navigation labels and recurring terms.',
    farmTitle: 'Farm Management',
    farmDescription: 'Dedicated templates for Agriculture, Aquaculture, and Livestock with specialized industrial tagging.',
    businessTitle: 'Business Operations',
@@ -53,20 +57,28 @@ const DEFAULT_COPY = {
 };
 
 export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const router = useRouter();
   const { toast } = useToast();
   const { clientId } = useClient();
   const { selectedProfile } = useUser();
-   const { language, translateBatch } = useLanguage();
+   const { language, setLanguage, translateBatch } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStage, setSubmitStage] = useState(0);
+  const submitStages = ['Fetching your expenses', 'Balancing your finances', 'Building your insights', 'Finalizing your workspace'];
    const [categoryDraft, setCategoryDraft] = useState('');
    const [copy, setCopy] = useState(DEFAULT_COPY);
   const [state, setState] = useState<OnboardingState>({
       projectName: '',
     primaryFocus: null,
+    preferredLanguage: language,
     industryId: null,
     selectedCategories: [],
   });
+
+  useEffect(() => {
+    setState((current) => ({ ...current, preferredLanguage: language }));
+  }, [language]);
 
    useEffect(() => {
       let isActive = true;
@@ -168,13 +180,21 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
 
   const completeOnboarding = async () => {
     setIsSubmitting(true);
+    setSubmitStage(0);
+    const stageTimer = window.setInterval(() => {
+      setSubmitStage((current) => (current + 1) % submitStages.length);
+    }, 1200);
     try {
+      if (state.preferredLanguage !== language) {
+        setLanguage(state.preferredLanguage);
+      }
       await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
          projectName: state.projectName,
             primaryFocus: state.primaryFocus,
+            preferredLanguage: state.preferredLanguage,
             industryId: state.industryId,
             selectedCategories: state.selectedCategories,
             clientId,
@@ -191,12 +211,12 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
 
          toast({ title: 'Setup Complete', description: 'Your workspace has been customized!' });
       onOpenChange(false);
-
-         window.location.reload();
+      router.refresh();
     } catch (error) {
       console.error('Onboarding error:', error);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to complete setup.' });
     } finally {
+      window.clearInterval(stageTimer);
       setIsSubmitting(false);
     }
   };
@@ -206,7 +226,7 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-         <DialogContent className="max-w-4xl w-[95vw] sm:w-[85vw] max-h-[92dvh] flex flex-col overflow-hidden p-0">
+         <DialogContent className="max-w-4xl w-[95vw] sm:w-[85vw] max-h-[92dvh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-0">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-indigo-500" />
@@ -227,7 +247,7 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
             <Progress value={progress} className="h-1 bg-slate-100 dark:bg-slate-800" />
         </div>
 
-            <ScrollArea className="flex-1 min-h-0 px-6 pb-6">
+            <div className="flex-1 min-h-0 px-6 pb-6 overflow-y-auto">
           {currentStep === 0 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                <div>
@@ -248,6 +268,25 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
                       <div>
                                      <h3 className="text-xl font-bold">{copy.focusTitle}</h3>
                                      <p className="text-slate-500 text-sm">{copy.focusDescription}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-bold">{copy.languageTitle}</h3>
+                        <p className="text-slate-500 text-sm">{copy.languageDescription}</p>
+                        <Select
+                          value={state.preferredLanguage}
+                          onValueChange={(value) => setState((current) => ({ ...current, preferredLanguage: value as SupportedLanguage }))}
+                        >
+                          <SelectTrigger className="h-12 text-base">
+                            <SelectValue placeholder="Select language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SUPPORTED_LANGUAGES.map((entry) => (
+                              <SelectItem key={entry.code} value={entry.code}>
+                                {entry.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                
                <div className="grid sm:grid-cols-2 gap-4">
@@ -397,14 +436,14 @@ export function AIOnboardingFlow({ open, onOpenChange }: { open: boolean; onOpen
                 </Card>
              </div>
           )}
-        </ScrollArea>
+        </div>
 
         <div className="p-6 border-t bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center">
                <Button variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0 || isSubmitting} className="font-bold">
                   <ChevronLeft className="mr-2 h-4 w-4" /> {copy.back}
             </Button>
             <Button onClick={handleNext} disabled={isSubmitting} size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 shadow-lg shadow-indigo-200 dark:shadow-none">
-                  {isSubmitting ? copy.finalizing : currentStep === stepsCount - 1 ? copy.startManaging : copy.continue}
+                  {isSubmitting ? submitStages[submitStage] : currentStep === stepsCount - 1 ? copy.startManaging : copy.continue}
                 {!isSubmitting && currentStep < stepsCount - 1 && <ChevronRight className="ml-2 h-4 w-4" />}
             </Button>
         </div>

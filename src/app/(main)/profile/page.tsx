@@ -52,6 +52,9 @@ import type { Project, Employee } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { useLayout } from "@/context/layout-context";
 import { DataImportTab } from "@/components/profile/data-import-tab";
+import { useLanguage, SUPPORTED_LANGUAGES, SupportedLanguage } from "@/context/language-context";
+import { useTheme } from "@/context/theme-context";
+import { PushNotificationSettings } from "@/components/push-notification-settings";
 
 const currencies: { value: Currency; label: string }[] = [
   { value: "INR", label: "INR (Indian Rupee)" },
@@ -62,6 +65,8 @@ const currencies: { value: Currency; label: string }[] = [
 
 function SettingsTab() {
   const { currency, setCurrency } = useCurrency();
+  const { language, setLanguage } = useLanguage();
+  const { theme, setTheme, specialThemeEnabled, setSpecialThemeEnabled } = useTheme();
   const { projects } = useProjects();
   const { employees } = useEmployees();
   const { selectedProjectId, setSelectedProjectId } = useProjectFilter();
@@ -129,6 +134,53 @@ function SettingsTab() {
         </div>
         <Separator />
         <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+          <Label htmlFor="language-select">Preferred Language</Label>
+          <div className="md:col-span-2">
+            <Select value={language} onValueChange={(value) => setLanguage(value as SupportedLanguage)}>
+              <SelectTrigger id="language-select" className="w-full">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORTED_LANGUAGES.map((entry) => (
+                  <SelectItem key={entry.code} value={entry.code}>
+                    {entry.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+          <Label htmlFor="theme-select">Color Theme</Label>
+          <div className="md:col-span-2 space-y-3">
+            <Select value={theme} onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}>
+              <SelectTrigger id="theme-select" className="w-full">
+                <SelectValue placeholder="Select theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+                <SelectItem value="system">System</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <p className="text-sm font-medium">Special Theme</p>
+                <p className="text-xs text-muted-foreground">Premium accent color palette.</p>
+              </div>
+              <Button
+                type="button"
+                variant={specialThemeEnabled ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSpecialThemeEnabled(!specialThemeEnabled)}
+              >
+                {specialThemeEnabled ? "Enabled" : "Enable"}
+              </Button>
+            </div>
+          </div>
+        </div>
+        <Separator />
+        <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
           <Label htmlFor="currency-select">Currency</Label>
           <div className="md:col-span-2">
             <Select
@@ -186,6 +238,7 @@ function SettingsTab() {
         </div>
       </CardContent>
     </Card>
+    
   );
 }
 
@@ -404,7 +457,10 @@ export default function ProfilePage() {
             <ProjectSettings />
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
-          <SettingsTab />
+          <div className="space-y-6">
+            <SettingsTab />
+            <PushNotificationSettings />
+          </div>
         </TabsContent>
         <TabsContent value="data-import" className="mt-6">
           <DataImportTab />

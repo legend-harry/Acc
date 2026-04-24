@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from '@/lib/supabase/client';
 import {
   Dialog,
@@ -51,6 +52,7 @@ export function AddExpenseDialog({
   onOpenChange?: (open: boolean) => void;
   hideTrigger?: boolean;
 }) {
+  const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -182,7 +184,7 @@ export function AddExpenseDialog({
       setIsLoading(false);
       setDialogOpen(false);
       resetDialog();
-      window.location.reload();
+      router.refresh();
 
       toast({
         title: "Transaction Added",

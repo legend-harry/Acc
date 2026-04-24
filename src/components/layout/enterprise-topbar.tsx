@@ -6,8 +6,6 @@ import { Search, Settings, PlusCircle, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddExpenseDialog } from "@/components/add-expense-dialog";
 import { useUser } from "@/context/user-context";
-import { createClient } from '@/lib/supabase/client';
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { useLanguage } from "@/context/language-context";
 
 interface EnterpriseTopbarProps {
@@ -46,8 +44,6 @@ export function EnterpriseTopbar({ onMobileMenuToggle }: EnterpriseTopbarProps) 
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2 sm:gap-4 ml-4">
-        <LanguageSwitcher />
-
         <Link href="/profile">
           <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
             <Settings className="h-[1.15rem] w-[1.15rem]" />

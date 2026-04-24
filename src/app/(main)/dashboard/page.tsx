@@ -23,6 +23,14 @@ export default function DashboardPage() {
   const loading = transactionsLoading || budgetsLoading || projectsLoading;
 
   useEffect(() => {
+    if (selectedProjectId !== "all" && projects.length > 0) {
+      const selectedExists = projects.some((project) => project.id === selectedProjectId);
+      if (!selectedExists) {
+        setSelectedProjectId("all");
+        return;
+      }
+    }
+
     // This effect runs only on the client, after hydration.
     if (selectedProjectId === "all") {
       setPageTitle("All Projects");

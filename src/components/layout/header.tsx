@@ -5,29 +5,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { useTheme } from "@/context/theme-context";
 import { useLanguage } from "@/context/language-context";
 import {
   PlusCircle,
   LayoutDashboard,
   ArrowLeftRight,
-  Target,
   PieChart,
-  User,
   Users,
-  Moon,
-  Sun,
-  Palette,
-  Sparkles,
-  Crown,
   Settings,
   FolderKanban,
   Archive,
   Fish,
   Menu,
   Search,
-  ChevronDown,
-  TrendingUp,
   Wallet,
   X,
 } from "lucide-react";
@@ -44,12 +34,9 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { useUser } from "@/context/user-context";
-import { useSubscription } from "@/context/subscription-context";
-import { InstallPwaButton } from "@/components/install-pwa-button";
 import { useProjects } from "@/hooks/use-database";
 import { useProjectFilter } from "@/context/project-filter-context";
 import { cn } from "@/lib/utils";
-import { LanguageSwitcher } from "@/components/language-switcher";
 
 const profiles = ["Ammu", "Vijay", "Divyesh", "Anvika", "Guest"];
 
@@ -153,79 +140,10 @@ function UserNav() {
   );
 }
 
-function ThemeSwitcher() {
-  const { t } = useLanguage();
-  const { theme, setTheme, specialThemeEnabled, setSpecialThemeEnabled } = useTheme();
-  const [isMounted, setIsMounted] = useState(false);
-  const { isPremium, openUpgradeDialog } = useSubscription();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const handleThemeChange = (selectedTheme: string) => {
-    if (selectedTheme === "special" && !isPremium) {
-      openUpgradeDialog("special-theme");
-      return;
-    }
-    if (selectedTheme === "special") {
-      setSpecialThemeEnabled(!specialThemeEnabled);
-      return;
-    }
-    setSpecialThemeEnabled(false);
-    setTheme(selectedTheme as any);
-  };
-
-  if (!isMounted) {
-    return (
-      <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors" disabled>
-        <Palette className="h-5 w-5" />
-      </button>
-    );
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-          <Palette className="h-5 w-5" />
-          <span className="sr-only">Toggle theme</span>
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>{t("Appearance")}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={theme} onValueChange={(val) => handleThemeChange(val)}>
-          <DropdownMenuRadioItem value="light">
-            <Sun className="mr-2 h-4 w-4" />
-            <span>{t("Light")}</span>
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="dark">
-            <Moon className="mr-2 h-4 w-4" />
-            <span>{t("Dark")}</span>
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="system">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>{t("System")}</span>
-          </DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-        
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem onClick={() => handleThemeChange("special")} disabled={!isPremium}>
-          <Sparkles className={cn("mr-2 h-4 w-4", !isPremium ? "text-yellow-400" : "text-purple-500")} />
-          <span>{specialThemeEnabled ? `Disable ${t("Special Theme")}` : t("Special Theme")}</span>
-          {!isPremium && <Crown className="ml-auto h-3 w-3 text-yellow-500" />}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 export function Header() {
   const { t } = useLanguage();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isPremium } = useSubscription();
   const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: t("Home") },
     { href: "/transactions", icon: ArrowLeftRight, label: t("Cash Flow") },
@@ -312,8 +230,6 @@ export function Header() {
             />
           </div>
 
-          <LanguageSwitcher />
-          <ThemeSwitcher />
           <GlobalProjectSwitcher />
 
 

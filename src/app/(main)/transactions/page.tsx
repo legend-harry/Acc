@@ -508,8 +508,8 @@ function TransactionsPageContent() {
                 Filter
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
-              <ScrollArea className="h-96">
+            <PopoverContent className={cn("w-[calc(100vw-2rem)] md:w-80 p-0", isMobile ? "max-h-[75dvh]" : "")} align="end">
+              <ScrollArea className={cn(isMobile ? "h-[65dvh]" : "h-96")}>
                 <div className="grid gap-4 p-4">
                   <h4 className="font-medium leading-none">Filters & Sort</h4>
                   <div className="grid gap-2">
@@ -724,6 +724,14 @@ function TransactionsPageContent() {
       </div>
 
       {!loading && <FloatingSum transactions={filteredTransactions} />}
+      <AddExpenseDialog>
+        <Button
+          className="md:hidden fixed bottom-24 right-4 z-50 h-14 w-14 rounded-full p-0 shadow-xl shadow-primary/25"
+          aria-label="Add transaction"
+        >
+          <span className="material-symbols-outlined">add</span>
+        </Button>
+      </AddExpenseDialog>
 
       {editingTransaction && (
         <EditTransactionDialog 

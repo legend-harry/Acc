@@ -208,7 +208,7 @@ export function AddExpenseDialog({
       >
         {!hideTrigger && <div onClick={() => setDialogOpen(true)}>{children}</div>}
 
-        <DialogContent className="sm:max-w-md p-0 rounded-[24px] border-0 shadow-2xl bg-background text-foreground">
+        <DialogContent className="sm:max-w-md p-0 rounded-[24px] border-0 shadow-2xl bg-background text-foreground flex flex-col max-h-[90dvh] overflow-hidden">
           <DialogDescription className="sr-only">Add a new financial transaction</DialogDescription>
           
           {/* Header */}
@@ -249,8 +249,8 @@ export function AddExpenseDialog({
               )}
             </div>
           ) : (
-            <form onSubmit={handleSubmit}>
-              <ScrollArea className="max-h-[75vh] px-6">
+            <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+              <ScrollArea className="min-h-0 flex-1 px-6">
                 <div className="space-y-8 py-4">
                   
                   {/* Amount Region */}
@@ -393,7 +393,7 @@ export function AddExpenseDialog({
                 </div>
               )}
 
-              <div className="px-6 py-6 pb-8 bg-white border-t-0">
+              <div className="shrink-0 sticky bottom-0 px-6 py-6 pb-8 bg-background/95 backdrop-blur border-t border-border/60">
                 <Button
                   type="submit"
                   disabled={isLoading || categoriesLoading}

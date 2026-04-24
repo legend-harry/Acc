@@ -189,7 +189,7 @@ export function EditTransactionDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl bg-surface">
+      <DialogContent className="sm:max-w-xl bg-surface flex max-h-[90dvh] flex-col overflow-hidden">
         <DialogHeader className="bg-primary/5 -m-6 mb-0 p-6 rounded-t-lg border-b border-primary/10">
           <DialogTitle className="font-headline text-2xl font-bold flex items-center gap-2">
              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -207,8 +207,8 @@ export function EditTransactionDialog({
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : (
-        <form onSubmit={handleSubmit} className="mt-4">
-          <ScrollArea className="max-h-[60vh] -mx-6 px-6">
+        <form onSubmit={handleSubmit} className="mt-4 flex min-h-0 flex-1 flex-col">
+          <ScrollArea className="min-h-0 flex-1 -mx-6 px-6">
             <div className="grid gap-6 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="project" className="text-right font-label font-bold text-xs uppercase tracking-wider text-outline">
@@ -445,7 +445,7 @@ export function EditTransactionDialog({
                  )}
               </div>
           </ScrollArea>
-          <DialogFooter className="pt-6 mt-6 border-t border-outline-variant/10">
+          <DialogFooter className="shrink-0 pt-6 mt-6 border-t border-outline-variant/10">
             <DialogClose asChild>
               <Button type="button" variant="ghost" className="font-bold text-outline">
                 Cancel

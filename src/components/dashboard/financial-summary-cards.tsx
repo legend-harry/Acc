@@ -1,7 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Landmark, PiggyBank, ShoppingCart, Wallet, CircleCheck } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 
 type Tx = {
   amount: number;
@@ -31,6 +39,8 @@ function clamp(value: number, min = 0, max = 100) {
 }
 
 export function FinancialSummaryCards({ transactions = [] }: { transactions?: Tx[] }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalFilter, setModalFilter] = useState<"income" | "expense" | null>(null);
   const safeTransactions = Array.isArray(transactions) ? transactions : [];
 
   const metrics = useMemo(() => {
@@ -95,9 +105,15 @@ export function FinancialSummaryCards({ transactions = [] }: { transactions?: Tx
     };
   }, [safeTransactions]);
 
+  const openModalFor = (type: "income" | "expense") => {
+    setModalFilter(type);
+    setModalOpen(true);
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-      <article className="rounded-2xl bg-surface-container-lowest border border-outline-variant/20 p-5 shadow-[0_8px_24px_rgba(25,28,32,0.04)]">
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <article onClick={() => openModalFor('income')} className="cursor-pointer rounded-2xl bg-surface-container-lowest border border-outline-variant/20 p-5 shadow-[0_8px_24px_rgba(25,28,32,0.04)]">
         <div className="flex items-start justify-between">
           <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
             <Wallet className="w-6 h-6 text-emerald-700" />
@@ -111,7 +127,7 @@ export function FinancialSummaryCards({ transactions = [] }: { transactions?: Tx
         </div>
       </article>
 
-      <article className="rounded-2xl bg-surface-container-lowest border border-outline-variant/20 p-5 shadow-[0_8px_24px_rgba(25,28,32,0.04)]">
+      <article onClick={() => openModalFor('expense')} className="cursor-pointer rounded-2xl bg-surface-container-lowest border border-outline-variant/20 p-5 shadow-[0_8px_24px_rgba(25,28,32,0.04)]">
         <div className="flex items-start justify-between">
           <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
             <ShoppingCart className="w-6 h-6 text-red-700" />
@@ -155,6 +171,66 @@ export function FinancialSummaryCards({ transactions = [] }: { transactions?: Tx
           <div className="h-full rounded-full bg-blue-500" style={{ width: `${metrics.savingsBar}%` }} />
         </div>
       </article>
-    </div>
+      </div>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-3xl w-[95vw] sm:w-[80vw] max-h-[85vh] p-0">
+          <div className="p-6">
+            <DialogTitle className="mb-1">{modalFilter === 'income' ? 'Total Income Transactions' : 'Total Expense Transactions'}</DialogTitle>
+            <DialogDescription className="mb-4 text-sm">Showing recent transactions and progressive {modalFilter === 'income' ? 'income' : 'expense'} graph.</DialogDescription>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="col-span-1">
+                <ScrollArea className="h-[420px] p-2 border rounded-md">
+                  <div className="space-y-3">
+                    {safeTransactions
+                      .filter((t) => t.type === modalFilter)
+                      .slice()
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map((t, i) => (
+                        <div key={i} className="p-3 rounded-lg bg-surface-container-lowest border"> 
+                          <div className="flex justify-between">
+                            <div>
+                              <p className="font-semibold">{t.type === 'income' ? 'Income' : 'Expense'}</p>
+                              <p className="text-sm text-on-surface-variant">{new Date(t.date).toLocaleString()}</p>
+                            </div>
+                            <div className="text-right font-bold">{formatInr(Number(t.amount))}</div>
+                          </div>
+                        </div>
+                      ))}
+                    {safeTransactions.filter((t) => t.type === modalFilter).length === 0 && (
+                      <div className="p-4 text-sm text-on-surface-variant">No transactions found.</div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+
+              <div className="col-span-1">
+                <div className="h-[420px] p-3 border rounded-md">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={(() => {
+                      const list = safeTransactions
+                        .filter((t) => t.type === modalFilter)
+                        .slice()
+                        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                      let cum = 0;
+                      return list.map((l) => {
+                        cum += Number(l.amount) || 0;
+                        return { time: new Date(l.date).toLocaleDateString(), value: cum };
+                      });
+                    })()}>
+                      <XAxis dataKey="time" hide />
+                      <YAxis hide />
+                      <Tooltip />
+                      <Area dataKey="value" stroke="#16A34A" fillOpacity={0.2} fill="#16A34A" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

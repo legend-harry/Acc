@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/data";
 import { useCurrency } from "@/context/currency-context";
 import { ShoppingCart, CreditCard, Cloud, Plane, Filter, MoveUp } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import type { Transaction } from "@/types";
 
 interface StitchStreamVelocityProps {
@@ -13,36 +14,16 @@ interface StitchStreamVelocityProps {
 
 export function StitchStreamVelocity({ transactions }: StitchStreamVelocityProps) {
   const { currency } = useCurrency();
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   const feed = useMemo(() => {
     return [...transactions]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 4);
+      .slice(0, 20);
   }, [transactions]);
 
-  const velocity = useMemo(() => {
-    const categories: Record<string, number> = {};
-    // Calculate spend per category in the last 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    transactions
-      .filter(t => t.type === 'expense' && new Date(t.date) > sevenDaysAgo)
-      .forEach(t => {
-        categories[t.category] = (categories[t.category] || 0) + t.amount;
-      });
-
-    const sorted = Object.entries(categories)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4);
-    
-    const max = sorted[0]?.[1] || 1;
-    return sorted.map(([name, amount]) => ({
-      name,
-      amount,
-      percentage: (amount / max) * 100
-    }));
-  }, [transactions]);
+  // category velocity and attached charts removed per request
 
   const getIcon = (category: string) => {
     const c = category.toLowerCase();
@@ -53,9 +34,9 @@ export function StitchStreamVelocity({ transactions }: StitchStreamVelocityProps
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-      {/* Left: Live Transaction Feed (60%) */}
-      <div className="lg:col-span-3 rounded-2xl bg-surface-container-lowest p-6 shadow-sm border border-outline-variant/10 flex flex-col h-[400px]">
+    <div className="w-full">
+      {/* Live Transaction Feed */}
+      <div className="rounded-2xl bg-surface-container-lowest p-6 shadow-sm border border-outline-variant/10 flex flex-col h-[400px]">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-sm font-semibold text-on-surface font-headline uppercase tracking-tight">Live Transaction Feed</h3>
           <div className="flex gap-2">
@@ -63,12 +44,12 @@ export function StitchStreamVelocity({ transactions }: StitchStreamVelocityProps
             <button className="text-outline hover:text-on-surface"><Filter className="w-4 h-4" /></button>
           </div>
         </div>
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-auto relative pr-2">
           <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none"></div>
           <div className="space-y-4 pt-2">
             {feed.map((t, i) => (
-              <div key={t.id} className={cn(
-                "flex items-center justify-between p-3 rounded-xl transition-colors",
+              <button key={t.id} onClick={() => { setSelectedTx(t); setDetailOpen(true); }} className={cn(
+                "w-full text-left flex items-center justify-between p-3 rounded-xl transition-colors",
                 i === 0 ? "bg-surface-container-low border border-outline-variant/20" : "hover:bg-surface-container-low/50"
               )}>
                 <div className="flex items-center gap-4">
@@ -98,41 +79,37 @@ export function StitchStreamVelocity({ transactions }: StitchStreamVelocityProps
                   </p>
                   <p className="text-[10px] text-outline">{t.vendor || 'Personal'}</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Right: Category Velocity (40%) */}
-      <div className="lg:col-span-2 rounded-2xl bg-surface-container p-6 shadow-sm flex flex-col h-[400px] border border-outline-variant/5">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-sm font-semibold text-on-surface font-headline uppercase tracking-tight">Category Velocity</h3>
-          <span className="text-[10px] uppercase font-bold text-outline tracking-wider">Top Moving</span>
-        </div>
-        <div className="flex-1 flex flex-col gap-5 justify-center">
-          {velocity.map((v, i) => (
-            <div key={v.name} className="relative w-full">
-              <div className="flex justify-between text-xs mb-1.5">
-                <span className="font-medium text-on-surface">{v.name}</span>
-                <span className="font-bold text-secondary-container">{formatCurrency(v.amount, currency)}</span>
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-md w-[95vw] sm:w-[80vw] p-0">
+          <div className="p-4">
+            <DialogTitle>Transaction</DialogTitle>
+            <DialogDescription className="mb-4 text-sm">Details for the selected transaction.</DialogDescription>
+            {selectedTx ? (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-semibold text-on-surface">{selectedTx.title}</p>
+                    <p className="text-sm text-on-surface-variant">{new Date(selectedTx.date).toLocaleString()}</p>
+                  </div>
+                  <div className="font-bold">{formatCurrency(selectedTx.amount, currency)}</div>
+                </div>
+                <div className="text-sm text-on-surface-variant">Category: {selectedTx.category}</div>
+                <div className="text-sm text-on-surface-variant">Vendor: {selectedTx.vendor || 'Personal'}</div>
+                <div className="text-sm text-on-surface-variant">Status: {selectedTx.status || 'completed'}</div>
+                <div className="pt-3 border-t">{selectedTx.description}</div>
               </div>
-              <div className="w-full bg-surface-container-high rounded-full h-2.5 overflow-hidden">
-                <div 
-                  className={cn(
-                    "h-full rounded-full transition-all duration-1000 ease-out",
-                    i === 0 ? "bg-secondary-container" : i === 1 ? "bg-tertiary-container" : "bg-outline"
-                  )} 
-                  style={{ width: `${v.percentage}%` }}
-                ></div>
-              </div>
-            </div>
-          ))}
-          {velocity.length === 0 && (
-             <div className="text-center py-8 text-outline text-sm italic">No recent velocity data</div>
-          )}
-        </div>
-      </div>
+            ) : (
+              <div>No transaction selected</div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

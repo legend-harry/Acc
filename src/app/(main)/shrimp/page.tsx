@@ -10,8 +10,14 @@ import {
   Plus, AlertTriangle, TrendingUp, FileText, BookOpen, Image,
   LayoutDashboard, Route, ClipboardList, Utensils, FolderOpen,
   Beaker, PieChart, Calculator, Fish, Waves, Activity, Shell,
-  Sparkles, ArrowRight, Zap, BarChart3
+  Sparkles, ArrowRight, Zap, BarChart3, ChevronDown
 } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { QuickSeedDialog } from "@/components/shrimp/quick-seed-dialog";
 import { ShrimpDashboard } from "@/components/shrimp/shrimp-dashboard";
 import { DailyLogForm } from "@/components/shrimp/daily-log-form";
@@ -22,6 +28,7 @@ import { KnowledgeBase } from "@/components/shrimp/knowledge-base";
 import { AddPondDialog } from "@/components/shrimp/add-pond-dialog";
 import { ShrimpChatBot } from "@/components/shrimp/shrimp-chatbot";
 import { ImageUploadDialog } from "@/components/shrimp/image-upload-dialog";
+import { HistoricalSeedDialog } from "@/components/shrimp/historical-seed-dialog";
 import { FarmStatusForm } from "@/components/shrimp/farm-status-form";
 import { DocumentUploadComponent } from "@/components/shrimp/document-upload";
 import { HistoricalMineralGraphs } from "@/components/shrimp/historical-minerals";
@@ -32,33 +39,24 @@ import { FCREngine } from "@/components/shrimp/fcr-engine";
 import { GrowthBiomassTracker } from "@/components/shrimp/growth-biomass-tracker";
 import { FinancialSummaryCards } from "@/components/dashboard/financial-summary-cards";
 import { usePonds, useAlerts } from '@/hooks/use-shrimp';
-import { useTransactions } from '@/hooks/use-database';
+import { useTransactions, useProjects } from '@/hooks/use-database';
 import { useUser } from '@/context/user-context';
 
-const TAB_CONFIG = [
-  { value: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', shortLabel: 'Dash' },
-  { value: 'harvest', icon: Calculator, label: 'Harvest', shortLabel: 'Harv' },
-  { value: 'fcr', icon: Zap, label: 'FCR Engine', shortLabel: 'FCR' },
-  { value: 'growth', icon: BarChart3, label: 'Growth', shortLabel: 'Grow' },
-  { value: 'journey', icon: Route, label: 'Journey', shortLabel: 'Map' },
-  { value: 'operations', icon: ClipboardList, label: 'Operations', shortLabel: 'Ops' },
-  { value: 'status', icon: Utensils, label: 'Feed Chart', shortLabel: 'Feed' },
-  { value: 'documents', icon: FolderOpen, label: 'Documents', shortLabel: 'Docs' },
-  { value: 'minerals', icon: Beaker, label: 'Minerals', shortLabel: 'Min' },
-  { value: 'reports', icon: PieChart, label: 'Reports', shortLabel: 'Fin' },
-];
+// Tabs configuration removed in favor of vertical A-Z tracker layout
 
 export default function ShrimpFarmingPage() {
   const [showAddPond, setShowAddPond] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [showQuickSeed, setShowQuickSeed] = useState(false);
+  const [showHistoricalSeed, setShowHistoricalSeed] = useState(false);
   const [activePond, setActivePond] = useState<string>('');
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('overview');
   const { selectedProfile } = useUser();
 
   const { ponds, loading: pondsLoading, deletePond } = usePonds();
   const { alerts, loading: alertsLoading } = useAlerts();
   const { transactions, loading: transactionsLoading } = useTransactions();
+  const { projects, loading: projectsLoading } = useProjects();
   const safePonds = Array.isArray(ponds) ? ponds : [];
   const safeAlerts = Array.isArray(alerts) ? alerts : [];
   const safeTransactions = Array.isArray(transactions) ? transactions : [];
@@ -100,14 +98,20 @@ export default function ShrimpFarmingPage() {
     };
   }, [safePonds, safeAlerts]);
 
+  // ── Centralized active project context ──
+  const activeProjectId = activePondData?.linkedprojectid || null;
+  const activeProjectName = useMemo(() => {
+    if (!activeProjectId) return null;
+    return projects.find(p => p.id === activeProjectId)?.name || null;
+  }, [activeProjectId, projects]);
+
   const shrimpDashboardTransactions = useMemo(() => {
     if (!activePondData) return safeTransactions;
-    const linkedProjectId = activePondData.linkedprojectid;
-    if (!linkedProjectId) return safeTransactions;
-    return safeTransactions.filter((t) => t.projectid === linkedProjectId);
-  }, [safeTransactions, activePondData]);
+    if (!activeProjectId) return safeTransactions;
+    return safeTransactions.filter((t) => t.projectid === activeProjectId);
+  }, [safeTransactions, activePondData, activeProjectId]);
 
-  if (pondsLoading || alertsLoading || transactionsLoading) {
+  if (pondsLoading || alertsLoading || transactionsLoading || projectsLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center space-y-4">
@@ -182,10 +186,16 @@ export default function ShrimpFarmingPage() {
             <span className="text-xs text-gray-500 capitalize">{activePondData.shrimptype}</span>
             <span className="text-xs text-gray-500">•</span>
             <span className="text-xs text-gray-500">Day {activePondData.cycleDay || 0}</span>
+            {activeProjectName && (
+              <>
+                <span className="text-xs text-gray-500">•</span>
+                <span className="text-xs text-indigo-600 font-medium truncate">📁 {activeProjectName}</span>
+              </>
+            )}
           </div>
           {safePonds.length > 1 && (
             <select
-              className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-600"
+              className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               value={activePond}
               onChange={(e) => setActivePond(e.target.value)}
             >
@@ -193,6 +203,16 @@ export default function ShrimpFarmingPage() {
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
+          )}
+          {activePondData.cycleDay > 0 && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              onClick={() => setShowHistoricalSeed(true)}
+            >
+              <Zap className="h-3.5 w-3.5 mr-1" /> Seed History
+            </Button>
           )}
         </div>
       )}
@@ -270,219 +290,135 @@ export default function ShrimpFarmingPage() {
         </div>
       )}
 
-      {/* === Main Content Tabs === */}
-      {safePonds.length > 0 && (
-        <div className="space-y-4">
-          <FinancialSummaryCards transactions={shrimpDashboardTransactions} />
+      {/* === Main Thematic Tabs Content === */}
+      {safePonds.length > 0 && activePondData && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 pb-20 animate-in fade-in duration-500">
+          
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-white/50 backdrop-blur-sm border border-gray-200/80 rounded-xl p-1 gap-1 h-auto">
+            <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-cyan-500 data-[state=active]:text-white py-2">
+              <LayoutDashboard className="h-4 w-4 mr-2 hidden sm:inline" /> Overview
+            </TabsTrigger>
+            <TabsTrigger value="operations" className="rounded-lg data-[state=active]:bg-cyan-500 data-[state=active]:text-white py-2">
+              <ClipboardList className="h-4 w-4 mr-2 hidden sm:inline" /> Feed & Water
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="rounded-lg data-[state=active]:bg-cyan-500 data-[state=active]:text-white py-2">
+              <BarChart3 className="h-4 w-4 mr-2 hidden sm:inline" /> Growth & Survival
+            </TabsTrigger>
+            <TabsTrigger value="business" className="rounded-lg data-[state=active]:bg-cyan-500 data-[state=active]:text-white py-2">
+              <Calculator className="h-4 w-4 mr-2 hidden sm:inline" /> Business & Harvest
+            </TabsTrigger>
+          </TabsList>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <div className="overflow-x-auto -mx-2 px-2 md:mx-0 md:px-0 pb-1">
-              <TabsList className="inline-flex md:grid md:w-full md:grid-cols-10 min-w-max md:min-w-0 bg-white/50 backdrop-blur-sm border border-gray-200/80 rounded-xl p-1 gap-0.5">
-                {TAB_CONFIG.map((tab) => (
-                  <TabsTrigger
-                    key={tab.value}
-                    value={tab.value}
-                    className="rounded-lg text-xs md:text-sm gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
-                  >
-                    <tab.icon className="h-3.5 w-3.5 hidden sm:block" />
-                    <span className="sm:hidden">{tab.shortLabel}</span>
-                    <span className="hidden sm:inline">{tab.label}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
+          {/* TAB 1: Overview (Daily Assistant & Main Stats) */}
+          <TabsContent value="overview" className="space-y-4">
+            <ProjectJourneyMap
+              projectPhase={currentPhase.name}
+              currentStage={activePondData.currentStage || 'operation'}
+              pondName={activePondData.name || ''}
+              cycleDay={activePondData.cycleDay || 0}
+              totalCycleDays={120}
+              projectId={activeProjectId}
+              projectName={activeProjectName}
+              farmingType={activePondData.farmingtype}
+              shrimpType={activePondData.shrimptype}
+              currentStock={activePondData.currentStock}
+              pondId={activePond}
+            />
+          </TabsContent>
 
-            {/* Dashboard Tab */}
-            <TabsContent value="dashboard" className="space-y-4 animate-in fade-in duration-300">
-              <ShrimpDashboard
-                ponds={safePonds}
-                currentPhase={currentPhase}
-                alerts={safeAlerts}
-                activePond={activePond}
-                onPondSelect={setActivePond}
-                onDeletePond={deletePond}
-              />
-            </TabsContent>
-
-            {/* Harvest Estimator Tab (NEW!) */}
-            <TabsContent value="harvest" className="space-y-4 animate-in fade-in duration-300">
-              {activePond && activePondData ? (
-                <HarvestEstimator
-                  pondName={activePondData.name}
-                  shrimpType={activePondData.shrimptype || 'white'}
-                  initialStock={activePondData.currentStock || 0}
-                  pondArea={activePondData.area || 0}
-                  cycleDay={activePondData.cycleDay || 0}
-                  seedDate={activePondData.createdAt}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="pt-6 text-center text-gray-600">
-                    Select a pond to view harvest projections
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            {/* FCR Engine Tab */}
-            <TabsContent value="fcr" className="space-y-4 animate-in fade-in duration-300">
-              {activePond && activePondData ? (
-                <FCREngine
-                  pondName={activePondData.name}
-                  shrimpType={activePondData.shrimptype || 'white'}
-                  initialStock={activePondData.currentStock || 0}
-                  pondArea={activePondData.area || 0}
-                  cycleDay={activePondData.cycleDay || 0}
-                  pondId={activePond}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="pt-6 text-center text-gray-600">
-                    Select a pond to use the FCR Engine
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            {/* Growth Curve Tab */}
-            <TabsContent value="growth" className="space-y-4 animate-in fade-in duration-300">
-              {activePond && activePondData ? (
-                <GrowthBiomassTracker
-                  pondName={activePondData.name}
-                  shrimpType={activePondData.shrimptype || 'white'}
-                  initialStock={activePondData.currentStock || 0}
-                  cycleDay={activePondData.cycleDay || 0}
-                  pondId={activePond}
-                  farmingType={activePondData.farmingtype}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="pt-6 text-center text-gray-600">
-                    Select a pond to track growth curves
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            {/* Journey Map Tab */}
-            <TabsContent value="journey" className="space-y-4 animate-in fade-in duration-300">
-              <ProjectJourneyMap
-                projectPhase={currentPhase.name}
-                currentStage={safePonds.find(p => p.id === activePond)?.currentStage || 'operation'}
-                pondName={safePonds.find(p => p.id === activePond)?.name || ''}
-                cycleDay={safePonds.find(p => p.id === activePond)?.cycleDay || 0}
-                totalCycleDays={120}
-              />
-            </TabsContent>
-
-            {/* Operations Tab */}
-            <TabsContent value="operations" className="space-y-4 animate-in fade-in duration-300">
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5 text-cyan-500" />
-                    Daily Operations
-                  </h2>
-                  <div className="grid gap-2 mb-6">
-                    {safePonds.map((pond: any) => (
-                      <div
-                        key={pond.id}
-                        className={`rounded-xl p-3 cursor-pointer transition-all duration-200 ${
-                          activePond === pond.id
-                            ? 'border-2 border-cyan-400 bg-cyan-50/80 shadow-sm'
-                            : 'border border-gray-200 hover:bg-gray-50 hover:border-cyan-200'
-                        }`}
-                        onClick={() => setActivePond(pond.id)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-gray-900">{pond.name}</h3>
-                            <p className="text-xs text-gray-600">
-                              {(pond.currentStock || 0).toLocaleString()} shrimp | {pond.shrimpType} | Day {pond.cycleDay || 0}
-                            </p>
-                          </div>
-                          <Badge variant={pond.status === 'active' ? 'default' : 'secondary'} className="capitalize text-xs">
-                            {pond.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
+          {/* TAB 2: Feed & Water (Operations) */}
+          <TabsContent value="operations" className="space-y-4">
+            <Accordion type="single" collapsible defaultValue="daily-log" className="w-full space-y-4">
+              
+              <AccordionItem value="daily-log" className="border rounded-xl bg-white overflow-hidden">
+                <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 hover:no-underline font-semibold text-gray-800">
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5 text-blue-500" />
+                    Daily Operations Log
                   </div>
-                </div>
-                {activePond && (
-                  <DailyLogForm
-                    pondId={activePond}
-                    pondName={safePonds.find(p => p.id === activePond)?.name || ''}
-                  />
-                )}
-              </div>
-            </TabsContent>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <DailyLogForm pondId={activePond} pondName={activePondData.name || ''} />
+                </AccordionContent>
+              </AccordionItem>
 
-            {/* Feed Chart Tab */}
-            <TabsContent value="status" className="space-y-4 animate-in fade-in duration-300">
-              {activePond && activePondData ? (
-                <FeedingSchedulePlanner
-                  pondName={activePondData.name}
-                  initialStock={activePondData.currentStock}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="pt-6 text-center text-gray-600">
-                    Please select a pond to view feed projections
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
+              <AccordionItem value="feeding-planner" className="border rounded-xl bg-white overflow-hidden">
+                <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 hover:no-underline font-semibold text-gray-800">
+                  <div className="flex items-center gap-2">
+                    <Utensils className="h-5 w-5 text-orange-500" />
+                    Feeding Schedule Planner
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <FeedingSchedulePlanner pondName={activePondData.name} initialStock={activePondData.currentStock} />
+                </AccordionContent>
+              </AccordionItem>
 
-            {/* Documents Tab */}
-            <TabsContent value="documents" className="space-y-4 animate-in fade-in duration-300">
-              {activePond ? (
-                <DocumentUploadComponent
-                  pondId={activePond}
-                    pondName={safePonds.find(p => p.id === activePond)?.name || ''}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="pt-6 text-center text-gray-600">
-                    Please select a pond to manage documents
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
+              <AccordionItem value="minerals" className="border rounded-xl bg-white overflow-hidden">
+                <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 hover:no-underline font-semibold text-gray-800">
+                  <div className="flex items-center gap-2">
+                    <Beaker className="h-5 w-5 text-purple-500" />
+                    Historical Minerals & Supplements
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <HistoricalMineralGraphs pondId={activePond} pondName={activePondData.name || ''} />
+                </AccordionContent>
+              </AccordionItem>
 
-            {/* Minerals Tab */}
-            <TabsContent value="minerals" className="space-y-4 animate-in fade-in duration-300">
-              {activePond ? (
-                <HistoricalMineralGraphs
-                  pondId={activePond}
-                  pondName={ponds.find(p => p.id === activePond)?.name || ''}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="pt-6 text-center text-gray-600">
-                    Please select a pond to view mineral data
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
+              <AccordionItem value="documents" className="border rounded-xl bg-white overflow-hidden">
+                <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 hover:no-underline font-semibold text-gray-800">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-emerald-500" />
+                    Documents & Test Reports
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <DocumentUploadComponent pondId={activePond} pondName={activePondData.name || ''} />
+                </AccordionContent>
+              </AccordionItem>
 
-            {/* Reports Tab */}
-            <TabsContent value="reports" className="space-y-4 animate-in fade-in duration-300">
-              {activePond && activePondData ? (
-                <FinancialDashboard
-                  pondId={activePond}
-                  linkedProjectId={activePondData.linkedprojectid ?? null}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="pt-6 text-center text-gray-600">
-                    Please select a pond to view financials
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+            </Accordion>
+          </TabsContent>
+
+          {/* TAB 3: Growth & Survival (Analytics) */}
+          <TabsContent value="analytics" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <GrowthBiomassTracker
+                pondName={activePondData.name}
+                shrimpType={activePondData.shrimptype || 'white'}
+                initialStock={activePondData.currentStock || 0}
+                cycleDay={activePondData.cycleDay || 0}
+                pondId={activePond}
+                farmingType={activePondData.farmingtype}
+              />
+              <FCREngine
+                pondName={activePondData.name}
+                shrimpType={activePondData.shrimptype || 'white'}
+                initialStock={activePondData.currentStock || 0}
+                pondArea={activePondData.area || 0}
+                cycleDay={activePondData.cycleDay || 0}
+                pondId={activePond}
+              />
+            </div>
+          </TabsContent>
+
+          {/* TAB 4: Business & Harvest */}
+          <TabsContent value="business" className="space-y-4">
+            <FinancialSummaryCards transactions={shrimpDashboardTransactions} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+              <HarvestEstimator
+                pondName={activePondData.name}
+                shrimpType={activePondData.shrimptype || 'white'}
+                initialStock={activePondData.currentStock || 0}
+                pondArea={activePondData.area || 0}
+                cycleDay={activePondData.cycleDay || 0}
+                seedDate={activePondData.createdAt}
+              />
+              <FinancialDashboard pondId={activePond} linkedProjectId={activeProjectId} />
+            </div>
+          </TabsContent>
+        </Tabs>
       )}
 
       <AddPondDialog
@@ -501,8 +437,19 @@ export default function ShrimpFarmingPage() {
       />
       <ImageUploadDialog open={showImageUpload} onOpenChange={setShowImageUpload} />
 
+      {activePondData && (
+        <HistoricalSeedDialog
+          pondId={activePondData.id}
+          pondName={activePondData.name}
+          cycleDay={activePondData.cycleDay || 0}
+          open={showHistoricalSeed}
+          onOpenChange={setShowHistoricalSeed}
+          onSuccess={() => { window.location.reload(); }}
+        />
+      )}
+
       {/* Floating Chatbot */}
-      <ShrimpChatBot pondId={activePond} />
+      <ShrimpChatBot pondId={activePond} activePondData={activePondData} />
     </div>
   );
 }

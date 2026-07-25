@@ -87,16 +87,33 @@ export function GrowthBiomassTracker({
     notes: '',
   });
 
-  // Load sampling data from Firebase
+  // Load sampling data from Supabase
   useEffect(() => {
-    if (!selectedProfile || !pondId) return;
-    // /* supabased ref init */
-    // const unsubscribe = onValue(samplingRef, (snapshot) => {
-    //  ...
-    // });
-    // return () => unsubscribe();
-    setSamplingData([]);
-  }, [selectedProfile, pondId]);
+    if (!pondId) return;
+    
+    const fetchSamples = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('pond_samples')
+        .select('*')
+        .eq('pond_id', pondId)
+        .order('week', { ascending: true });
+        
+      if (!error && data) {
+        setSamplingData(data.map((d: any) => ({
+          id: d.id,
+          week: d.week,
+          avgWeightG: d.avg_weight_g || 0,
+          estimatedSurvivalPct: d.estimated_survival_pct || 85,
+          sampleSize: d.sample_size || 50,
+          date: d.date || new Date().toISOString().split('T')[0],
+          notes: d.notes || ''
+        })));
+      }
+    };
+    
+    fetchSamples();
+  }, [pondId]);
 
   // Generate ideal growth curve locally
   const idealCurve = useMemo(() => {

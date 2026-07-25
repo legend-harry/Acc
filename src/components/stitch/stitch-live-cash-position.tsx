@@ -26,9 +26,8 @@ export function StitchLiveCashPosition({ transactions }: StitchLiveCashPositionP
       .filter((transaction) => !Number.isNaN(transaction.timestamp))
       .sort((a, b) => a.timestamp - b.timestamp);
 
-    const latestTimestamp = resolvedTransactions.length > 0
-      ? resolvedTransactions[resolvedTransactions.length - 1].timestamp
-      : Date.now();
+    // Use the current time as the reference so time-window selections are always relative to now
+    const latestTimestamp = Date.now();
     const windowMs: Record<"1w" | "1m" | "1y", number> = {
       "1w": 7 * 24 * 60 * 60 * 1000,
       "1m": 30 * 24 * 60 * 60 * 1000,

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Send, X, ExternalLink } from 'lucide-react';
 import { useUser } from '@/context/user-context';
 
-export function ShrimpChatBot({ pondId }: { pondId?: string }) {
+export function ShrimpChatBot({ pondId, activePondData }: { pondId?: string; activePondData?: any }) {
   const { selectedProfile } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
@@ -32,7 +32,18 @@ export function ShrimpChatBot({ pondId }: { pondId?: string }) {
       const response = await fetch('/api/ai/chat-assist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage, profile: selectedProfile, pondId }),
+        body: JSON.stringify({ 
+          message: userMessage, 
+          profile: selectedProfile, 
+          pondId,
+          pondContext: activePondData ? {
+            name: activePondData.name,
+            farmingType: activePondData.farmingtype,
+            shrimpType: activePondData.shrimptype,
+            cycleDay: activePondData.cycleDay,
+            currentStock: activePondData.currentStock
+          } : null
+        }),
       });
 
       const data = await response.json();
@@ -47,9 +58,7 @@ export function ShrimpChatBot({ pondId }: { pondId?: string }) {
     }
   };
 
-  const openGeminiChat = () => {
-    window.open('https://gemini.google.com', '_blank');
-  };
+  // Gemini Link removed as requested
 
   if (!isOpen) {
     return (
@@ -67,7 +76,7 @@ export function ShrimpChatBot({ pondId }: { pondId?: string }) {
   return (
     <Card className="fixed bottom-4 right-4 w-full max-w-sm sm:w-96 shadow-xl z-50 max-h-[90vh] flex flex-col">
       <CardHeader className="bg-blue-600 text-white rounded-t-lg flex flex-row items-center justify-between p-3 sm:p-4 flex-shrink-0">
-        <CardTitle className="text-sm sm:text-base">🦐 Shrimp Assistant</CardTitle>
+        <CardTitle className="text-sm sm:text-base">🦐 Farm Assistant</CardTitle>
         <button
           onClick={() => setIsOpen(false)}
           className="hover:bg-blue-700 p-1 rounded"
@@ -122,17 +131,6 @@ export function ShrimpChatBot({ pondId }: { pondId?: string }) {
             <Send className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         </div>
-
-        {/* Gemini Link */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={openGeminiChat}
-          className="w-full gap-2 text-xs flex-shrink-0"
-        >
-          <ExternalLink className="h-3 w-3" />
-          Open Gemini Chat
-        </Button>
 
         {/* Quick Questions */}
         <div className="text-xs text-muted-foreground flex-shrink-0">

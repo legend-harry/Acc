@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, profile, pondId } = await req.json();
+    const { message, profile, pondId, pondContext } = await req.json();
 
     if (!profile || !pondId) {
       return NextResponse.json(
@@ -12,34 +14,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    /* supabased ref init */
-    const supabase = await createClient();
-    const { data: snapshotData } = await supabase.from('dummy').select('*').limit(10);
-    const snapshot = { val: () => snapshotData || {} };
-    const knowledgeData = snapshot.val();
-
-    if (!knowledgeData) {
-      return NextResponse.json({
-        response: 'No knowledge base entries found for this pond. Upload documents or add notes to enable responses.',
-        missingFields: ['knowledgeBase'],
-      });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    
+    let systemPrompt = `You are an expert aquaculture and shrimp farming assistant.`;
+    if (pondContext) {
+      systemPrompt += ` You are currently assisting with a pond named "${pondContext.name}". 
+      Context: ${pondContext.farmingType} farming of ${pondContext.shrimpType} shrimp. 
+      Day in cycle: ${pondContext.cycleDay}. Current Stock: ${pondContext.currentStock}. 
+      Use this context to give highly specific and relevant advice. Keep responses helpful but concise.`;
     }
 
-    const entries = Object.values(knowledgeData) as any[];
-    const query = String(message || '').toLowerCase();
-    const matches = entries.filter((entry) =>
-      String(entry.title || '').toLowerCase().includes(query) ||
-      String(entry.content || '').toLowerCase().includes(query)
-    );
+    const chat = model.startChat({
+      systemInstruction: systemPrompt,
+    });
 
-    const topEntries = (matches.length > 0 ? matches : entries).slice(0, 3);
-    const responseLines = topEntries.map((entry) => `- ${entry.title || 'Untitled'}: ${String(entry.content || '').slice(0, 160)}`);
+    const result = await chat.sendMessage(message);
+    const responseText = result.response.text();
 
-    const response = responseLines.length > 0
-      ? `Based on stored knowledge entries:\n${responseLines.join('\n')}`
-      : 'No matching knowledge entries found. Add more documents or notes.';
-
-    return NextResponse.json({ response });
+    return NextResponse.json({ response: responseText });
   } catch (error) {
     console.error('Chat error:', error);
     return NextResponse.json(

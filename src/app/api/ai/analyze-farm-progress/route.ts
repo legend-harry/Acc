@@ -9,43 +9,44 @@ export async function POST(req: NextRequest) {
     const {
       pondName,
       currentStage,
-      daysInCycle,
-      stockHealth,
-      waterQuality,
-      feedingStatus,
+      cycleDay,
+      totalCycleDays,
       farmingType,
-      observations,
+      shrimpType,
+      currentStock,
+      recentLogs
     } = body;
 
-    const prompt = `You are an expert aquaculture and shrimp farming consultant. Analyze the following progress assessment for a pond and provide insights and actionable recommendations.
+    const prompt = `You are an expert aquaculture and shrimp farming consultant. You act as the daily assistant for a farmer. Analyze the current pond context and generate a strict, concise daily briefing and schedule. Do NOT use lengthy paragraphs or repetitive language. Be direct, factual, and stick to hardcoded operational instructions.
 
-## Pond Progress Data
+## Pond Context
 - Pond Name: ${pondName || 'Unknown'}
 - Farming Type: ${farmingType || 'Unknown'}
+- Shrimp Species: ${shrimpType || 'Unknown'}
 - Current Stage: ${currentStage || 'Unknown'}
-- Days in Cycle: ${daysInCycle || 0}
-- Stock Health: ${stockHealth || 'Unknown'}
-- Water Quality: ${waterQuality || 'Unknown'}
-- Feeding Status: ${feedingStatus || 'Unknown'}
-- Direct Observations: ${observations || 'None'}
+- Day in Cycle: ${cycleDay || 0} out of ${totalCycleDays || 120}
+- Current Stock (PL): ${currentStock || 'Unknown'}
+- Recent Data/Logs: ${recentLogs ? JSON.stringify(recentLogs) : 'No recent logs provided'}
 
 ## Analysis Required
-1. Evaluate whether the reported conditions match what is expected for the given stage and days in cycle.
-2. Identify immediate risks based on stock health, water quality, and feeding status.
-3. Recommend priority interventions or adjustments (e.g., to feeding, aeration, monitoring).
-4. Provide a summarized checklist of next steps.
+1. Generate a VERY brief statusSummary (max 1 sentence) stating facts about today's stage.
+2. Evaluate current risk levels.
+3. Identify expected parameters for this specific day/stage in short bullet-point format.
+4. Provide a strict time-based schedule for the day (e.g., exact feeding times, when to test DO/pH, when to clean trays).
+5. Recommend 2 specific, concise actionable steps for today (e.g. "Apply 10kg Vitamin C").
+6. CRITICAL: Analyze the correlation between the current day and the Moon cycle. If it's a New Moon or Full Moon phase, specifically instruct the farmer on moulting risks and mineral supplementation in the recommendations.
 
-Return ONLY valid JSON with this structure:
+Return ONLY valid JSON with this exact structure:
 {
-  "statusSummary": "Short 1-2 sentence summary of overall pond trajectory",
+  "statusSummary": "One short, direct sentence (e.g. 'Day 45: Transitioning to intensive feed schedule.')",
   "riskLevel": "low" | "medium" | "high" | "critical",
-  "expectedDeltas": "What parameters normally look like at this stage",
-  "alerts": [
-    { "severity": "info" | "warning" | "critical", "message": "Clear specific issue" }
+  "expectedDeltas": "Weight: ~5g | FCR: 1.2 | DO: >4.5 mg/L",
+  "dailySchedule": [
+    { "time": "06:00 AM", "task": "Check DO, Apply Morning Feed", "type": "feed" | "test" | "observe" | "maintenance" }
   ],
   "recommendations": [
-    "Actionable step 1",
-    "Actionable step 2"
+    "Apply probiotic mix A",
+    "Monitor tray consumption 1hr after feeding"
   ]
 }`;
 

@@ -114,8 +114,9 @@ export function usePonds() {
             farmingType: pond.farming_type    ?? pond.farmingtype    ?? '',
             targetDensity: pond.target_density  ?? pond.targetDensity  ?? 0,
             seedAmount: pond.seed_amount     ?? pond.seedAmount     ?? 0,
-            expectedCount: pond.expected_count  ?? pond.expectedCount  ?? 0,
-            currentStock: pond.current_stock   ?? pond.currentStock   ?? 0,
+            expectedCount: pond.expected_count  ?? pond.expectedcount ?? pond.expectedCount  ?? 0,
+            currentStock: pond.current_stock   ?? pond.currentstock ?? pond.currentStock   ?? 0,
+            status: pond.status ?? 'active',
             stockingdate: pond.stockingdate    ?? pond.stocking_date  ?? null,
             linkedprojectid: pond.linkedprojectid ?? pond.linked_project_id ?? null,
           } as unknown as Pond;
